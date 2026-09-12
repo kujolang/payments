@@ -1,0 +1,35 @@
+from src.storage.sqlite import open_store, intake, prepare, grant, claim, recover
+from src.domain.binding import snapshot_digest
+path := env("PAYMENTS_TEST_DB")
+mode := env("PAYMENTS_TEST_MODE")
+assert(path != "" && mode != "", "fixture_environment")
+db := open_store(path)
+examples := parse_json(read_file("tests/fixtures/domain.json"))
+snapshot := examples["snapshot"]
+digest := snapshot_digest(snapshot)
+if mode == "setup" {
+    assert(intake(db,"scope","key","request","execution",examples["intent"])["ok"],"setup_intake")
+    assert(prepare(db,"scope","execution",0,snapshot,digest,1000),"setup_prepare")
+    assert(grant(db,"scope","execution",1,{"approval_id":"approval","binding_digest":"binding","nonce":"nonce","expires_at_ms":2000},digest,"invocation","issuer",1000),"setup_grant")
+} else {
+    if mode == "recover" { recover(db) }
+    else {
+        won := claim(db,"scope","execution",2,"approval","binding",digest,"invocation",1000)
+        if won {
+            if mode == "crash_before_send" {
+                write_file(env("PAYMENTS_TEST_MARKER"),"claimed")
+                sleep(30000)
+            }
+            // Deliberately non-idempotent fake processor in a separate database.
+            processor := db_connect("sqlite",env("PAYMENTS_TEST_PROCESSOR"))
+            db_execute(processor,"INSERT INTO charges(execution_id) VALUES(?)",["execution"])
+            db_close(processor)
+            if mode == "crash_after_send" {
+                write_file(env("PAYMENTS_TEST_MARKER"),"sent")
+                sleep(30000)
+            }
+            print("winner")
+        } else { print("denied") }
+    }
+}
+db_close(db)

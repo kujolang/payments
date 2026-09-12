@@ -1,0 +1,34 @@
+from src.storage.sqlite import open_store, intake, inspect, prepare, grant, claim, cancel, recover
+from src.domain.binding import intent_digest, snapshot_digest
+
+path := env("PAYMENTS_TEST_DB")
+assert(path != "", "test_database_required")
+db := open_store(path)
+examples := parse_json(read_file("tests/fixtures/domain.json"))
+i := examples["intent"]
+s := examples["snapshot"]
+d := snapshot_digest(s)
+a := {"approval_id":"a1","binding_digest":"b1","nonce":"n1","expires_at_ms":2000}
+assert(intake(db,"tenant-user","key1","request1","e1",i)["ok"],"intake")
+assert(intake(db,"tenant-user","key1","request1","ignored",i)["replay"],"replay")
+assert(intake(db,"tenant-user","key1","changed","ignored",i)["ok"] == false,"key_conflict")
+assert(intake(db,"tenant-user","key2","request1","ignored",i)["execution_id"] == "e1","purchase_dedupe")
+assert(inspect(db,"other-tenant","e1") == null,"tenant_scope")
+assert(prepare(db,"tenant-user","e1",0,s,d,1000),"prepare")
+assert(prepare(db,"tenant-user","e1",1,s,d,1000) == false,"immutable_snapshot")
+assert(grant(db,"tenant-user","e1",1,a,d,"inv1","issuer1",1000),"grant")
+assert(claim(db,"tenant-user","e1",99,"a1","b1",d,"inv1",1000) == false,"revision_conflict")
+assert(claim(db,"tenant-user","e1",2,"a1","b1",d,"inv1",1000),"atomic_claim_approval_rollback")
+assert(claim(db,"tenant-user","e1",2,"a1","b1",d,"inv1",1000) == false,"one_claim")
+assert(cancel(db,"tenant-user","e1",3) == false,"no_postclaim_cancel")
+db_close(db)
+db2 := open_store(path)
+assert(recover(db2) == 1,"recover_unknown")
+row := inspect(db2,"tenant-user","e1")
+assert(row["state"] == "reconciliation_required" && row["claimed"] == 1,"durable_claim")
+assert(claim(db2,"tenant-user","e1",row["revision"],"a1","b1",d,"inv1",1000) == false,"no_recovery_dispatch")
+mut reset := false
+try { db_execute(db2,"UPDATE executions SET claimed=0 WHERE execution_id='e1'",[]); reset = true } except e { }
+assert(reset == false,"sql_claim_fence")
+db_close(db2)
+print("SQLite intake, approval consumption, durable claim and recovery passed")

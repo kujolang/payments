@@ -1,0 +1,91 @@
+// Trusted persistence port. It does not authenticate callers or issue approvals.
+// Only a successful claim return in the current invocation may authorize dispatch.
+export open_store := func(path) {
+    db := db_connect("sqlite", path)
+    db_query(db, "PRAGMA journal_mode=WAL", [])
+    db_query(db, "PRAGMA synchronous=FULL", [])
+    db_query(db, "PRAGMA foreign_keys=ON", [])
+    db_query(db, "PRAGMA busy_timeout=5000", [])
+    db_execute(db, "CREATE TABLE IF NOT EXISTS payments_meta(version INTEGER PRIMARY KEY CHECK(version=1))", [])
+    db_execute(db, "INSERT OR IGNORE INTO payments_meta VALUES(1)", [])
+    db_execute(db, "CREATE TABLE IF NOT EXISTS executions(execution_id TEXT PRIMARY KEY, scope TEXT NOT NULL, purchase_ref TEXT NOT NULL, request_digest TEXT NOT NULL, intent_json TEXT NOT NULL, snapshot_json TEXT, snapshot_digest TEXT, state TEXT NOT NULL CHECK(state IN ('awaiting_authorization','ready','executing','reconciliation_required','succeeded','closed')), revision INTEGER NOT NULL DEFAULT 0, expires_at_ms INTEGER NOT NULL, claimed INTEGER NOT NULL DEFAULT 0 CHECK(claimed IN (0,1)), invocation_id TEXT, closed_reason TEXT, receipt_json TEXT, UNIQUE(scope,purchase_ref), CHECK(claimed=0 OR state NOT IN ('ready','awaiting_authorization')))", [])
+    db_execute(db, "CREATE TABLE IF NOT EXISTS request_keys(scope TEXT NOT NULL,key_hash TEXT NOT NULL,request_digest TEXT NOT NULL,execution_id TEXT NOT NULL REFERENCES executions(execution_id),PRIMARY KEY(scope,key_hash))", [])
+    db_execute(db, "CREATE TABLE IF NOT EXISTS approvals(approval_id TEXT PRIMARY KEY,execution_id TEXT NOT NULL REFERENCES executions(execution_id),scope TEXT NOT NULL,snapshot_digest TEXT NOT NULL,invocation_id TEXT NOT NULL,binding_digest TEXT NOT NULL,issuer_ref TEXT NOT NULL,nonce TEXT NOT NULL,expires_at_ms INTEGER NOT NULL,consumed INTEGER NOT NULL DEFAULT 0 CHECK(consumed IN (0,1)),UNIQUE(issuer_ref,nonce))", [])
+    db_execute(db, "CREATE TABLE IF NOT EXISTS observations(execution_id TEXT NOT NULL REFERENCES executions(execution_id),evidence_id TEXT NOT NULL,digest TEXT NOT NULL,observation_json TEXT NOT NULL,PRIMARY KEY(execution_id,evidence_id))", [])
+    db_execute(db, "CREATE TRIGGER IF NOT EXISTS permanent_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=1 AND NEW.claimed!=1 BEGIN SELECT RAISE(ABORT,'permanent_claim'); END", [])
+    db_execute(db, "CREATE TRIGGER IF NOT EXISTS permanent_execution BEFORE DELETE ON executions BEGIN SELECT RAISE(ABORT,'permanent_execution'); END", [])
+    return db
+}
+export inspect := func(db, scope, execution_id) {
+    rows := db_query(db, "SELECT * FROM executions WHERE scope=? AND execution_id=?", [scope, execution_id])
+    if len(rows) == 0 { return null }
+    return rows[0]
+}
+export intake := func(db, scope, key_hash, request_digest, execution_id, intent) {
+    mut result := {"ok": false, "code": "storage_failure"}
+    try {
+        db_execute(db, "BEGIN IMMEDIATE", [])
+        keys := db_query(db, "SELECT request_digest,execution_id FROM request_keys WHERE scope=? AND key_hash=?", [scope,key_hash])
+        if len(keys) > 0 {
+            if keys[0]["request_digest"] == request_digest { result = {"ok": true,"execution_id":keys[0]["execution_id"],"replay":true} }
+            else { result = {"ok":false,"code":"idempotency_conflict"} }
+        } else {
+            purchases := db_query(db, "SELECT execution_id,request_digest FROM executions WHERE scope=? AND purchase_ref=?", [scope,intent["purchase_ref"]])
+            if len(purchases) > 0 {
+                if purchases[0]["request_digest"] == request_digest {
+                    db_execute(db,"INSERT INTO request_keys VALUES(?,?,?,?)",[scope,key_hash,request_digest,purchases[0]["execution_id"]])
+                    result = {"ok":true,"execution_id":purchases[0]["execution_id"],"replay":true}
+                } else { result = {"ok":false,"code":"purchase_conflict"} }
+            } else {
+                db_execute(db, "INSERT INTO executions(execution_id,scope,purchase_ref,request_digest,intent_json,state,expires_at_ms) VALUES(?,?,?,?,?,'awaiting_authorization',?)", [execution_id,scope,intent["purchase_ref"],request_digest,to_json(intent),intent["expires_at_ms"]])
+                db_execute(db,"INSERT INTO request_keys VALUES(?,?,?,?)",[scope,key_hash,request_digest,execution_id])
+                result = {"ok":true,"execution_id":execution_id,"replay":false}
+            }
+        }
+        db_execute(db, "COMMIT", [])
+    } except e {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        result = {"ok":false,"code":"storage_failure"}
+    }
+    return result
+}
+export prepare := func(db, scope, execution_id, revision, snapshot, digest, now_ms) {
+    // Snapshot becomes immutable after this CAS. Caller performs domain validation.
+    rows := db_execute(db,"UPDATE executions SET snapshot_json=?,snapshot_digest=?,expires_at_ms=?,revision=revision+1 WHERE execution_id=? AND scope=? AND state='awaiting_authorization' AND claimed=0 AND snapshot_json IS NULL AND revision=? AND expires_at_ms>?",[to_json(snapshot),digest,snapshot["expires_at_ms"],execution_id,scope,revision,now_ms])
+    return rows == 1
+}
+export grant := func(db, scope, execution_id, revision, approval, snapshot_digest, invocation_id, issuer_ref, now_ms) {
+    // Authenticated issuer + Ability validation are mandatory application preconditions.
+    mut ok := false
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        rows := db_execute(db,"UPDATE executions SET state='ready',revision=revision+1 WHERE execution_id=? AND scope=? AND state='awaiting_authorization' AND snapshot_digest=? AND claimed=0 AND revision=? AND expires_at_ms>?",[execution_id,scope,snapshot_digest,revision,now_ms])
+        if rows == 1 && approval["expires_at_ms"] > now_ms {
+            db_execute(db,"INSERT INTO approvals VALUES(?,?,?,?,?,?,?,?,?,0)",[approval["approval_id"],execution_id,scope,snapshot_digest,invocation_id,approval["binding_digest"],issuer_ref,approval["nonce"],approval["expires_at_ms"]])
+            db_execute(db,"COMMIT",[])
+            ok = true
+        } else { db_execute(db,"ROLLBACK",[]) }
+    } except e { try { db_execute(db,"ROLLBACK",[]) } except rollback_error { } }
+    return ok
+}
+export claim := func(db, scope, execution_id, revision, approval_id, binding_digest, snapshot_digest, invocation_id, now_ms) {
+    mut won := false
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        consumed := db_execute(db,"UPDATE approvals SET consumed=1 WHERE approval_id=? AND execution_id=? AND scope=? AND binding_digest=? AND snapshot_digest=? AND invocation_id=? AND expires_at_ms>? AND consumed=0",[approval_id,execution_id,scope,binding_digest,snapshot_digest,invocation_id,now_ms])
+        if consumed == 1 {
+            rows := db_execute(db,"UPDATE executions SET state='executing',claimed=1,invocation_id=?,revision=revision+1 WHERE execution_id=? AND scope=? AND snapshot_digest=? AND state='ready' AND claimed=0 AND revision=? AND expires_at_ms>?",[invocation_id,execution_id,scope,snapshot_digest,revision,now_ms])
+            if rows == 1 { db_execute(db,"COMMIT",[]); won = true }
+            else { db_execute(db,"ROLLBACK",[]) }
+        } else { db_execute(db,"ROLLBACK",[]) }
+    } except e { try { db_execute(db,"ROLLBACK",[]) } except rollback_error { } }
+    return won
+}
+export cancel := func(db, scope, execution_id, revision) {
+    rows := db_execute(db,"UPDATE executions SET state='closed',closed_reason='cancelled',revision=revision+1 WHERE scope=? AND execution_id=? AND revision=? AND state IN ('awaiting_authorization','ready') AND claimed=0",[scope,execution_id,revision])
+    return rows == 1
+}
+export recover := func(db) {
+    // Recovery is observation-only: it never clears a claim or recreates a permit.
+    return db_execute(db,"UPDATE executions SET state='reconciliation_required',revision=revision+1 WHERE state='executing' AND claimed=1",[])
+}
