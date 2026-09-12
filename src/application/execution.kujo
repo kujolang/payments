@@ -47,7 +47,7 @@ export request_provider_authorization := func(store, principal, execution_id, pr
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
-    if row == null || row["snapshot_json"] == null || row["claimed"] == 1 { return {"ok":false,"code":"invalid_execution"} }
+    if row == null || row["snapshot_json"] == null || row["claimed"] == 1 || now_ms >= row["expires_at_ms"] || (row["state"] != "awaiting_authorization" && row["state"] != "ready") { return {"ok":false,"code":"invalid_execution"} }
     snapshot := parse_json(row["snapshot_json"])
     if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
     ref := store["preparation_ref"](scope,execution_id)
@@ -167,6 +167,8 @@ export execute_payment := func(store, principal, execution_id, approval, definit
         assert(permit["take"](),"dispatch_permit_missing")
         current := store["inspect"](scope,execution_id)
         ctx := context_for(current,principal,clock(),"execution")
+        if ctx["deadline_ms"] > approval["expires_at_ms"] { ctx["deadline_ms"] = approval["expires_at_ms"] }
+        if ctx["deadline_ms"] > current["expires_at_ms"] { ctx["deadline_ms"] = current["expires_at_ms"] }
         ctx["invocation_id"] = invocation["invocation_id"]
         ctx["claim_id"] = invocation["invocation_id"]
         ctx["provider_idempotency_key"] = invocation["invocation_id"]

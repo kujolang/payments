@@ -1,3 +1,4 @@
+// Diagnostic only: compare VM and interpreter; not a passing-suite test.
 from src.storage.port import sqlite_port
 from ability import approval_binding_digest
 from src.domain.binding import snapshot_digest
@@ -16,7 +17,7 @@ clock := func() { return 1500 }
 policy := func(snapshot, invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"policy1","outcome":"allow","reason":"Fixture policy; separate approval still required.","requirements":["human"],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
 audit := func(phase, invocation, payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
 verify_issuer := func(issuer, approval, invocation) { return issuer == "fixture-issuer" && approval["nonce"] == "issued-nonce" }
-for behavior in ["success","throw_after","throw_before","pending","audit_failure","expire_after_claim","short_approval"] {
+for behavior in ["short_approval"] {
     db := open_store(env("PAYMENTS_TEST_DB")+"-"+behavior)
     processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-processor-"+behavior)
     provider := fixture_provider(processor,examples["snapshot"],examples["capabilities"],behavior)
@@ -37,7 +38,14 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
     approval := {"schema":"kujo.ability.approval/v1","approval_id":"approval","binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"issued-nonce","evidence":{}}
     if behavior == "short_approval" {
         approval["expires_at_ms"] = 1800
-
+        original := {"submit":provider["submit"]}
+        provider["submit"] = func(ref,ctx) {
+            print(to_json({"debug_deadline":ctx["deadline_ms"]}))
+            assert(ctx["deadline_ms"] <= 1800,"deadline_within_approval")
+            value := original["submit"](ref,ctx)
+            print(to_json({"debug_native_value":value}))
+            return value
+        }
     }
     forged := parse_json(to_json(approval))
     forged["nonce"] = "forged"
@@ -59,6 +67,7 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
         return audit(phase,invocation,payload)
     }
     result := execute_payment(sqlite_port(db),principal,"exec_1",approval,definition,provider,schemas,table,"US",{"clock_ms":selected_clock,"policy":policy,"audit":selected_audit},confirmation)
+    if behavior == "short_approval" { print(to_json({"observed_status":result["result"]["status"],"expected_status":"succeeded"})) }
     if behavior == "audit_failure" { assert(result["ok"] == false && result["result"]["status"] == "succeeded","audit_not_financial_failure") }
     if behavior == "success" || behavior == "short_approval" { assert(result["result"]["status"] == "succeeded","paid") }
     if behavior == "pending" { assert(result["result"]["status"] == "executing","pending") }

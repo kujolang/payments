@@ -1,0 +1,4 @@
+{"debug_deadline":1800}
+{"expected_status":"succeeded","observed_status":"reconciliation_required"}
+[KUJOVM001] [vm] Runtime Error: paid
+  --> 0:0

@@ -36,6 +36,8 @@ export fixture_provider := func(processor, installed_snapshot, capabilities, beh
         snapshot := parse_json(rows[0]["snapshot_json"])
         assert(snapshot_digest(snapshot) == context["snapshot_digest"],"fixture_binding")
         assert(context["now_ms"] < snapshot["expires_at_ms"],"fixture_expiry")
+        assert(context["deadline_ms"] <= snapshot["expires_at_ms"],"financial_deadline")
+        if behavior == "short_approval" { assert(context["deadline_ms"] <= 1800,"short_approval_deadline") }
         if behavior == "throw_before" { assert(false,"SENTINEL_PROVIDER_SECRET") }
         db_execute(processor,"INSERT INTO fixture_charges VALUES(?,?)",[ref,to_json(snapshot)])
         if behavior == "throw_after" { assert(false,"SENTINEL_SPT") }

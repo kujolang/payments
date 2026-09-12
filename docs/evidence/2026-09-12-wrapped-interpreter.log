@@ -1,0 +1,11 @@
+Type checking warnings:
+  [KUJORUN001] [runtime] Undefined Function: Undefined function 'audit'
+  --> 0:0
+   = Did you mean 'exit'?
+   = note: Function must be defined before it is called
+
+
+{"debug_deadline":1800}
+{"debug_native_value":{"actual_amount":{"currency":"USD","minor":5500},"evidence_ref":"fixture:exec_1","execution_id":"exec_1","next_action":null,"observed_at_ms":1500,"outcome":"succeeded","phase":"execution","retry_after_ms":null,"schema":"kujo.payment-observation/v1","snapshot_digest":"761cb7957786fbcd30902a1d38f88eac8a4e1791a313be64c9eef8ae7e3c153c"}}
+{"expected_status":"succeeded","observed_status":"succeeded"}
+Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
