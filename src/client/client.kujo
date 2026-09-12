@@ -1,0 +1,7 @@
+// This module has no imports, environment, filesystem, credential or process APIs.
+export purchase_request := func(transport, intent_request, idempotency_key) {
+    return transport({"operation":"request","input":intent_request,"idempotency_key":idempotency_key})
+}
+export purchase_status := func(transport, execution_id) {
+    return transport({"operation":"inspect","input":{"execution_id":execution_id}})
+}

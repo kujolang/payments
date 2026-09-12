@@ -1,0 +1,70 @@
+from src.storage.port import sqlite_port
+from ability import approval_binding_digest
+from src.domain.binding import snapshot_digest
+from src.storage.sqlite import open_store, intake, inspect
+from src.providers.fixture.provider import fixture_provider
+from src.application.execution import principal_scope, request_provider_authorization, prepare_execution, execution_invocation, authorize_execution, execute_payment, reconcile_execution
+
+examples := parse_json(read_file("tests/fixtures/domain.json"))
+mut schemas := {}
+for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+principal := examples["intent"]["principal"]
+scope := principal_scope(principal)
+table := {"version":"fixture-v1","exponents":{"USD":2}}
+clock := func() { return 1500 }
+policy := func(snapshot, invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"policy1","outcome":"allow","reason":"Fixture policy; separate approval still required.","requirements":["human"],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
+audit := func(phase, invocation, payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
+verify_issuer := func(issuer, approval, invocation) { return issuer == "fixture-issuer" && approval["nonce"] == "issued-nonce" }
+for behavior in ["success","throw_after","throw_before","pending","audit_failure","expire_after_claim"] {
+    db := open_store(env("PAYMENTS_TEST_DB")+"-"+behavior)
+    processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-processor-"+behavior)
+    provider := fixture_provider(processor,examples["snapshot"],examples["capabilities"],behavior)
+    verify := func(snapshot, observation) {
+        rows := db_query(processor,"SELECT snapshot_json FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])
+        return len(rows) == 1 && snapshot_digest(parse_json(rows[0]["snapshot_json"])) == snapshot_digest(snapshot)
+    }
+    confirmation := {"id":"fixture-rule-v1","assurance":"provider_confirmed","verify":verify}
+    assert(intake(db,scope,"key","request","exec_1",examples["intent"])["ok"],"intake")
+    prepared := prepare_execution(sqlite_port(db),principal,"exec_1",provider,schemas,table,1500,"US")
+    assert(prepared["ok"],"prepare")
+    assert(request_provider_authorization(sqlite_port(db),principal,"exec_1",provider,schemas["observation"],1500)["status"] == "authorized","provider_authorization")
+    assert(request_provider_authorization(sqlite_port(db),principal,"exec_1",provider,schemas["observation"],1500)["status"] == "authorized","observe_authorization")
+    assert(db_query(processor,"SELECT count(*) AS n FROM fixture_authorizations",[])[0]["n"] == 1,"no_duplicate_native_authorization")
+    row := inspect(db,scope,"exec_1")
+    invocation := execution_invocation(row,principal,definition)
+    approval := {"schema":"kujo.ability.approval/v1","approval_id":"approval","binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"issued-nonce","evidence":{}}
+    forged := parse_json(to_json(approval))
+    forged["nonce"] = "forged"
+    assert(authorize_execution(sqlite_port(db),principal,"exec_1",forged,definition,"fixture-issuer",verify_issuer,1500)["ok"] == false,"forged_issuer")
+    assert(authorize_execution(sqlite_port(db),principal,"exec_1",approval,definition,"fixture-issuer",verify_issuer,1500)["ok"],"authorize")
+    for field in ["nonce","binding_digest","approval_id"] {
+        mut tampered := parse_json(to_json(approval))
+        tampered[field] = "wrong"
+        blocked := execute_payment(sqlite_port(db),principal,"exec_1",tampered,definition,provider,schemas,table,"US",{"clock_ms":clock,"policy":policy,"audit":audit},confirmation)
+        assert(blocked["ok"] == false,"tampered_grant")
+        assert(inspect(db,scope,"exec_1")["claimed"] == 0,"tampered_no_claim")
+    }
+    selected_clock := func() {
+        if behavior == "expire_after_claim" && inspect(db,scope,"exec_1")["claimed"] == 1 { return 2000 }
+        return 1500
+    }
+    selected_audit := func(phase,invocation,payload) {
+        if behavior == "audit_failure" && phase == "completed" { return {"ok":false} }
+        return audit(phase,invocation,payload)
+    }
+    result := execute_payment(sqlite_port(db),principal,"exec_1",approval,definition,provider,schemas,table,"US",{"clock_ms":selected_clock,"policy":policy,"audit":selected_audit},confirmation)
+    if behavior == "audit_failure" { assert(result["ok"] == false && result["result"]["status"] == "succeeded","audit_not_financial_failure") }
+    if behavior == "success" { assert(result["result"]["status"] == "succeeded","paid") }
+    if behavior == "pending" { assert(result["result"]["status"] == "executing","pending") }
+    if behavior == "throw_before" || behavior == "throw_after" || behavior == "expire_after_claim" { assert(result["result"]["status"] == "reconciliation_required","ambiguous") }
+    repeated := execute_payment(sqlite_port(db),principal,"exec_1",approval,definition,provider,schemas,table,"US",{"clock_ms":clock,"policy":policy,"audit":audit},confirmation)
+    count := db_query(processor,"SELECT count(*) AS n FROM fixture_charges",[])[0]["n"]
+    if behavior == "throw_before" || behavior == "expire_after_claim" { assert(count == 0,"no_charge") } else { assert(count == 1,"one_charge") }
+    reconciled := reconcile_execution(sqlite_port(db),principal,"exec_1",provider,schemas["observation"],confirmation,1500)
+    if behavior == "throw_after" || behavior == "pending" { assert(reconciled["result"]["status"] == "succeeded","reconciled") }
+    assert(contains(to_json(result),"SENTINEL") == 0,"safe_error")
+    db_close(processor)
+    db_close(db)
+}
+print("Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed")

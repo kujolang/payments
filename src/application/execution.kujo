@@ -1,0 +1,199 @@
+from src.application.contracts import valid_store
+from ability import create_ability_registry, register_ability_definition, register_ability_binding, register_ability_exposure, execute_ability, ability_definition_digest, validate_ability_approval, approval_binding_digest
+from src.domain.binding import frame, intent_digest, snapshot_digest
+from src.domain.validation import valid_intent, valid_snapshot, valid_capabilities
+from src.domain.lifecycle import summary, observation_event
+from src.providers.contract import call_provider, valid_provider
+
+export principal_scope := func(principal) {
+    return sha256(frame(["kujo.payment-principal/v1",principal["type"],principal["id"],principal["tenant_id"]]))
+}
+func context_for(row, principal, now_ms, phase) {
+    return {"execution_id":row["execution_id"],"principal":principal,"tenant_id":principal["tenant_id"],"now_ms":now_ms,"deadline_ms":now_ms+10000,"phase":phase,"operation_id":row["execution_id"]+":"+phase,"snapshot_digest":row["snapshot_digest"]}
+}
+export prepare_execution := func(store, principal, execution_id, provider, schemas, table, now_ms, region) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null || row["state"] != "awaiting_authorization" { return {"ok":false,"code":"invalid_execution"} }
+    if row["snapshot_json"] != null { return {"ok":true,"prepared":true} }
+    intent := parse_json(row["intent_json"])
+    if valid_intent(intent,schemas["intent"],table,now_ms) == false || valid_provider(provider) == false { return {"ok":false,"code":"invalid_preparation"} }
+    ctx := context_for(row,principal,now_ms,"authorization")
+    try {
+        describe := provider["describe"]
+        caps := describe(ctx)
+        if valid_capabilities(caps,schemas["capabilities"],now_ms) == false { return {"ok":false,"code":"capabilities_unavailable"} }
+        result := call_provider(provider,"prepare",intent,ctx)
+        if result["ok"] == false { return {"ok":false,"code":"preparation_unknown"} }
+        prepared := result["value"]
+        snapshot := prepared["terms"]
+        if snapshot["execution_id"] != execution_id || snapshot["provider"]["id"] != provider["id"] || snapshot["provider"]["adapter_version"] != provider["version"] { return {"ok":false,"code":"provider_mismatch"} }
+        if valid_snapshot(snapshot,schemas["snapshot"],intent,caps,table,now_ms,region) == false { return {"ok":false,"code":"invalid_snapshot"} }
+        ref := prepared["prepared_ref"]
+        if type(ref) != "string" || len(ref) < 1 || len(ref) > 128 { return {"ok":false,"code":"invalid_preparation"} }
+        if store["save_preparation"](scope,execution_id,row["revision"],snapshot,snapshot_digest(snapshot),ref,now_ms) == false { return {"ok":false,"code":"preparation_conflict"} }
+        return {"ok":true,"prepared":true}
+    } except e { return {"ok":false,"code":"preparation_unknown"} }
+}
+
+func valid_authorization_observation(result, schema, row) {
+    if result["ok"] != true { return false }
+    value := result["value"]
+    if json_schema_validate(value,schema)["valid"] == false { return false }
+    return value["phase"] == "authorization" && value["outcome"] == "authorized" && value["execution_id"] == row["execution_id"] && value["snapshot_digest"] == row["snapshot_digest"] && value["actual_amount"] == null && value["evidence_ref"] != null
+}
+export request_provider_authorization := func(store, principal, execution_id, provider, schema, now_ms) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null || row["snapshot_json"] == null || row["claimed"] == 1 { return {"ok":false,"code":"invalid_execution"} }
+    snapshot := parse_json(row["snapshot_json"])
+    if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
+    ref := store["preparation_ref"](scope,execution_id)
+    ctx := context_for(row,principal,now_ms,"authorization")
+    mut result := {"ok":false}
+    if store["begin_provider_authorization"](scope,execution_id) {
+        result = call_provider(provider,"request_authorization",ref,ctx)
+    } else {
+        // An uncertain native approval/credential request is observed, never recreated.
+        result = call_provider(provider,"observe",{"execution_id":execution_id,"prepared_ref":ref},ctx)
+    }
+    if valid_authorization_observation(result,schema,row) { return {"ok":true,"status":"authorized"} }
+    return {"ok":true,"status":"pending_or_unknown"}
+}
+
+export execution_invocation := func(row, principal, definition) {
+    id := "execute:" + row["execution_id"]
+    return {"schema":"kujo.ability.invocation/v1","invocation_id":id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":ability_definition_digest(definition)["digest"],"input":{"execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"]},"principal":principal,"request_id":id,"trace_id":id,"surface":"sdk","idempotency_key":id,"approval":{},"metadata":{}}
+}
+export authorize_execution := func(store, principal, execution_id, approval, definition, issuer_ref, verify_issuer, now_ms) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null || row["snapshot_json"] == null || row["state"] != "awaiting_authorization" { return {"ok":false,"code":"invalid_execution"} }
+    invocation := execution_invocation(row,principal,definition)
+    try {
+        if validate_ability_approval(approval,invocation,now_ms)["ok"] == false { return {"ok":false,"code":"invalid_approval"} }
+        if verify_issuer(issuer_ref,approval,invocation) != true { return {"ok":false,"code":"untrusted_approval"} }
+        if approval["expires_at_ms"] > row["expires_at_ms"] { return {"ok":false,"code":"approval_outlives_snapshot"} }
+        return {"ok":store["grant"](scope,execution_id,row["revision"],approval,row["snapshot_digest"],invocation["invocation_id"],issuer_ref,now_ms)}
+    } except e { return {"ok":false,"code":"authorization_failed"} }
+}
+func unknown_observation(row, now_ms) {
+    return {"schema":"kujo.payment-observation/v1","execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"],"phase":"execution","outcome":"unknown","observed_at_ms":now_ms,"evidence_ref":null,"actual_amount":null,"next_action":null,"retry_after_ms":null}
+}
+export accept_observation := func(store, principal, execution_id, provider_result, schema, confirmation, now_ms) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null || row["claimed"] != 1 { return {"ok":false,"code":"invalid_execution"} }
+    snapshot := parse_json(row["snapshot_json"])
+    mut observation := unknown_observation(row,now_ms)
+    mut event := "unknown"
+    if provider_result["ok"] == true {
+        candidate := provider_result["value"]
+        candidate_event := observation_event(candidate,schema,execution_id,row["snapshot_digest"],snapshot["charge"],now_ms)
+        if candidate_event != "unknown" {
+            // Confirmation is installed trusted route code; never supplied by caller.
+            verify := confirmation["verify"]
+            mut verified := false
+            try { verified = verify(snapshot,candidate) } except e { verified = false }
+            if verified == true { observation = candidate; event = candidate_event }
+        }
+    }
+    mut receipt := null
+    if event == "succeeded" || event == "failed_no_effect" {
+        receipt = {"schema":"kujo.payment-receipt/v1","receipt_id":"receipt:"+execution_id,"execution_id":execution_id,"snapshot_digest":row["snapshot_digest"],"outcome":event,"observed_amount":observation["actual_amount"],"observed_at_ms":observation["observed_at_ms"],"evidence_ref":observation["evidence_ref"],"confirmation_rule_ref":confirmation["id"],"assurance":confirmation["assurance"]}
+    }
+    evidence_id := "observation:" + to_string(row["revision"])
+    if observation["evidence_ref"] != null { evidence_id = observation["evidence_ref"] + ":" + event }
+    digest := sha256(frame(["kujo.payment-observation-binding/v1",execution_id,row["snapshot_digest"],event,to_json(observation["actual_amount"]),to_string(observation["evidence_ref"])]))
+    saved := store["record_observation"](scope,execution_id,row["revision"],evidence_id,digest,observation,event,receipt)
+    if saved["ok"] == false { return saved }
+    return {"ok":true,"result":summary(store["inspect"](scope,execution_id))}
+}
+export reconcile_execution := func(store, principal, execution_id, provider, schema, confirmation, now_ms) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null { return {"ok":false,"code":"not_found"} }
+    if row["state"] == "succeeded" || row["state"] == "closed" { return {"ok":true,"result":summary(row)} }
+    if row["claimed"] != 1 { return {"ok":false,"code":"not_submitted"} }
+    snapshot := parse_json(row["snapshot_json"])
+    if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
+    ctx := context_for(row,principal,now_ms,"execution")
+    ref := {"execution_id":execution_id,"prepared_ref":store["preparation_ref"](scope,execution_id)}
+    return accept_observation(store,principal,execution_id,call_provider(provider,"observe",ref,ctx),schema,confirmation,now_ms)
+}
+export execute_payment := func(store, principal, execution_id, approval, definition, provider, schemas, table, region, host, confirmation) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    scope := principal_scope(principal)
+    row := store["inspect"](scope,execution_id)
+    if row == null || row["snapshot_json"] == null { return {"ok":false,"code":"not_found"} }
+    if row["claimed"] == 1 { return {"ok":true,"result":summary(row)} }
+    snapshot := parse_json(row["snapshot_json"])
+    if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
+    if row["state"] != "ready" { return {"ok":false,"code":"not_ready"} }
+    if store["issued_approval_matches"](scope,execution_id,approval) == false { return {"ok":false,"code":"untrusted_approval"} }
+    invocation := execution_invocation(row,principal,definition)
+    invocation["approval"] = approval
+    clock := host["clock_ms"]
+    authorization_ref := {"execution_id":execution_id,"prepared_ref":store["preparation_ref"](scope,execution_id)}
+    provider_authorization := call_provider(provider,"observe",authorization_ref,context_for(row,principal,clock(),"authorization"))
+    if valid_authorization_observation(provider_authorization,schemas["observation"],row) == false { return {"ok":false,"code":"provider_authorization_pending"} }
+    host_policy := host["policy"]
+    // Per-invocation, nonpersistent native handle: callbacks copy dictionaries,
+    // but share this scoped connection. No journal row can recreate this permit.
+    permit := store["new_permit"]()
+    policy := func(def, inv, exposure) {
+        decision := host_policy(snapshot,inv)
+        // One-time human approval remains mandatory even if host policy says allow.
+        if decision["outcome"] == "allow" { decision["outcome"] = "approval_required" }
+        return decision
+    }
+    consume := func(grant_value, inv) {
+        describe := provider["describe"]
+        now := clock()
+        if store["issued_approval_matches"](scope,execution_id,grant_value) == false { return {"ok":false} }
+        caps := describe(context_for(row,principal,now,"execution"))
+        if valid_capabilities(caps,schemas["capabilities"],now) == false { return {"ok":false} }
+        if valid_snapshot(snapshot,schemas["snapshot"],parse_json(row["intent_json"]),caps,table,now,region) == false { return {"ok":false} }
+        won := store["claim"](scope,execution_id,row["revision"],grant_value["approval_id"],approval_binding_digest(inv),row["snapshot_digest"],inv["invocation_id"],now)
+        if won { permit["issue"]() }
+        return {"ok":won}
+    }
+    handler := func(input, context) {
+        assert(permit["take"](),"dispatch_permit_missing")
+        current := store["inspect"](scope,execution_id)
+        ctx := context_for(current,principal,clock(),"execution")
+        ctx["invocation_id"] = invocation["invocation_id"]
+        ctx["claim_id"] = invocation["invocation_id"]
+        ctx["provider_idempotency_key"] = invocation["invocation_id"]
+        ref := store["preparation_ref"](scope,execution_id)
+        if ctx["now_ms"] >= current["expires_at_ms"] || ctx["now_ms"] >= approval["expires_at_ms"] {
+            return accept_observation(store,principal,execution_id,{"ok":false},schemas["observation"],confirmation,clock())
+        }
+        outcome := call_provider(provider,"submit",ref,ctx)
+        return accept_observation(store,principal,execution_id,outcome,schemas["observation"],confirmation,clock())
+    }
+    begin := func(key, digest, inv) { return store["begin_ability"](inv["ability_id"],key,digest,inv["invocation_id"]) }
+    complete := func(key, digest, receipt) { return store["complete_ability"](receipt["ability_id"],key,digest,receipt) }
+    mut registry := create_ability_registry()
+    registered := register_ability_definition(registry,definition)
+    assert(registered["ok"],"definition")
+    registry = registered["registry"]
+    binding := {"schema":"kujo.ability.binding/v1","ability_id":definition["id"],"ability_version":definition["version"],"handler_id":"kujo.payments.executor","handler_version":"1.0.0","handler":handler,"result_mode":"kujo.result/v1","timeout_ms":10000,"metadata":{}}
+    bound := register_ability_binding(registry,binding)
+    assert(bound["ok"],"binding")
+    registry = bound["registry"]
+    exposure := {"schema":"kujo.ability.exposure/v1","ability_id":definition["id"],"ability_version":definition["version"],"surface":"sdk","name":"execute","enabled":true,"public":false,"metadata":{}}
+    exposed := register_ability_exposure(registry,exposure)
+    assert(exposed["ok"],"exposure")
+    registry = exposed["registry"]
+    services := {"policy":policy,"clock_ms":clock,"audit":host["audit"],"consume_approval":consume,"begin_idempotency":begin,"complete_idempotency":complete}
+    // Operation receipt failure must not overwrite authoritative financial status.
+    result := execute_ability(registry,invocation,services)
+    permit["close"]()
+    return {"ok":result["ok"],"result":summary(store["inspect"](scope,execution_id)),"ability_result":result}
+}

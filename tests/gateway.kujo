@@ -1,0 +1,38 @@
+from src.storage.port import sqlite_port
+from src.gateway.operations import gateway_call, decode_gateway_request
+from src.storage.sqlite import open_store, inspect, cancel
+from src.application.execution import principal_scope
+from src.client.client import purchase_request, purchase_status
+
+db := open_store(env("PAYMENTS_TEST_DB"))
+principal := {"type":"user","id":"user_1","tenant_id":"tenant_1"}
+clock := func() { return 1000 }
+authenticate := func(context) { if context == "authenticated-test-channel" { return principal } return null }
+policy := func(definition, invocation, exposure) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"gateway-policy","outcome":"allow","reason":"Fixture access policy","requirements":[],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
+audit := func(phase, invocation, payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
+config := {"authenticate":authenticate,"clock_ms":clock,"policy":policy,"audit":audit,"namespace":"fixture-installation","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json"))}}
+transport := func(request) { return gateway_call(sqlite_port(db),request,"authenticated-test-channel",config) }
+input := {"purchase_ref":"purchase1","payee_ref":"merchant1","amount":{"mode":"maximum","minor":5500,"currency":"USD"},"purpose":"Fixture purchase","payment_profile":"default","expires_in_ms":1000}
+response := purchase_request(transport,input,"key")
+assert(response["ok"],"request")
+id := response["result"]["execution_id"]
+assert(response["result"]["status"] == "awaiting_authorization","async_intake")
+assert(purchase_request(transport,input,"key")["result"]["execution_id"] == id,"stable_identity")
+assert(purchase_request(transport,input,"different-key")["result"]["execution_id"] == id,"purchase_identity")
+assert(cancel(db,principal_scope(principal),id,0),"cancel")
+assert(purchase_status(transport,id)["result"]["status"] == "closed","fresh_status")
+// Request replay remains the original intake receipt; only status is fresh.
+assert(purchase_request(transport,input,"key")["result"]["status"] == "awaiting_authorization","honest_request_replay")
+assert(gateway_call(sqlite_port(db),{"operation":"inspect","input":{"execution_id":id}},"forged",config)["ok"] == false,"authentication")
+assert(gateway_call(sqlite_port(db),{"operation":"execute","input":{}},"authenticated-test-channel",config)["ok"] == false,"hidden_execute_denied")
+assert(gateway_call(sqlite_port(db),{"operation":"inspect","input":{"execution_id":id},"principal":principal},"authenticated-test-channel",config)["ok"] == false,"caller_principal_denied")
+assert(purchase_status(transport,"other")["ok"] == false,"unknown_id")
+assert(decode_gateway_request("{not json")["ok"] == false,"invalid_json")
+for minor in [5500.0,5500.1,true,0,-1,9007199254740992] {
+    mut bad := parse_json(to_json(input))
+    bad["amount"] = {"mode":"maximum","minor":minor,"currency":"USD"}
+    assert(purchase_request(transport,bad,"bad"+to_string(minor))["ok"] == false,"money_ingress")
+}
+assert(len(db_query(db,"SELECT * FROM executions",[])) == 1,"only_one_purchase")
+db_close(db)
+print("Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed")

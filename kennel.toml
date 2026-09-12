@@ -10,7 +10,7 @@ source = "github:kujolang/ability"
 [dev-dependencies]
 
 [kujo]
-entry = "src/domain/binding.kujo"
+entry = "src/client/client.kujo"
 excludes = [".git", "kennel_packages", "dist", "build", "node_modules"]
 includes = ["README.md"]
 minimum_version = "1.4.0"
@@ -30,6 +30,7 @@ repository = "https://github.com/kujolang/payments"
 version = "0.1.0"
 
 [package.exports]
+client = "src/client/client.kujo"
 
 [package.metadata]
 

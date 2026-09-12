@@ -1,0 +1,21 @@
+export valid_provider := func(provider) {
+    if type(provider) != "dict" { return false }
+    for key in ["id","version"] {
+        if has_key(provider,key) == 0 { return false }
+        if type(provider[key]) != "string" || len(provider[key]) < 1 || len(provider[key]) > 128 { return false }
+    }
+    for method in ["describe","prepare","request_authorization","submit","observe"] {
+        if has_key(provider,method) == 0 { return false }
+        if type(provider[method]) != "function" { return false }
+    }
+    return true
+}
+export call_provider := func(provider, method, argument, context) {
+    // Registered code only; no dynamic imports or provider-supplied executable.
+    if valid_provider(provider) == false { return {"ok":false,"code":"provider_unavailable"} }
+    if contains(["prepare","request_authorization","submit","observe","cancel"],method) == false { return {"ok":false,"code":"unsupported_operation"} }
+    if has_key(provider,method) == 0 { return {"ok":false,"code":"unsupported_operation"} }
+    callback := provider[method]
+    try { return {"ok":true,"value":callback(argument,context)} }
+    except e { return {"ok":false,"code":"provider_operation_failed"} }
+}

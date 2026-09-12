@@ -1,0 +1,49 @@
+// Synthetic, trusted-process example. No credentials or real provider APIs.
+from ability import approval_binding_digest
+from src.storage.sqlite import open_store, inspect
+from src.storage.port import sqlite_port
+from src.providers.fixture.provider import fixture_provider
+from src.domain.binding import snapshot_digest
+from src.application.execution import principal_scope, prepare_execution, request_provider_authorization, execution_invocation, authorize_execution, execute_payment
+from src.gateway.operations import gateway_call
+
+root := env("PAYMENTS_DEMO_DIR")
+assert(root != "","Set PAYMENTS_DEMO_DIR to a private existing fixture directory")
+db := open_store(root+"/payments.db")
+processor := db_connect("sqlite",root+"/processor.db")
+store := sqlite_port(db)
+v := parse_json(read_file("tests/fixtures/domain.json"))
+principal := v["intent"]["principal"]
+mut schemas := {}
+for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+table := {"version":"fixture-v1","exponents":{"USD":2}}
+clock := func() { return 1500 }
+audit := func(phase,inv,payload) { return {"ok":true,"written":true,"event_id":"fixture:"+phase,"phase":phase} }
+policy_decision := func() { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-policy","outcome":"allow","reason":"Synthetic demonstration only","requirements":["human"],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
+gateway_policy := func(def,inv,exposure) { return policy_decision() }
+execute_policy := func(snapshot,inv) { return policy_decision() }
+authenticate := func(channel) { if channel == "synthetic-channel" { return principal } return null }
+config := {"authenticate":authenticate,"clock_ms":clock,"policy":gateway_policy,"audit":audit,"namespace":"local-fixture","currency_table":table,"intent_schema":schemas["intent"],"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json"))}}
+request := {"operation":"request","idempotency_key":"demo1","input":{"purchase_ref":"demo1","payee_ref":"merchant_1","amount":{"mode":"maximum","minor":5500,"currency":"USD"},"purpose":"Synthetic purchase","payment_profile":"default","expires_in_ms":500}}
+requested := gateway_call(store,request,"synthetic-channel",config)
+assert(requested["ok"],"fixture_intake")
+execution_id := requested["result"]["execution_id"]
+print(to_json(requested["result"]))
+provider := fixture_provider(processor,v["snapshot"],v["capabilities"],"success")
+assert(prepare_execution(store,principal,execution_id,provider,schemas,table,1500,"US")["ok"],"prepare")
+assert(request_provider_authorization(store,principal,execution_id,provider,schemas["observation"],1500)["status"] == "authorized","provider_approval")
+row := inspect(db,principal_scope(principal),execution_id)
+invocation := execution_invocation(row,principal,definition)
+approval := {"schema":"kujo.ability.approval/v1","approval_id":"demo-approval","binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"demo-nonce","evidence":{}}
+verify_issuer := func(issuer,candidate,inv) { return issuer == "synthetic-issuer" && candidate == approval }
+assert(authorize_execution(store,principal,execution_id,approval,definition,"synthetic-issuer",verify_issuer,1500)["ok"],"host_approval")
+verify := func(snapshot,observation) {
+    rows := db_query(processor,"SELECT snapshot_json FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])
+    return len(rows) == 1 && snapshot_digest(parse_json(rows[0]["snapshot_json"])) == snapshot_digest(snapshot)
+}
+result := execute_payment(store,principal,execution_id,approval,definition,provider,schemas,table,"US",{"clock_ms":clock,"policy":execute_policy,"audit":audit},{"id":"fixture-rule","assurance":"provider_confirmed","verify":verify})
+assert(result["result"]["status"] == "succeeded","fixture_execution")
+print(to_json(result["result"]))
+db_close(processor)
+db_close(db)

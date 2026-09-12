@@ -1,0 +1,92 @@
+from src.application.contracts import valid_store
+from ability import create_ability_registry, register_ability_definition, register_ability_binding, register_ability_exposure, execute_ability, validate_ability_value
+from src.domain.binding import frame
+from src.domain.validation import valid_intent
+from src.domain.lifecycle import summary
+from src.application.execution import principal_scope
+
+func request_digest(input) {
+    mut parts := ["kujo.payment-request-binding/v1",input["purchase_ref"],input["payee_ref"],input["amount"]["mode"],to_string(input["amount"]["minor"]),input["amount"]["currency"],input["purpose"],input["payment_profile"],to_string(input["expires_in_ms"])]
+    for field in ["shipping_profile","provider_preference"] {
+        if has_key(input,field) { parts = push(parts,"1"); parts = push(parts,input[field]) }
+        else { parts = push(parts,"0") }
+    }
+    return sha256(frame(parts))
+}
+export decode_gateway_request := func(body) {
+    if type(body) != "string" || byte_length(body) > 8192 { return {"ok":false,"code":"invalid_request"} }
+    try {
+        value := parse_json(body)
+        if type(value) != "dict" { return {"ok":false,"code":"invalid_request"} }
+        return {"ok":true,"value":value}
+    } except e { return {"ok":false,"code":"invalid_request"} }
+}
+export gateway_call := func(store, request, transport_context, config) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    // transport_context comes from the authenticated server, never request JSON.
+    // This embedding API is not itself a process or network isolation boundary.
+    try {
+        if type(request) != "dict" { return {"ok":false,"code":"invalid_request"} }
+        for key in keys(request) {
+            if contains(["operation","input","idempotency_key"],key) == false { return {"ok":false,"code":"invalid_request"} }
+        }
+        if has_key(request,"operation") == 0 || has_key(request,"input") == 0 { return {"ok":false,"code":"invalid_request"} }
+        operation := request["operation"]
+        if operation != "request" && operation != "inspect" { return {"ok":false,"code":"operation_denied"} }
+        authenticate := config["authenticate"]
+        principal := authenticate(transport_context)
+        if json_schema_validate(principal,config["intent_schema"]["properties"]["principal"])["valid"] == false { return {"ok":false,"code":"unauthenticated"} }
+        scope := principal_scope(principal)
+        definition := config["definitions"][operation]
+        input := request["input"]
+        if validate_ability_value(input,definition["input_schema"],"input")["ok"] == false { return {"ok":false,"code":"invalid_request"} }
+        mut key := ""
+        if has_key(request,"idempotency_key") { key = request["idempotency_key"] }
+        if type(key) != "string" || len(key) > 128 || (operation == "request" && len(key) < 1) { return {"ok":false,"code":"invalid_idempotency_key"} }
+        if operation == "inspect" && key != "" { return {"ok":false,"code":"status_is_intrinsic"} }
+        clock := config["clock_ms"]
+        now := clock()
+        mut identity_key := key
+        if operation == "inspect" { identity_key = to_string(now) + ":" + input["execution_id"] }
+        invocation_id := "gateway:" + sha256(frame([config["namespace"],scope,operation,identity_key]))
+        handler := func(payload, context) {
+            if operation == "inspect" {
+                row := store["inspect"](scope,payload["execution_id"])
+                if row == null { return {"ok":false,"code":"not_found","message":"Payment not found","details":{}} }
+                return {"ok":true,"result":summary(row)}
+            }
+            if type(payload["expires_in_ms"]) != "int" { return {"ok":false,"code":"invalid_request","message":"Invalid purchase","details":{}} }
+            expiry := now + payload["expires_in_ms"]
+            execution_id := "execution:" + sha256(frame([config["namespace"],scope,payload["purchase_ref"]]))
+            intent := {"schema":"kujo.payment-intent/v1","intent_id":"intent:"+sha256(execution_id),"purchase_ref":payload["purchase_ref"],"principal":principal,"kind":"purchase","payee_ref":payload["payee_ref"],"amount":payload["amount"],"purpose":payload["purpose"],"expires_at_ms":expiry,"payment_profile":payload["payment_profile"],"correlation_id":invocation_id}
+            for field in ["shipping_profile","provider_preference"] { if has_key(payload,field) { intent[field] := payload[field] } }
+            if valid_intent(intent,config["intent_schema"],config["currency_table"],now) == false { return {"ok":false,"code":"invalid_request","message":"Invalid purchase","details":{}} }
+            admitted := store["intake"](scope,sha256(key),request_digest(payload),execution_id,intent)
+            if admitted["ok"] == false { return {"ok":false,"code":admitted["code"],"message":"Purchase request conflicts or is unavailable","details":{}} }
+            return {"ok":true,"result":summary(store["inspect"](scope,admitted["execution_id"]))}
+        }
+        mut registry := create_ability_registry()
+        registered := register_ability_definition(registry,definition)
+        assert(registered["ok"],"definition")
+        registry = registered["registry"]
+        bound := register_ability_binding(registry,{"schema":"kujo.ability.binding/v1","ability_id":definition["id"],"ability_version":definition["version"],"handler_id":"kujo.payments.gateway."+operation,"handler_version":"1.0.0","handler":handler,"result_mode":"kujo.result/v1","timeout_ms":2000,"metadata":{}})
+        assert(bound["ok"],"binding")
+        registry = bound["registry"]
+        exposed := register_ability_exposure(registry,{"schema":"kujo.ability.exposure/v1","ability_id":definition["id"],"ability_version":definition["version"],"surface":"agent","name":operation,"enabled":true,"public":false,"metadata":{}})
+        assert(exposed["ok"],"exposure")
+        registry = exposed["registry"]
+        invocation := {"schema":"kujo.ability.invocation/v1","invocation_id":invocation_id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":"","input":input,"principal":principal,"request_id":invocation_id,"trace_id":invocation_id,"surface":"agent","idempotency_key":key,"approval":{},"metadata":{}}
+        begin := func(key_digest, digest, inv) { return store["begin_ability"](inv["ability_id"],key_digest,digest,inv["invocation_id"]) }
+        complete := func(key_digest, digest, receipt) { return store["complete_ability"](receipt["ability_id"],key_digest,digest,receipt) }
+        result := execute_ability(registry,invocation,{"clock_ms":clock,"policy":config["policy"],"audit":config["audit"],"begin_idempotency":begin,"complete_idempotency":complete})
+        // Only a compact domain summary crosses the model-facing boundary.
+        if result["ok"] == true { return {"ok":true,"result":result["receipt"]["result"]} }
+        if has_key(result,"receipt") {
+            receipt := result["receipt"]
+            if validate_ability_value(receipt["result"],definition["output_schema"],"output")["ok"] {
+                return {"ok":false,"code":"operation_receipt_failed","result":receipt["result"]}
+            }
+        }
+        return {"ok":false,"code":"request_not_completed"}
+    } except e { return {"ok":false,"code":"gateway_unavailable"} }
+}

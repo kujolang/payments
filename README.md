@@ -11,3 +11,9 @@ Implementation follows the accepted September 12 architecture review in kujolang
 ## Development
 
 Kujo 1.4.0 or later is required. Install the commit-pinned Ability dependency with `kennel install` (or `kujo run /path/to/kennel/kennel.kujo --interpreter -- install`). Set `KUJO_BIN` to a built Kujo executable and run `bash scripts/test.sh` from this directory. Normal tests use synthetic data and never move money.
+
+## Runnable fixture
+
+See [local fixture](examples/local-fixture/README.md) for a synthetic purchase through the gateway, provider authorization, host Ability approval, one-use submission and authoritative observation. Agent-facing operations are request and status; the executor and provider callbacks remain private to trusted host code.
+
+The injected gateway authentication callback is an embedding boundary. A network server, real identity adapter and tested physical separation are still required before connecting untrusted agent processes or real provider credentials.

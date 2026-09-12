@@ -1,0 +1,56 @@
+from src.domain.binding import intent_digest, snapshot_digest, capabilities_digest
+
+// Synthetic backend. It cannot be selected in a live executor registry.
+// The processor deliberately has no charge uniqueness constraint.
+export fixture_provider := func(processor, installed_snapshot, capabilities, behavior) {
+    db_execute(processor,"CREATE TABLE IF NOT EXISTS fixture_prepared(ref TEXT PRIMARY KEY,snapshot_json TEXT NOT NULL)",[])
+    db_execute(processor,"CREATE TABLE IF NOT EXISTS fixture_charges(ref TEXT NOT NULL,snapshot_json TEXT NOT NULL)",[])
+    db_execute(processor,"CREATE TABLE IF NOT EXISTS fixture_authorizations(ref TEXT NOT NULL)",[])
+    describe := func(context) { return parse_json(to_json(capabilities)) }
+    prepare := func(intent, context) {
+        mut snapshot := parse_json(to_json(installed_snapshot))
+        snapshot["execution_id"] = context["execution_id"]
+        snapshot["principal"] = intent["principal"]
+        snapshot["intent_digest"] = intent_digest(intent)
+        snapshot["capabilities_digest"] = capabilities_digest(capabilities)
+        ref := context["execution_id"]
+        prior := db_query(processor,"SELECT snapshot_json FROM fixture_prepared WHERE ref=?",[ref])
+        if len(prior) == 0 { db_execute(processor,"INSERT INTO fixture_prepared VALUES(?,?)",[ref,to_json(snapshot)]) }
+        else { assert(snapshot_digest(parse_json(prior[0]["snapshot_json"])) == snapshot_digest(snapshot),"fixture_preparation_conflict") }
+        return {"prepared_ref":ref,"terms":snapshot,"expires_at_ms":snapshot["expires_at_ms"],"capabilities_digest":snapshot["capabilities_digest"]}
+    }
+    observation := func(ref, context, outcome) {
+        rows := db_query(processor,"SELECT snapshot_json FROM fixture_prepared WHERE ref=?",[ref])
+        assert(len(rows) == 1,"fixture_reference_unknown")
+        snapshot := parse_json(rows[0]["snapshot_json"])
+        assert(snapshot["execution_id"] == context["execution_id"],"fixture_reference_mismatch")
+        mut amount := null
+        if outcome == "succeeded" { amount = snapshot["charge"] }
+        return {"schema":"kujo.payment-observation/v1","execution_id":context["execution_id"],"snapshot_digest":snapshot_digest(snapshot),"phase":context["phase"],"outcome":outcome,"observed_at_ms":context["now_ms"],"evidence_ref":"fixture:" + ref,"actual_amount":amount,"next_action":null,"retry_after_ms":null}
+    }
+    authorize := func(ref, context) { db_execute(processor,"INSERT INTO fixture_authorizations VALUES(?)",[ref]); return observation(ref,context,"authorized") }
+    submit := func(ref, context) {
+        assert(context["phase"] == "execution","fixture_phase")
+        rows := db_query(processor,"SELECT snapshot_json FROM fixture_prepared WHERE ref=?",[ref])
+        assert(len(rows) == 1,"fixture_reference_unknown")
+        snapshot := parse_json(rows[0]["snapshot_json"])
+        assert(snapshot_digest(snapshot) == context["snapshot_digest"],"fixture_binding")
+        assert(context["now_ms"] < snapshot["expires_at_ms"],"fixture_expiry")
+        if behavior == "throw_before" { assert(false,"SENTINEL_PROVIDER_SECRET") }
+        db_execute(processor,"INSERT INTO fixture_charges VALUES(?,?)",[ref,to_json(snapshot)])
+        if behavior == "throw_after" { assert(false,"SENTINEL_SPT") }
+        if behavior == "pending" { return observation(ref,context,"pending") }
+        return observation(ref,context,"succeeded")
+    }
+    observe := func(reference, context) {
+        if context["phase"] == "authorization" {
+            authorities := db_query(processor,"SELECT ref FROM fixture_authorizations WHERE ref=?",[reference["prepared_ref"]])
+            if len(authorities) == 1 { return observation(reference["prepared_ref"],context,"authorized") }
+            return observation(reference["prepared_ref"],context,"unknown")
+        }
+        rows := db_query(processor,"SELECT snapshot_json FROM fixture_charges WHERE ref=?",[reference["prepared_ref"]])
+        if len(rows) == 1 { return observation(reference["prepared_ref"],context,"succeeded") }
+        return observation(reference["prepared_ref"],context,"unknown")
+    }
+    return {"id":"fixture","version":"1.0.0","fixture_only":true,"describe":describe,"prepare":prepare,"request_authorization":authorize,"submit":submit,"observe":observe}
+}
