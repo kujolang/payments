@@ -87,3 +87,7 @@ export capability_parts := func(value) {
 export intent_digest := func(value) { return sha256(frame(intent_parts(value))) }
 export snapshot_digest := func(value) { return sha256(frame(snapshot_parts(value))) }
 export capabilities_digest := func(value) { return sha256(frame(capability_parts(value))) }
+
+export principal_digest := func(principal) {
+    return sha256(frame(["kujo.payment-principal/v1",principal["type"],principal["id"],principal["tenant_id"]]))
+}

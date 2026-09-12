@@ -1,0 +1,19 @@
+generated_at = "2026-09-12 22:52:39"
+generated_by = "kennel"
+version = 1
+
+[[package]]
+checksum = ""
+install_path = "kennel_packages/fence"
+kind = "github"
+name = "fence"
+path = ""
+repository = "https://github.com/kujolang/fence.git"
+requested = "fda049ed9aa55ba50c150b84bb9ca1bdf49af0dc"
+requested_kind = "commit"
+resolved_commit = "fda049ed9aa55ba50c150b84bb9ca1bdf49af0dc"
+resolved_ref = "fda049ed9aa55ba50c150b84bb9ca1bdf49af0dc"
+signature = ""
+signing_key = ""
+source = "github:kujolang/fence"
+version = "1.0.0"

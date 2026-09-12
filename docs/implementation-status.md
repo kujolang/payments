@@ -40,4 +40,8 @@ The OCI profile uses a checksum-pinned official Linux 1.4.0 runtime. A separate 
 
 Still unfinished: operator worker/approval flow, Link machine adapter, complete provider and security conformance matrix, Workcell/Dispatch/SDK examples, CI/fences/operations and real sandbox/live acceptance. No earlier broad phase checkbox is inferred complete from these partial proofs.
 
-Verification note: the aggregate OCI script encountered a transient host fork/resource limit after the execution component test. The remaining gateway component and current-image containment test were then run separately and passed. The receipt records the tested image digests and positive canary control. This is not reported as a single uninterrupted aggregate run.
+Verification note: the aggregate OCI script encountered a transient host fork/resource limit after the execution component test. The remaining gateway component and current-image containment test were then run separately and passed. The receipt records the tested image digests and positive canary control. A subsequent uninterrupted aggregate rerun passed; this supersedes the interrupted-run limitation without changing the scoped deployment claim.
+
+## Import boundary milestone
+
+The shared principal digest now lives in domain binding code, so intake no longer imports the private execution module. Fence is pinned in a separate development-tool project; normal tests enforce the import graph and reject nine forbidden dependency edges plus three source-coverage/external-import mutations. See docs/architecture-enforcement.md. This is static enforcement, not a runtime sandbox or a completed security gauntlet. The normal service suite and the OCI aggregate suite passed after the change.

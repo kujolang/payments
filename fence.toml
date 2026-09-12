@@ -1,0 +1,52 @@
+version = 1
+source_roots = ["src"]
+default_severity = "error"
+fail_on = "error"
+unknown_dependency_policy = "deny"
+
+[scan]
+include = ["src/**/*.kujo"]
+exclude = []
+
+[limits]
+max_files = 500
+max_imports = 2000
+max_report_bytes = 1048576
+
+[zones.client]
+paths = ["src/client/**"]
+can_depend_on = []
+
+[zones.domain]
+paths = ["src/domain/**"]
+can_depend_on = []
+
+[zones.ports]
+paths = ["src/application/contracts.kujo"]
+can_depend_on = []
+
+[zones.provider_contract]
+paths = ["src/providers/contract.kujo"]
+can_depend_on = []
+
+[zones.application]
+paths = ["src/application/execution.kujo"]
+can_depend_on = ["domain", "ports", "provider_contract"]
+external_allow = ["ability"]
+
+[zones.gateway]
+paths = ["src/gateway/**"]
+can_depend_on = ["domain", "ports"]
+external_allow = ["ability"]
+
+[zones.storage]
+paths = ["src/storage/**"]
+can_depend_on = ["domain"]
+
+[zones.adapters]
+paths = ["src/providers/fixture/**", "src/providers/link/**"]
+can_depend_on = ["domain", "provider_contract"]
+
+[zones.executor]
+paths = ["src/executor/**"]
+can_depend_on = ["gateway", "application", "storage", "adapters", "domain", "ports", "provider_contract"]

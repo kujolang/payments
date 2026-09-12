@@ -1,0 +1,7 @@
+[package]
+name = "payments-dev-tools"
+version = "0.1.0"
+
+[dependencies.fence]
+commit = "fda049ed9aa55ba50c150b84bb9ca1bdf49af0dc"
+source = "github:kujolang/fence"

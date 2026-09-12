@@ -11,3 +11,4 @@ Compiler optimization: 1 constants folded, 7 dead instructions removed, 0 peepho
 Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
 HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
 Provisioning: private permissions, token suppression and overwrite refusal passed
+Architecture: 14 files; Fence passed; 9 forbidden edges and 3 coverage/external mutations rejected

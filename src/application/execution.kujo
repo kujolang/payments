@@ -1,12 +1,12 @@
 from src.application.contracts import valid_store
 from ability import create_ability_registry, register_ability_definition, register_ability_binding, register_ability_exposure, execute_ability, ability_definition_digest, validate_ability_approval, approval_binding_digest
-from src.domain.binding import frame, intent_digest, snapshot_digest
+from src.domain.binding import frame, intent_digest, snapshot_digest, principal_digest
 from src.domain.validation import valid_intent, valid_snapshot, valid_capabilities
 from src.domain.lifecycle import summary, observation_event
 from src.providers.contract import call_provider, valid_provider
 
 export principal_scope := func(principal) {
-    return sha256(frame(["kujo.payment-principal/v1",principal["type"],principal["id"],principal["tenant_id"]]))
+    return principal_digest(principal)
 }
 func context_for(row, principal, now_ms, phase) {
     return {"execution_id":row["execution_id"],"principal":principal,"tenant_id":principal["tenant_id"],"now_ms":now_ms,"deadline_ms":now_ms+10000,"phase":phase,"operation_id":row["execution_id"]+":"+phase,"snapshot_digest":row["snapshot_digest"]}

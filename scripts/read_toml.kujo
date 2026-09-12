@@ -1,0 +1,2 @@
+// Test supervisor bridge: use Kujo's TOML implementation, not a second parser.
+print(to_json(parse_toml(read_file(env("PAYMENTS_TEST_TOML")))))
