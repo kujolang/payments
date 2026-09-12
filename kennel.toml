@@ -31,6 +31,7 @@ version = "0.1.0"
 
 [package.exports]
 client = "src/client/client.kujo"
+http_client = "src/client/http.kujo"
 
 [package.metadata]
 

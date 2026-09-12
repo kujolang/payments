@@ -1,0 +1,132 @@
+{
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "kujo.payment-service/v1"
+    },
+    "bind": {
+      "enum": [
+        "127.0.0.1",
+        "0.0.0.0"
+      ]
+    },
+    "port": {
+      "type": "integer",
+      "minimum": 1024,
+      "maximum": 65535
+    },
+    "database": {
+      "type": "string",
+      "pattern": "^/",
+      "maxLength": 4096
+    },
+    "namespace": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "currency_table": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "exponents": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 4
+          }
+        }
+      },
+      "required": [
+        "version",
+        "exponents"
+      ],
+      "additionalProperties": false
+    },
+    "credentials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "verifier": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "principal": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "tenant_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              }
+            },
+            "required": [
+              "type",
+              "id",
+              "tenant_id"
+            ],
+            "additionalProperties": false
+          },
+          "operations": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "request",
+                "inspect"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 2
+          },
+          "disabled": {
+            "type": "boolean"
+          },
+          "expires_at_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "verifier",
+          "principal",
+          "operations",
+          "disabled",
+          "expires_at_ms"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1,
+      "maxItems": 128
+    }
+  },
+  "required": [
+    "schema",
+    "bind",
+    "port",
+    "database",
+    "namespace",
+    "currency_table",
+    "credentials"
+  ],
+  "additionalProperties": false
+}

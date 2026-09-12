@@ -1,0 +1,13 @@
+// Run only through provision.sh, which creates a private directory under umask 077.
+from src.gateway.http import token_verifier
+root := env("PAYMENTS_PROVISION_DIR")
+assert(root != "","private_directory_required")
+principal := parse_json(env("PAYMENTS_PRINCIPAL_JSON"))
+intent_schema := parse_json(read_file("contracts/intent.schema.json"))
+assert(json_schema_validate(principal,intent_schema["properties"]["principal"])["valid"],"invalid_principal")
+// UUID generation bypasses Kujo's seedable random_id facility.
+token := uuid_v4()+uuid_v4()
+settings := {"schema":"kujo.payment-service/v1","bind":"127.0.0.1","port":8000,"database":root+"/payments.db","namespace":uuid_v4(),"currency_table":{"version":"operator-reviewed-fiat-example-v1","exponents":{"USD":2,"JPY":0,"KWD":3}},"credentials":[{"verifier":token_verifier(token),"principal":principal,"operations":["request","inspect"],"disabled":false,"expires_at_ms":current_timestamp()+86400000}]}
+write_file_atomic_beneath(root,"client-token",token)
+write_file_atomic_beneath(root,"service.json",to_json(settings))
+print("Created private client-token and service.json. Token expires in 24 hours; review the currency table before use.")

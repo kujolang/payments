@@ -1,0 +1,55 @@
+from src.gateway.operations import gateway_call, decode_gateway_request
+
+export token_verifier := func(token) {
+    assert(type(token) == "string" && len(token) >= 64 && len(token) <= 256,"invalid_transport_token")
+    return hmac_sha256(token,"kujo.payments.transport/v1")
+}
+func authenticate(headers, credentials, now_ms) {
+    mut authorization := ""
+    mut count := 0
+    for name in keys(headers) {
+        if to_lower(name) == "authorization" { authorization = headers[name]; count = count+1 }
+    }
+    if count != 1 || type(authorization) != "string" || len(authorization) < 71 || len(authorization) > 263 { return null }
+    if substring(authorization,0,7) != "Bearer " { return null }
+    token := substring(authorization,7,len(authorization))
+    for credential in credentials {
+        if credential["disabled"] == false && credential["expires_at_ms"] > now_ms {
+            if hmac_sha256_verify(token,"kujo.payments.transport/v1",credential["verifier"]) {
+                return credential
+            }
+        }
+    }
+    return null
+}
+func reply(status, value) {
+    response := json_response(status,value)
+    response = set_header(response,"Cache-Control","no-store")
+    response = set_header(response,"X-Content-Type-Options","nosniff")
+    return response
+}
+export request_handler := func(store, config, credentials) {
+    return func(request) {
+        try {
+            clock := config["clock_ms"]
+            credential := authenticate(request["headers"],credentials,clock())
+            if credential == null { return reply(401,{"ok":false,"code":"unauthenticated"}) }
+            mut media := ""
+            for name in keys(request["headers"]) { if to_lower(name) == "content-type" { media = to_lower(request["headers"][name]) } }
+            if media != "application/json" { return reply(415,{"ok":false,"code":"json_required"}) }
+            decoded := decode_gateway_request(request["body"])
+            if decoded["ok"] == false { return reply(400,{"ok":false,"code":"invalid_request"}) }
+            value := decoded["value"]
+            if has_key(value,"operation") == 0 { return reply(400,{"ok":false,"code":"invalid_request"}) }
+            if contains(credential["operations"],value["operation"]) == false { return reply(403,{"ok":false,"code":"operation_denied"}) }
+            // The principal comes exclusively from the verified credential record.
+            principal := credential["principal"]
+            authenticate_context := func(context) { if context == principal { return principal } return null }
+            instance := config
+            instance["authenticate"] = authenticate_context
+            result := gateway_call(store,value,principal,instance)
+            if result["ok"] { return reply(200,result) }
+            return reply(409,result)
+        } except e { return reply(503,{"ok":false,"code":"service_unavailable"}) }
+    }
+}

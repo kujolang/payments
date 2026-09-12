@@ -1,0 +1,66 @@
+"""Real-process request/status transport tests; synthetic application tokens only."""
+import hashlib,hmac,json,os,socket,sqlite3,subprocess,tempfile,time,urllib.request,urllib.error
+from pathlib import Path
+ROOT=Path(__file__).resolve().parents[2]
+def digest(token):
+    return hmac.new(token.encode(),b'kujo.payments.transport/v1',hashlib.sha256).hexdigest()
+def exchange(port,token,value,content_type='application/json',path='/v1/payments'):
+    body=value if isinstance(value,bytes) else json.dumps(value).encode()
+    request=urllib.request.Request(f'http://127.0.0.1:{port}{path}',body,headers={'Authorization':'Bearer '+token,'Content-Type':content_type})
+    try:
+        with urllib.request.urlopen(request,timeout=4) as response: return response.status,response.read(),dict(response.headers)
+    except urllib.error.HTTPError as e: return e.code,e.read(),dict(e.headers)
+with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
+    root=Path(tmp)
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    token='a'*64;other='b'*64;expired='c'*64
+    credentials=[]
+    for secret,tenant,expiry in [(token,'one',4102444800000),(other,'two',4102444800000),(expired,'one',1)]:
+        credentials.append({'verifier':digest(secret),'principal':{'type':'user','id':'user','tenant_id':tenant},'operations':['request','inspect'],'disabled':False,'expires_at_ms':expiry})
+    settings={'schema':'kujo.payment-service/v1','bind':'127.0.0.1','port':port,'database':str(root/'payments.db'),'namespace':'test-installation','currency_table':{'version':'test-v1','exponents':{'USD':2}},'credentials':credentials}
+    (root/'config.json').write_text(json.dumps(settings))
+    env={**os.environ,'PAYMENTS_SERVICE_CONFIG':str(root/'config.json'),'KUJO_HTTP_SERVER_READ_TIMEOUT_MS':'500'}
+    process=subprocess.Popen([os.environ['KUJO_BIN'],'run','src/executor/gateway.kujo','--interpreter'],cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    try:
+        deadline=time.monotonic()+15
+        while True:
+            if process.poll() is not None: raise AssertionError(process.communicate())
+            try:
+                with socket.create_connection(('127.0.0.1',port),timeout=.1): break
+            except OSError:
+                assert time.monotonic()<deadline,'gateway startup timeout';time.sleep(.05)
+        purchase={'operation':'request','idempotency_key':'key','input':{'purchase_ref':'order','payee_ref':'merchant','amount':{'mode':'maximum','minor':5500,'currency':'USD'},'purpose':'Synthetic purchase','payment_profile':'default','expires_in_ms':60000}}
+        status,body,headers=exchange(port,token,purchase)
+        assert status==200,(status,body)
+        result=json.loads(body)['result'];eid=result['execution_id']
+        assert headers['Cache-Control']=='no-store'
+        lookup={'operation':'inspect','input':{'execution_id':eid}}
+        assert exchange(port,token,lookup)[0]==200
+        assert exchange(port,other,lookup)[0]==409
+        assert exchange(port,expired,lookup)[0]==401
+        assert exchange(port,'d'*64,lookup)[0]==401
+        assert exchange(port,token,{'operation':'execute','input':{}})[0]==403
+        assert exchange(port,token,{**lookup,'principal':credentials[0]['principal']})[0]==409
+        assert exchange(port,token,b'{'*9000)[0]==400
+        assert exchange(port,token,lookup,'text/plain')[0]==415
+        assert exchange(port,token,lookup,path='/execute')[0]==404
+        exponent=json.dumps(purchase).replace('5500','5500e0').replace('"key"','"exponent"').encode()
+        assert exchange(port,token,exponent)[0]==409,'lexical floating money rejected'
+        assert exchange(port,token,purchase)[1]==body,'request replay'
+        with sqlite3.connect(root/'payments.db') as db:
+            assert db.execute('SELECT count(*) FROM executions').fetchone()[0]==1
+            assert db.execute('SELECT count(*) FROM audit').fetchone()[0]>0
+        client_env={**env,'KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS':'true','PAYMENTS_CLIENT_ENDPOINT':f'http://127.0.0.1:{port}/v1/payments','PAYMENTS_CLIENT_TOKEN':token}
+        client=subprocess.run([os.environ['KUJO_BIN'],'run','tests/network/client.kujo','--interpreter'],cwd=ROOT,env=client_env,capture_output=True,text=True,timeout=10,check=True)
+        assert json.loads(client.stdout)['ok'] is True
+        assert token not in client.stdout+client.stderr
+        # No request tokens may be persisted in any service artifact.
+        for file in root.iterdir():
+            if file.is_file():
+                for secret in [token,other,expired]: assert secret.encode() not in file.read_bytes(),file
+    finally:
+        process.terminate()
+        out,err=process.communicate(timeout=5)
+        for secret in [token,other,expired]: assert secret not in out+err
+print('HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed')

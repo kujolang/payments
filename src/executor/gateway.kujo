@@ -1,0 +1,35 @@
+// Trusted request/status service. Provider credentials are not needed here.
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.gateway.http import request_handler
+
+config_path := env("PAYMENTS_SERVICE_CONFIG")
+assert(config_path != "","PAYMENTS_SERVICE_CONFIG is required")
+settings := parse_json(read_file(config_path))
+assert(json_schema_validate(settings,parse_json(read_file("contracts/service.schema.json")))["valid"],"service_config_invalid")
+assert(type(settings["port"]) == "int" && settings["port"] >= 1024 && settings["port"] <= 65535,"service_port")
+assert(settings["bind"] == "127.0.0.1" || settings["bind"] == "0.0.0.0","service_bind")
+assert(len(settings["credentials"]) > 0 && len(settings["credentials"]) <= 128,"service_credentials")
+assert(len(keys(settings["currency_table"]["exponents"])) > 0,"currency_table_empty")
+for credential in settings["credentials"] {
+    if len(credential["operations"]) == 2 { assert(credential["operations"][0] != credential["operations"][1],"duplicate_operation") }
+    assert(type(credential["verifier"]) == "string" && len(credential["verifier"]) == 64,"credential_verifier")
+    assert(type(credential["expires_at_ms"]) == "int","credential_expiry")
+    for op in credential["operations"] { assert(op == "request" || op == "inspect","credential_operation") }
+}
+db := open_store(settings["database"])
+clock := func() { return current_timestamp() }
+policy := func(definition,invocation,exposure) {
+    return {"schema":"kujo.ability.policy-decision/v1","decision_id":"gateway-access-v1","outcome":"allow","reason":"Authenticated request/status access; financial execution requires separate authorization.","requirements":[],"policy_id":"kujo.payments.gateway-access","policy_version":"1.0.0"}
+}
+audit := func(phase,invocation,payload) {
+    // Deliberately omit input, principal claims, payload, headers and raw failures.
+    id := invocation["invocation_id"]+":"+phase
+    db_execute(db,"INSERT OR IGNORE INTO audit VALUES(?,NULL,?)",[id,phase])
+    return {"ok":true,"written":true,"phase":phase,"event_id":id}
+}
+config := {"clock_ms":clock,"policy":policy,"audit":audit,"namespace":settings["namespace"],"currency_table":settings["currency_table"],"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json"))}}
+handler := request_handler(sqlite_port(db),config,settings["credentials"])
+mut server := http_listen(settings["bind"],settings["port"])
+server = server.route("POST","/v1/payments",handler)
+server.listen()

@@ -1,0 +1,30 @@
+// Construct this transport in trusted harness configuration, never from model arguments.
+export http_transport := func(endpoint, token, summary_schema, local_fixture) {
+    assert(type(endpoint) == "string" && len(endpoint) <= 2048,"invalid_gateway_endpoint")
+    assert(type(token) == "string" && len(token) >= 64 && len(token) <= 256,"invalid_gateway_token")
+    mut private_fixture := false
+    if local_fixture == true && regex_match(endpoint,"^http://127\\.0\\.0\\.1:[0-9]+/v1/payments$") { private_fixture = true }
+    assert(private_fixture || regex_match(endpoint,"^https://[^/?#@]+/v1/payments$"),"https_gateway_required")
+    return func(request) {
+        try {
+            mut destination_policy := "deny_private"
+            if private_fixture { destination_policy = "inherit" }
+            wire := http_request(endpoint,{"method":"POST","headers":{"Authorization":"Bearer "+token,"Content-Type":"application/json"},"body":to_json(request),"timeout":5,"max_response_bytes":4096,"redirects":"none","pin_dns":true,"destination_policy":destination_policy})
+            match wire {
+                case Ok(response): {
+                    if response["_status"] >= 300 && response["_status"] < 400 { return {"ok":false,"code":"gateway_redirect_denied"} }
+                    body := parse_json(response["_body"])
+                    if type(body) != "dict" || has_key(body,"ok") == 0 || type(body["ok"]) != "bool" { return {"ok":false,"code":"invalid_gateway_response"} }
+                    for field in keys(body) { if contains(["ok","code","result"],field) == false { return {"ok":false,"code":"invalid_gateway_response"} } }
+                    if has_key(body,"result") {
+                        if json_schema_validate(body["result"],summary_schema)["valid"] == false { return {"ok":false,"code":"invalid_gateway_response"} }
+                        if response["_status"] == 200 && body["ok"] { return {"ok":true,"result":body["result"]} }
+                        return {"ok":false,"code":"gateway_rejected","result":body["result"]}
+                    }
+                    return {"ok":false,"code":"gateway_rejected"}
+                }
+                case Err(error): { return {"ok":false,"code":"gateway_transport_unknown"} }
+            }
+        } except e { return {"ok":false,"code":"gateway_transport_unknown"} }
+    }
+}

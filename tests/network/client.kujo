@@ -1,0 +1,7 @@
+from src.client.http import http_transport
+from src.client.client import purchase_request
+schema := parse_json(read_file("contracts/abilities/request.json"))["output_schema"]
+transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),schema,true)
+result := purchase_request(transport,{"purchase_ref":"client","payee_ref":"merchant","amount":{"mode":"maximum","minor":100,"currency":"USD"},"purpose":"Client test","payment_profile":"default","expires_in_ms":60000},"client-key")
+assert(result["ok"],"client_request_failed")
+print(to_json(result))
