@@ -1,0 +1,14 @@
+from src.providers.link.mpp import validate_mpp_challenge, mpp_credential
+vectors := parse_json(read_file("tests/fixtures/mpp.json"))
+for vector in vectors["cases"] {
+    result := validate_mpp_challenge(vector["header"],vectors["expected"],vector["now_ms"])
+    assert(result["ok"] == vector["valid"],vector["name"])
+    if vector["valid"] {
+        assert(result["expires_at_ms"] == vector["expires_at_ms"],"expiry_oracle")
+        assert(result["digest"] == vector["digest"],"binding_oracle")
+        // A fake credential only. No production token is passed to a test runner.
+        credential := mpp_credential(result,"SENTINEL_SPT")
+        assert(credential == vector["credential"],"credential_wire_oracle")
+    } else { assert(result == {"ok":false,"code":"mpp_challenge_rejected"},"normalized_rejection") }
+}
+print("MPP: "+to_string(len(vectors["cases"]))+" independent canonical encoding, header, amount, route, expiry and credential vectors passed")

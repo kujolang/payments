@@ -1,0 +1,17 @@
+{
+  "schema": "kujo.payment-provider-source/v1",
+  "package": "mppx",
+  "version": "0.8.15",
+  "registry_archive": "https://registry.npmjs.org/mppx/-/mppx-0.8.15.tgz",
+  "integrity": "sha512-+4jQRYB3AbgATfsZZAen7SxDC4miAPhUokTmBgda5OORZKvPnbWKAKHMHK1oMKsxWTVMYBwfgxmiJYAEe6I47g==",
+  "integrity_source": "stripe/link-cli@4aa62ba34eaeb884d00041681f5c7801521c0bf8/pnpm-lock.yaml",
+  "reviewed_at": "2026-09-12",
+  "sha256": {
+    "src/Challenge.ts": "0b368f68306bcf0ba2e2532d7b3871c63a01f6c8b709bdd1b4f1cdc2ea8d3a6a",
+    "src/Credential.ts": "315711efc3242d94bc14683df67115f413edaba89b1733361012c5810b005906",
+    "src/PaymentRequest.ts": "a92fd44bc2d40924c126ad0f855c045fcc7c798ca0c58a0a0810005fe13867d9",
+    "src/Receipt.ts": "bd3476e8231ac0be118b50d30e206a13cbccb96edba4a3ef94372a45530dd1fa",
+    "src/stripe/Methods.ts": "f13772be511e0dd4d6481807d6258622b24c40631652c6bff3378509a1a0d1bc",
+    "src/stripe/server/Charge.ts": "b0484953b7e4e6e2689d243228dac6d98adaf1052621bd639b02661016226f14"
+  }
+}

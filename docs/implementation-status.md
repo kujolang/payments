@@ -55,3 +55,8 @@ Verification limitation for this milestone: the normal host suite and expanded F
 ## Link native authorization components
 
 Implemented a bounded fixed-origin private Link transport and crash-conservative SpendRequest issuance/observation journal, grounded in pinned SDK 0.4.1 / CLI 0.19.1 source. Tests cover exact native binding, suppression of extra secret fields, four-process issuance contention and lost-response no-retry. This is not yet a complete selectable Link provider; MPP execution, credential retrieval, merchant reconciliation and live account conformance remain unfinished. See docs/link-provider.md and deployment/link-source.lock.json.
+
+
+## MPP codec and one-shot submission components
+
+Added a source-pinned Stripe charge codec, immutable private MPP preparations/dispatches, execution-only SPT retrieval, exact challenge revalidation and sanitized merchant observation. Provider deadlines now end no later than the approval or snapshot; expired intents cannot initiate native authorization. Tests use independent vectors and synthetic merchant/API callbacks. Complete Link registration, native merchant transport and authoritative account/merchant observation are still unfinished. A wrapped-callback VM/interpreter disagreement is preserved under tests/runtime and documented; supported privileged entrypoints continue to require interpreter mode.

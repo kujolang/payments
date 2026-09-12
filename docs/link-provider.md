@@ -1,6 +1,6 @@
 # Link reference provider implementation
 
-Status: internal authorization components only. They are not a complete selectable provider, a live-tested integration or a readiness claim. Link is an adapter; no core schema contains SpendRequest, SPT, LPT, card or CLI concepts.
+Status: internal authorization and MPP submission components. They are not a complete selectable provider, a live-tested integration or a readiness claim. Link is an adapter; no core schema contains SpendRequest, SPT, LPT, card or CLI concepts.
 
 ## Source provenance
 
@@ -24,4 +24,17 @@ Native bodies may contain PAN, CVC, SPT, LPT, approval URLs or other private inf
 
 Synthetic fixtures cover approved, malformed and mismatched native responses, unknown/succeeded statuses, provider exceptions, lost create responses, restart, permanent issuance tombstones, changed native parameters and sentinel suppression. Four actual Kujo processes share a journal against a deliberately non-deduplicating fake API ledger and produce exactly one native issuance, including the lost-response case. Transport denial tests prove invalid paths/delegated creation/expired deadlines stop before network access; they are not a live HTTPS test.
 
-Remaining implementation: full five-method provider SPI, immutable registered MPP challenge validation, SPT retrieval and one-shot merchant submission, authoritative merchant correlation/observation, provider account/profile identity verification, operator-only approval URL delivery, credential lifecycle and sandbox/live conformance. OAuth acquisition/refresh must stay in a privileged credential service; credentials must not enter the model or generic journal. LPT, raw virtual cards and browser injection remain excluded from V1. Keep the provider unavailable until these required gates have evidence.
+Remaining implementation: full five-method provider registration, native registered merchant HTTP and authoritative account/merchant observation adapters, provider account/profile identity verification, operator-only approval URL delivery, credential lifecycle and sandbox/live conformance. OAuth acquisition/refresh must stay in a privileged credential service; credentials must not enter the model or generic journal. LPT, raw virtual cards and browser injection remain excluded from V1. Keep the provider unavailable until these required gates have evidence.
+
+
+## MPP charge and submission components
+
+`mpp.kujo` implements the supported Stripe charge profile from the integrity-pinned mppx 0.8.15 sources recorded in deployment/mpp-source.lock.json. It accepts one ASCII quoted-parameter Payment challenge, requires a UTC millisecond expiry, rejects duplicate/unknown headers and noncanonical JSON, and checks exact amount, currency, realm, network, payment-method types, recipient and request-body digest against installed expectations. Request objects use ASCII keys and string leaves; unsupported provider shapes fail closed without changing Kujo's core semantics. Opaque data remains unchanged. The complete challenge digest, including its ID and expiry, is immutable after preparation: even challenge rotation with unchanged amount requires a new authorized preparation, not silent renewal.
+
+Credential encoding retains the validated request/opaque wire strings. When the challenge contains externalId, the payload echoes it exactly, as required by the reviewed Stripe server verifier. No SDK code is executed by the adapter. Python fixtures independently encode the accepted wire structure; this is not yet a live mppx interoperability attestation.
+
+`submission.kujo` records immutable preparations and permanent one-shot dispatches in the privileged provider database. Before retrieving an SPT it probes the installed merchant request without credentials and revalidates the exact challenge. It retrieves the SPT only through the private expanded Link response, then constructs the Payment credential in memory and calls the installed pay callback once. Exceptions or lost responses become unknown; repeated calls observe without another payment call. The generic executor now caps the provider deadline at both approval and snapshot expiration, and the submission path rechecks it before sending. Memory zeroization is not promised; use short-lived privileged processes and enforce the deployment boundary.
+
+The injected merchant port has probe(context), pay(credential_header, context) and observe(reference, snapshot, context). These are trusted installed callbacks, not model-supplied endpoints. The pay response body is ignored. Observation requires exact binding and amount, removes unknown/private fields, and hashes native evidence references into opaque local references. The core still requires its separately installed authoritative confirmation rule. A 2xx or a Payment-Receipt header by itself does not mint a Kujo financial receipt. Native HTTP route installation and real account/merchant observation remain required.
+
+Tests cover 55 independent codec vectors, re-probe mutation rejection, missing/malformed credentials, a lost response after a fake charge, no second send, unverified HTTP success and extra-secret-field suppression. All financial effects are synthetic.

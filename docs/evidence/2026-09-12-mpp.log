@@ -1,0 +1,21 @@
+Compiler optimization: 1 constants folded, 0 dead instructions removed, 0 peephole optimizations
+domain validation passed
+Cross-language binding vectors passed: 67
+SQLite intake, approval consumption, durable claim and recovery passed
+Kujo SQLite: 8-process race and SIGKILL before/after dispatch passed; no resumed dispatch
+Lifecycle: 60 state/event cases and evidence mismatch checks passed
+Pinned Ability definitions and seven domain schemas passed
+Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+Compiler optimization: 1 constants folded, 7 dead instructions removed, 0 peephole optimizations
+Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
+Provisioning: private permissions, token suppression and overwrite refusal passed
+Architecture: 21 files; Fence passed; 11 forbidden edges and 3 coverage/external mutations rejected
+Operator: scope, review binding, changed definition, expiry, durable separate-process grant, replay denial and normalized errors passed
+Bounded worker: asynchronous operator grant, native authorization dedupe, four-process dispatch race, post-charge reconciliation and terminal replay passed
+Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+Link issuance: four native workers, non-deduping API ledger, lost create response and restart all retain one issuance
+MPP vectors: 55
+MPP: 55 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed

@@ -1,0 +1,64 @@
+from src.providers.link.authorization import open_link_authorizations, request_link_authorization
+from src.providers.link.submission import open_link_submissions, prepare_link_submission, submit_link_once, observe_link_submission
+from src.providers.link.mpp import validate_mpp_challenge
+from src.domain.binding import snapshot_digest
+vectors := parse_json(read_file("tests/fixtures/mpp.json"))
+v := parse_json(read_file("tests/fixtures/domain.json"))
+header := vectors["cases"][0]["header"]
+expected := vectors["expected"]
+validated := validate_mpp_challenge(header,expected,1500)
+mut snapshot := v["snapshot"]
+request_binding := snapshot["request_binding"]
+request_binding["terms_digest"] = validated["digest"]
+snapshot["request_binding"] = request_binding
+snapshot["provider"] = {"id":"link","adapter_version":"0.1.0","account_ref":"account_1"}
+clock := func() { return 1500 }
+for scenario in ["success","lost_after_charge","changed_challenge","wrong_amount","bad_spt","unverified_2xx","observation_leak"] {
+    db := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-"+scenario)
+    open_link_authorizations(db)
+    open_link_submissions(db)
+    ledger := db_connect("sqlite",":memory:")
+    db_execute(ledger,"CREATE TABLE calls(kind TEXT)",[])
+    api := func(method,path,body,deadline) {
+        db_execute(ledger,"INSERT INTO calls VALUES(?)",[method])
+        mut native := {"id":"spend_1","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"approved","shared_payment_token":{"id":"SENTINEL_SPT"}}
+        if scenario == "bad_spt" { native["shared_payment_token"] = null }
+        return {"ok":true,"native":native}
+    }
+    probe := func(context) {
+        mut selected := header
+        if scenario == "changed_challenge" { selected = replace(header,"challenge_1","challenge_2") }
+        if scenario == "wrong_amount" { for vector in vectors["cases"] { if vector["name"] == "amount_str_5.5e3" { selected = vector["header"] } } }
+        return {"status":402,"challenge":selected}
+    }
+    pay := func(credential,context) {
+        // Independent expected wire fixture contains only a fake token.
+        assert(credential == vectors["cases"][0]["credential"],"credential_wire")
+        db_execute(ledger,"INSERT INTO calls VALUES('pay')",[])
+        if scenario == "lost_after_charge" { assert(false,"SENTINEL_LPT") }
+        return {"status":200,"body":"SENTINEL_PAN"}
+    }
+    observe := func(ref,snap,context) {
+        count := db_query(ledger,"SELECT count(*) AS n FROM calls WHERE kind='pay'",[])[0]["n"]
+        mut outcome := "unknown"
+        mut amount := null
+        if count == 1 && scenario != "unverified_2xx" { outcome = "succeeded"; amount = snapshot["charge"] }
+        return {"execution_id":snap["execution_id"],"snapshot_digest":snapshot_digest(snap),"phase":"execution","outcome":outcome,"actual_amount":amount,"observed_at_ms":1500,"evidence_ref":"SENTINEL_NATIVE_REFERENCE","private_extra":"SENTINEL_API_SECRET"}
+    }
+    merchant := {"probe":probe,"pay":pay,"observe":observe}
+    assert(prepare_link_submission(db,"ref",snapshot,header,expected,1500)["ok"],"prepare")
+    assert(request_link_authorization(db,"ref",snapshot,"network_1","pm_fixture",true,api,10000)["ok"],"authorize")
+    context := {"phase":"execution","claim_id":"claim_1","execution_id":snapshot["execution_id"],"snapshot_digest":snapshot_digest(snapshot),"now_ms":1500,"deadline_ms":10000}
+    first := submit_link_once(db,"ref",snapshot,expected,api,merchant,context,clock)
+    if scenario == "lost_after_charge" || scenario == "changed_challenge" || scenario == "wrong_amount" || scenario == "bad_spt" || scenario == "unverified_2xx" { assert(first["outcome"] == "unknown",scenario) }
+    else { assert(first["outcome"] == "succeeded","success") }
+    second := submit_link_once(db,"ref",snapshot,expected,api,merchant,context,clock)
+    count := db_query(ledger,"SELECT count(*) AS n FROM calls WHERE kind='pay'",[])[0]["n"]
+    if scenario == "changed_challenge" || scenario == "wrong_amount" || scenario == "bad_spt" { assert(count == 0,"no_send") }
+    else { assert(count == 1,"one_send") }
+    if scenario == "lost_after_charge" { assert(second["outcome"] == "succeeded","reconcile_no_send") }
+    for value in [first,second,db_query(db,"SELECT * FROM link_mpp_prepared",[]),db_query(db,"SELECT * FROM link_mpp_dispatches",[]),db_query(db,"SELECT * FROM link_authorizations",[])] { assert(contains(to_json(value),"SENTINEL") == 0,"no_secret_escape") }
+    db_close(ledger)
+    db_close(db)
+}
+print("Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed")

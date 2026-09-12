@@ -1,0 +1,125 @@
+// Private Stripe MPP charge codec, grounded in mppx 0.8.15. It does not move funds.
+// V1 accepts one quoted-parameter Payment challenge and canonical string-valued
+// Stripe requests. Unsupported/multiple/ambiguous challenges fail closed.
+export mpp_base64url := func(value) { return replace(replace(replace(encode_base64(value),"+","-"),"/","_"),"=","") }
+func decode_url(value) {
+    assert(type(value) == "string" && len(value) > 0 && len(value) <= 16384 && regex_match(value,"^[A-Za-z0-9_-]+$"),"mpp_encoding")
+    mut encoded := replace(replace(value,"-","+"),"_","/")
+    while len(encoded) % 4 != 0 { encoded = encoded+"=" }
+    decoded := decode_base64_utf8(encoded)
+    assert(mpp_base64url(decoded) == value,"mpp_noncanonical_encoding")
+    return decoded
+}
+func params(header) {
+    assert(type(header) == "string" && len(header) <= 20000 && regex_match(header,"^[ -~]+$"),"mpp_header")
+    assert(to_lower(substring(header,0,8)) == "payment ","mpp_scheme")
+    mut i := 8
+    mut fields := {}
+    while i < len(header) {
+        while i < len(header) && substring(header,i,i+1) == " " { i = i+1 }
+        start := i
+        while i < len(header) && substring(header,i,i+1) != "=" { i = i+1 }
+        key := substring(header,start,i)
+        assert(contains(["id","realm","method","intent","request","expires","digest","description","opaque"],key) && has_key(fields,key) == 0,"mpp_parameter")
+        i = i+1
+        assert(i < len(header) && substring(header,i,i+1) == "\"","mpp_quoted")
+        i = i+1
+        mut value := ""
+        mut closed := false
+        while i < len(header) && closed == false {
+            char := substring(header,i,i+1)
+            i = i+1
+            if char == "\"" { closed = true }
+            else {
+                if char == "\\" {
+                    assert(i < len(header),"mpp_escape")
+                    escaped := substring(header,i,i+1)
+                    assert(escaped == "\\" || escaped == "\"","mpp_escape")
+                    value = value+escaped
+                    i = i+1
+                } else { value = value+char }
+            }
+        }
+        assert(closed,"mpp_unclosed")
+        fields[key] = value
+        while i < len(header) && substring(header,i,i+1) == " " { i = i+1 }
+        if i < len(header) {
+            assert(substring(header,i,i+1) == "," && i+1 < len(header),"mpp_separator")
+            i = i+1
+        }
+    }
+    return fields
+}
+func expiry(value) {
+    assert(regex_match(value,"^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"),"mpp_expiry_format")
+    hours := to_int(substring(value,11,13))
+    minutes := to_int(substring(value,14,16))
+    seconds := to_int(substring(value,17,19))
+    millis := to_int(substring(value,20,23))
+    assert(hours <= 23 && minutes <= 59 && seconds <= 59,"mpp_expiry_time")
+    day := parse_date(substring(value,0,10),"YYYY-MM-DD")
+    assert(type(day) == "float" || type(day) == "int","mpp_expiry_date")
+    return to_int(day)*1000+hours*3600000+minutes*60000+seconds*1000+millis
+}
+func strings_only(value, depth) {
+    if depth > 4 { return false }
+    if type(value) == "string" { return len(value) <= 4096 }
+    if type(value) == "array" {
+        if len(value) > 16 { return false }
+        for item in value { if strings_only(item,depth+1) == false { return false } }
+        return true
+    }
+    if type(value) == "dict" {
+        if len(keys(value)) > 16 { return false }
+        for key in keys(value) {
+            if regex_match(key,"^[A-Za-z][A-Za-z0-9_]{0,63}$") == false || strings_only(value[key],depth+1) == false { return false }
+        }
+        return true
+    }
+    return false
+}
+export validate_mpp_challenge := func(header, expected, now_ms) {
+    try {
+        fields := params(header)
+        for key in ["id","realm","method","intent","request","expires"] { assert(has_key(fields,key) == 1,"mpp_required") }
+        assert(fields["method"] == "stripe" && fields["intent"] == "charge" && fields["realm"] == expected["realm"],"mpp_route")
+        assert(regex_match(fields["id"],"^[A-Za-z0-9_-]{1,256}$"),"mpp_id")
+        expires := expiry(fields["expires"])
+        assert(type(now_ms) == "int" && expires > now_ms,"mpp_expired")
+        raw := decode_url(fields["request"])
+        request := parse_json(raw)
+        assert(type(request) == "dict" && strings_only(request,0),"mpp_request")
+        // Canonical roundtrip rejects duplicate JSON keys and alternate escaping.
+        // Accepted request keys are ASCII; all leaves are strings, never floats.
+        assert(to_json(request) == raw,"mpp_request_not_canonical")
+        for key in keys(request) { assert(contains(["amount","currency","methodDetails","recipient","description","externalId"],key),"mpp_request_field") }
+        assert(type(request["amount"]) == "string" && request["amount"] == to_string(expected["charge"]["minor"]) && type(expected["charge"]["minor"]) == "int","mpp_amount")
+        assert(request["currency"] == to_lower(expected["charge"]["currency"]),"mpp_currency")
+        assert(expected["charge"]["minor"] >= 1 && expected["charge"]["minor"] <= 9007199254740991,"mpp_money_range")
+        for optional in ["description","externalId","recipient"] { if has_key(request,optional) { assert(type(request[optional]) == "string","mpp_request_string") } }
+        if has_key(fields,"opaque") { assert(regex_match(fields["opaque"],"^[A-Za-z0-9_-]{1,4096}$"),"mpp_opaque") }
+        details := request["methodDetails"]
+        assert(type(details) == "dict","mpp_details")
+        for key in keys(details) { assert(contains(["networkId","paymentMethodTypes","metadata"],key),"mpp_details_field") }
+        assert(type(details["paymentMethodTypes"]) == "array" && len(details["paymentMethodTypes"]) > 0,"mpp_payment_types")
+        for method_type in details["paymentMethodTypes"] { assert(type(method_type) == "string","mpp_payment_type") }
+        if has_key(details,"metadata") {
+            assert(type(details["metadata"]) == "dict","mpp_metadata")
+            for key in keys(details["metadata"]) { assert(type(details["metadata"][key]) == "string","mpp_metadata_value") }
+        }
+        assert(details["networkId"] == expected["network_id"] && details["paymentMethodTypes"] == expected["payment_method_types"],"mpp_network")
+        if expected["recipient"] == null { assert(has_key(request,"recipient") == 0,"mpp_recipient") }
+        else { assert(request["recipient"] == expected["recipient"],"mpp_recipient") }
+        if expected["body_digest"] == null { assert(has_key(fields,"digest") == 0,"mpp_body") }
+        else { assert(fields["digest"] == expected["body_digest"],"mpp_body") }
+        return {"ok":true,"wire":fields,"request":request,"digest":sha256(to_json(fields)),"expires_at_ms":expires}
+    } except error { return {"ok":false,"code":"mpp_challenge_rejected"} }
+}
+export mpp_credential := func(validated, spt) {
+    assert(validated["ok"] == true && type(spt) == "string" && len(spt) > 0 && len(spt) <= 8192,"mpp_credential_invalid")
+    // request and opaque remain the exact validated wire strings. Never include
+    // provider credentials in a persisted journal, diagnostic, or generic receipt.
+    mut payload := {"spt":spt}
+    if has_key(validated["request"],"externalId") { payload["externalId"] = validated["request"]["externalId"] }
+    return "Payment "+mpp_base64url(to_json({"challenge":validated["wire"],"payload":payload}))
+}

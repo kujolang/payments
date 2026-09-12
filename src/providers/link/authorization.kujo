@@ -55,3 +55,24 @@ export request_link_authorization := func(db, ref, snapshot, network_id, payment
         return {"ok":true,"status":"pending_or_unknown"}
     } except error { return unknown() }
 }
+
+// Execution-only private helper. Its return value must remain in the privileged
+// adapter; never expose it as an Ability or persist it in either journal.
+export execution_credential := func(db, ref, snapshot, api, deadline_ms) {
+    try {
+        rows := db_query(db,"SELECT * FROM link_authorizations WHERE ref=?",[ref])
+        if len(rows) != 1 || rows[0]["digest"] != snapshot_digest(snapshot) || rows[0]["account_ref"] != snapshot["provider"]["account_ref"] || rows[0]["native_id"] == null { return unknown() }
+        row := rows[0]
+        result := api("GET","/spend_requests/"+row["native_id"]+"?include=shared_payment_token",null,deadline_ms)
+        if result["ok"] != true { return unknown() }
+        native := result["native"]
+        if matching(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] || native["status"] != "approved" || has_key(native,"shared_payment_token") == 0 { return unknown() }
+        mut token := native["shared_payment_token"]
+        if type(token) == "dict" {
+            if has_key(token,"id") == 0 { return unknown() }
+            token = token["id"]
+        }
+        if type(token) != "string" || len(token) < 1 || len(token) > 8192 { return unknown() }
+        return {"ok":true,"spt":token}
+    } except error { return unknown() }
+}

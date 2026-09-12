@@ -1,0 +1,360 @@
+{
+  "source": "mppx 0.8.15 Credential.serialize and PaymentRequest.serialize; independent Python oracle for the supported string-only subset",
+  "expected": {
+    "realm": "merchant.example",
+    "charge": {
+      "minor": 5500,
+      "currency": "USD"
+    },
+    "network_id": "network_1",
+    "payment_method_types": [
+      "card"
+    ],
+    "recipient": null,
+    "body_digest": null
+  },
+  "cases": [
+    {
+      "name": "canonical",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": true,
+      "now_ms": 0,
+      "expires_at_ms": 1789257600000,
+      "digest": "c16db89a11070dea48dc4559ee7f831b92f26878931a5a810fa2a215b3775c47",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0p0WlhSb2IyUkVaWFJoYVd4eklqcDdJbTVsZEhkdmNtdEpaQ0k2SW01bGRIZHZjbXRmTVNJc0luQmhlVzFsYm5STlpYUm9iMlJVZVhCbGN5STZXeUpqWVhKa0lsMTlmUSJ9LCJwYXlsb2FkIjp7InNwdCI6IlNFTlRJTkVMX1NQVCJ9fQ"
+    },
+    {
+      "name": "opaque_and_quoted",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", description=\"A, B and \\\"quoted\\\" item\", opaque=\"eyJvcmRlciI6Im9uZSJ9\"",
+      "valid": true,
+      "now_ms": 0,
+      "expires_at_ms": 1789257600000,
+      "digest": "8a025a3d16fb1aec09f67fd50901bca377f7d5afc3f943b3c73aeb6daaab1d5e",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZGVzY3JpcHRpb24iOiJBLCBCIGFuZCBcInF1b3RlZFwiIGl0ZW0iLCJleHBpcmVzIjoiMjAyNi0wOS0xM1QwMDowMDowMC4wMDBaIiwiaWQiOiJjaGFsbGVuZ2VfMSIsImludGVudCI6ImNoYXJnZSIsIm1ldGhvZCI6InN0cmlwZSIsIm9wYXF1ZSI6ImV5SnZjbVJsY2lJNkltOXVaU0o5IiwicmVhbG0iOiJtZXJjaGFudC5leGFtcGxlIiwicmVxdWVzdCI6ImV5SmhiVzkxYm5RaU9pSTFOVEF3SWl3aVkzVnljbVZ1WTNraU9pSjFjMlFpTENKdFpYUm9iMlJFWlhSaGFXeHpJanA3SW01bGRIZHZjbXRKWkNJNkltNWxkSGR2Y210Zk1TSXNJbkJoZVcxbGJuUk5aWFJvYjJSVWVYQmxjeUk2V3lKallYSmtJbDE5ZlEifSwicGF5bG9hZCI6eyJzcHQiOiJTRU5USU5FTF9TUFQifX0"
+    },
+    {
+      "name": "unicode_in_request",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJkZXNjcmlwdGlvbiI6IkNvZmZlZSDimJUiLCJleHRlcm5hbElkIjoib3JkZXJfMSIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": true,
+      "now_ms": 0,
+      "expires_at_ms": 1789257600000,
+      "digest": "3e76e167a665ff0464ce6639514e9beae0f03f80f303ec7725d54678591783fe",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0prWlhOamNtbHdkR2x2YmlJNklrTnZabVpsWlNEaW1KVWlMQ0psZUhSbGNtNWhiRWxrSWpvaWIzSmtaWEpmTVNJc0ltMWxkR2h2WkVSbGRHRnBiSE1pT25zaWJtVjBkMjl5YTBsa0lqb2libVYwZDI5eWExOHhJaXdpY0dGNWJXVnVkRTFsZEdodlpGUjVjR1Z6SWpwYkltTmhjbVFpWFgxOSJ9LCJwYXlsb2FkIjp7ImV4dGVybmFsSWQiOiJvcmRlcl8xIiwic3B0IjoiU0VOVElORUxfU1BUIn19"
+    },
+    {
+      "name": "metadata",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im1ldGFkYXRhIjp7Im9yZGVyIjoib25lIn0sIm5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": true,
+      "now_ms": 0,
+      "expires_at_ms": 1789257600000,
+      "digest": "83a6230299053769c2a6e18ec0a6d3cad516376d9c7d8d21396de9a580513e64",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0p0WlhSb2IyUkVaWFJoYVd4eklqcDdJbTFsZEdGa1lYUmhJanA3SW05eVpHVnlJam9pYjI1bEluMHNJbTVsZEhkdmNtdEpaQ0k2SW01bGRIZHZjbXRmTVNJc0luQmhlVzFsYm5STlpYUm9iMlJVZVhCbGN5STZXeUpqWVhKa0lsMTlmUSJ9LCJwYXlsb2FkIjp7InNwdCI6IlNFTlRJTkVMX1NQVCJ9fQ"
+    },
+    {
+      "name": "field_method_tempo",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"tempo\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_intent_session",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"session\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_realm_evil.example",
+      "header": "Payment id=\"challenge_1\", realm=\"evil.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_id_../../id",
+      "header": "Payment id=\"../../id\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_expires_2026-02-30T00:00:00.000Z",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-02-30T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_expires_2026-09-13T24:00:00.000Z",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T24:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_expires_2026-09-13T00:00:00Z",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_expires_2026-09-13T00:00:00.000+00:00",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000+00:00\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_request_@@@@",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"@@@@\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_opaque_not base64",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", opaque=\"not base64\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "field_digest_sha-256=unrequested",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", digest=\"sha-256=unrequested\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_id",
+      "header": "Payment realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_realm",
+      "header": "Payment id=\"challenge_1\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_method",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_intent",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_request",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "missing_expires",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_5500.0",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwLjAiLCJjdXJyZW5jeSI6InVzZCIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_5.5e3",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1LjVlMyIsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_05500",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiIwNTUwMCIsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_+5500",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiIrNTUwMCIsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_-5500",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiItNTUwMCIsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_0",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiIwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_str_9007199254740992",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI5MDA3MTk5MjU0NzQwOTkyIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_int_5500",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOjU1MDAsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_float_5500.0",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOjU1MDAuMCwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "amount_bool_True",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOnRydWUsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "request_currency",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJldXIiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "request_currency",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJVU0QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "request_recipient",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19LCJyZWNpcGllbnQiOiJhY2N0X290aGVyIn0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "request_unknown",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19LCJ1bmtub3duIjoidmFsdWUifQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "request_externalId",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJleHRlcm5hbElkIjp7ImJhZCI6InNoYXBlIn0sIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "details_networkId",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im90aGVyIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "details_paymentMethodTypes",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjcnlwdG8iXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "details_paymentMethodTypes",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6W119fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "details_metadata",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im1ldGFkYXRhIjp7IngiOmZhbHNlfSwibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "details_unrecognized",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl0sInVucmVjb2duaXplZCI6IngifX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "duplicate",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiIxIiwiYW1vdW50IjoiNTUwMCIsImN1cnJlbmN5IjoidXNkIiwibWV0aG9kRGV0YWlscyI6eyJuZXR3b3JrSWQiOiJuZXR3b3JrXzEiLCJwYXltZW50TWV0aG9kVHlwZXMiOlsiY2FyZCJdfX0\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "spaces",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiAiNTUwMCIsICJjdXJyZW5jeSI6ICJ1c2QiLCAibWV0aG9kRGV0YWlscyI6IHsibmV0d29ya0lkIjogIm5ldHdvcmtfMSIsICJwYXltZW50TWV0aG9kVHlwZXMiOiBbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "unsorted",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJjdXJyZW5jeSI6InVzZCIsImFtb3VudCI6IjU1MDAiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "duplicate_header",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", id=\"other\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "two_challenges",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "trailing_comma",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\",",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "unquoted",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=stripe, intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "newline",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"\n",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "unknown_param",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", extra=\"x\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "basic",
+      "header": "Basic abc",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "huge",
+      "header": "Payment xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "bad_escape",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\", description=\"bad\\n\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "expired",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 1789257600000
+    },
+    {
+      "name": "padding",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ=\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+// Private MPP submission journal and one-use dispatch. The installed merchant
+// port owns authenticated observation; a 2xx response alone is never settlement.
+from src.providers.link.mpp import validate_mpp_challenge, mpp_credential
+from src.providers.link.authorization import execution_credential
+from src.domain.binding import snapshot_digest
+
+export open_link_submissions := func(db) {
+    db_execute(db,"CREATE TABLE IF NOT EXISTS link_mpp_prepared(ref TEXT PRIMARY KEY,snapshot_digest TEXT NOT NULL,challenge_digest TEXT NOT NULL,challenge_json TEXT NOT NULL)",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS link_mpp_dispatches(ref TEXT PRIMARY KEY REFERENCES link_mpp_prepared(ref),claim_id TEXT NOT NULL UNIQUE)",[])
+    for table in ["link_mpp_prepared","link_mpp_dispatches"] {
+        db_execute(db,"CREATE TRIGGER IF NOT EXISTS "+table+"_no_update BEFORE UPDATE ON "+table+" BEGIN SELECT RAISE(ABORT,'link_mpp_immutable'); END",[])
+        db_execute(db,"CREATE TRIGGER IF NOT EXISTS "+table+"_no_delete BEFORE DELETE ON "+table+" BEGIN SELECT RAISE(ABORT,'link_mpp_permanent'); END",[])
+    }
+}
+export prepare_link_submission := func(db, ref, snapshot, header, expected, now_ms) {
+    try {
+        challenge := validate_mpp_challenge(header,expected,now_ms)
+        if challenge["ok"] != true || snapshot["request_binding"]["terms_digest"] != challenge["digest"] || snapshot["expires_at_ms"] > challenge["expires_at_ms"] { return {"ok":false,"code":"link_preparation_rejected"} }
+        digest := snapshot_digest(snapshot)
+        db_execute(db,"INSERT OR IGNORE INTO link_mpp_prepared VALUES(?,?,?,?)",[ref,digest,challenge["digest"],to_json(challenge["wire"])])
+        rows := db_query(db,"SELECT * FROM link_mpp_prepared WHERE ref=?",[ref])
+        matches := len(rows) == 1 && rows[0]["snapshot_digest"] == digest && rows[0]["challenge_digest"] == challenge["digest"]
+        return {"ok":matches}
+    } except error { return {"ok":false,"code":"link_preparation_rejected"} }
+}
+func unknown(snapshot, now_ms) {
+    return {"schema":"kujo.payment-observation/v1","execution_id":snapshot["execution_id"],"snapshot_digest":snapshot_digest(snapshot),"phase":"execution","outcome":"unknown","observed_at_ms":now_ms,"evidence_ref":null,"actual_amount":null,"next_action":null,"retry_after_ms":null}
+}
+export observe_link_submission := func(ref, snapshot, merchant, context, clock_ms) {
+    try {
+        observation := merchant["observe"](ref,snapshot,context)
+        for key in ["execution_id","snapshot_digest","phase","outcome","observed_at_ms","evidence_ref","actual_amount"] { if has_key(observation,key) == 0 { return unknown(snapshot,context["now_ms"]) } }
+        if observation["execution_id"] != snapshot["execution_id"] || observation["snapshot_digest"] != snapshot_digest(snapshot) || observation["phase"] != "execution" { return unknown(snapshot,context["now_ms"]) }
+        if contains(["succeeded","failed_no_effect","pending","unknown"],observation["outcome"]) == false || type(observation["observed_at_ms"]) != "int" || observation["observed_at_ms"] < 0 || observation["observed_at_ms"] > clock_ms() { return unknown(snapshot,context["now_ms"]) }
+        mut amount := null
+        if observation["outcome"] == "succeeded" {
+            if type(observation["actual_amount"]) != "dict" || type(observation["actual_amount"]["minor"]) != "int" || observation["actual_amount"] != snapshot["charge"] { return unknown(snapshot,context["now_ms"]) }
+            amount = snapshot["charge"]
+        } else { if observation["actual_amount"] != null { return unknown(snapshot,context["now_ms"]) } }
+        mut evidence := null
+        if observation["evidence_ref"] != null {
+            if type(observation["evidence_ref"]) != "string" || len(observation["evidence_ref"]) < 1 || len(observation["evidence_ref"]) > 4096 { return unknown(snapshot,context["now_ms"]) }
+            evidence = "link-evidence:"+sha256(observation["evidence_ref"])
+        }
+        // Reconstruct the narrow observation; never echo unknown fields, native
+        // receipt references, next-action URLs or private merchant payloads.
+        // Core still requires the installed independent confirmation rule.
+        return {"schema":"kujo.payment-observation/v1","execution_id":snapshot["execution_id"],"snapshot_digest":snapshot_digest(snapshot),"phase":"execution","outcome":observation["outcome"],"observed_at_ms":observation["observed_at_ms"],"evidence_ref":evidence,"actual_amount":amount,"next_action":null,"retry_after_ms":null}
+    } except error { return unknown(snapshot,context["now_ms"]) }
+}
+export submit_link_once := func(db, ref, snapshot, expected, api, merchant, context, clock_ms) {
+    try {
+        rows := db_query(db,"SELECT * FROM link_mpp_prepared WHERE ref=?",[ref])
+        if len(rows) != 1 || rows[0]["snapshot_digest"] != snapshot_digest(snapshot) || context["snapshot_digest"] != snapshot_digest(snapshot) || context["execution_id"] != snapshot["execution_id"] || context["phase"] != "execution" || context["claim_id"] == "" { return unknown(snapshot,clock_ms()) }
+        claimed := db_execute(db,"INSERT OR IGNORE INTO link_mpp_dispatches VALUES(?,?)",[ref,context["claim_id"]])
+        if claimed != 1 { return observe_link_submission(ref,snapshot,merchant,context,clock_ms) }
+        if clock_ms() >= snapshot["expires_at_ms"] { return unknown(snapshot,clock_ms()) }
+        // Re-probe the exact installed request without credentials, then require
+        // the complete immutable challenge binding before retrieving an SPT.
+        probe := merchant["probe"](context)
+        if probe["status"] != 402 { return unknown(snapshot,clock_ms()) }
+        challenge := validate_mpp_challenge(probe["challenge"],expected,clock_ms())
+        if challenge["ok"] != true || challenge["digest"] != rows[0]["challenge_digest"] { return unknown(snapshot,clock_ms()) }
+        credential := execution_credential(db,ref,snapshot,api,context["deadline_ms"])
+        if credential["ok"] != true || clock_ms() >= snapshot["expires_at_ms"] || clock_ms() >= context["deadline_ms"] { return unknown(snapshot,clock_ms()) }
+        header := mpp_credential(challenge,credential["spt"])
+        // Returned response bodies are deliberately ignored. The separate
+        // installed observation/confirmation path decides financial status.
+        merchant["pay"](header,context)
+        return observe_link_submission(ref,snapshot,merchant,context,clock_ms)
+    } except error { return unknown(snapshot,clock_ms()) }
+}
