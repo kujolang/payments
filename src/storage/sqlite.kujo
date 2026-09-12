@@ -1,3 +1,4 @@
+from src.domain.lifecycle import transition
 // Trusted persistence port. It does not authenticate callers or issue approvals.
 // Only a successful claim return in the current invocation may authorize dispatch.
 export open_store := func(path) {
@@ -14,6 +15,14 @@ export open_store := func(path) {
     db_execute(db, "CREATE TABLE IF NOT EXISTS observations(execution_id TEXT NOT NULL REFERENCES executions(execution_id),evidence_id TEXT NOT NULL,digest TEXT NOT NULL,observation_json TEXT NOT NULL,PRIMARY KEY(execution_id,evidence_id))", [])
     db_execute(db, "CREATE TRIGGER IF NOT EXISTS permanent_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=1 AND NEW.claimed!=1 BEGIN SELECT RAISE(ABORT,'permanent_claim'); END", [])
     db_execute(db, "CREATE TRIGGER IF NOT EXISTS permanent_execution BEFORE DELETE ON executions BEGIN SELECT RAISE(ABORT,'permanent_execution'); END", [])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS incidents(execution_id TEXT NOT NULL REFERENCES executions(execution_id),evidence_id TEXT NOT NULL,digest TEXT NOT NULL,code TEXT NOT NULL,PRIMARY KEY(execution_id,evidence_id,digest,code))",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS immutable_snapshot BEFORE UPDATE OF snapshot_json,snapshot_digest ON executions WHEN OLD.snapshot_json IS NOT NULL AND (NEW.snapshot_json IS NOT OLD.snapshot_json OR NEW.snapshot_digest IS NOT OLD.snapshot_digest) BEGIN SELECT RAISE(ABORT,'immutable_snapshot'); END",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS immutable_terminal BEFORE UPDATE OF state,receipt_json ON executions WHEN OLD.state IN ('succeeded','closed') AND (NEW.state!=OLD.state OR NEW.receipt_json IS NOT OLD.receipt_json) BEGIN SELECT RAISE(ABORT,'immutable_terminal'); END",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS preparations(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),prepared_ref TEXT NOT NULL,provider_id TEXT NOT NULL)",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS ability_calls(operation TEXT NOT NULL,key_digest TEXT NOT NULL,request_digest TEXT NOT NULL,invocation_id TEXT NOT NULL,receipt_json TEXT,PRIMARY KEY(operation,key_digest))",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS audit(event_id TEXT PRIMARY KEY,execution_id TEXT,phase TEXT NOT NULL)",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS issued_approvals(approval_id TEXT PRIMARY KEY REFERENCES approvals(approval_id),approval_json TEXT NOT NULL)",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS provider_authorizations(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),started INTEGER NOT NULL CHECK(started=1))",[])
     return db
 }
 export inspect := func(db, scope, execution_id) {
@@ -62,6 +71,7 @@ export grant := func(db, scope, execution_id, revision, approval, snapshot_diges
         rows := db_execute(db,"UPDATE executions SET state='ready',revision=revision+1 WHERE execution_id=? AND scope=? AND state='awaiting_authorization' AND snapshot_digest=? AND claimed=0 AND revision=? AND expires_at_ms>?",[execution_id,scope,snapshot_digest,revision,now_ms])
         if rows == 1 && approval["expires_at_ms"] > now_ms {
             db_execute(db,"INSERT INTO approvals VALUES(?,?,?,?,?,?,?,?,?,0)",[approval["approval_id"],execution_id,scope,snapshot_digest,invocation_id,approval["binding_digest"],issuer_ref,approval["nonce"],approval["expires_at_ms"]])
+            db_execute(db,"INSERT INTO issued_approvals VALUES(?,?)",[approval["approval_id"],to_json(approval)])
             db_execute(db,"COMMIT",[])
             ok = true
         } else { db_execute(db,"ROLLBACK",[]) }
@@ -88,4 +98,104 @@ export cancel := func(db, scope, execution_id, revision) {
 export recover := func(db) {
     // Recovery is observation-only: it never clears a claim or recreates a permit.
     return db_execute(db,"UPDATE executions SET state='reconciliation_required',revision=revision+1 WHERE state='executing' AND claimed=1",[])
+}
+
+export record_observation := func(db, scope, execution_id, revision, evidence_id, digest, observation, event, receipt) {
+    // Only normalized, authenticated executor observations reach this port.
+    // Conflicts are retained without replacing the original evidence or receipt.
+    mut result := {"ok":false,"code":"storage_failure"}
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        row := inspect(db,scope,execution_id)
+        if row == null { result = {"ok":false,"code":"not_found"} }
+        else {
+            existing := db_query(db,"SELECT digest FROM observations WHERE execution_id=? AND evidence_id=?",[execution_id,evidence_id])
+            if len(existing) > 0 {
+                if existing[0]["digest"] == digest { result = {"ok":true,"duplicate":true} }
+                else {
+                    db_execute(db,"INSERT OR IGNORE INTO incidents VALUES(?,?,?,'evidence_conflict')",[execution_id,evidence_id,digest])
+                    db_execute(db,"UPDATE executions SET state='reconciliation_required',revision=revision+1 WHERE execution_id=? AND claimed=1 AND state NOT IN ('closed','succeeded')",[execution_id])
+                    result = {"ok":false,"code":"evidence_conflict"}
+                }
+            } else {
+                if row["revision"] != revision { result = {"ok":false,"code":"revision_conflict"} }
+                else {
+                    next := transition(row["state"],event,row["claimed"] == 1)
+                    if next["ok"] == false {
+                        db_execute(db,"INSERT OR IGNORE INTO incidents VALUES(?,?,?,'invalid_observation_transition')",[execution_id,evidence_id,digest])
+                        result = {"ok":false,"code":"invalid_observation_transition"}
+                    } else {
+                        mut reason := null
+                        mut receipt_json := null
+                        if event == "failed_no_effect" { reason = "failed_no_effect" }
+                        if receipt != null { receipt_json = to_json(receipt) }
+                        if (event == "succeeded" || event == "failed_no_effect") && receipt == null {
+                            result = {"ok":false,"code":"receipt_required"}
+                        } else {
+                            db_execute(db,"INSERT INTO observations VALUES(?,?,?,?)",[execution_id,evidence_id,digest,to_json(observation)])
+                            db_execute(db,"UPDATE executions SET state=?,closed_reason=?,receipt_json=?,revision=revision+1 WHERE execution_id=? AND scope=? AND revision=?",[next["state"],reason,receipt_json,execution_id,scope,revision])
+                            result = {"ok":true,"duplicate":false}
+                        }
+                    }
+                }
+            }
+        }
+        db_execute(db,"COMMIT",[])
+    } except e {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        result = {"ok":false,"code":"storage_failure"}
+    }
+    return result
+}
+
+export save_preparation := func(db, scope, execution_id, revision, snapshot, digest, prepared_ref, now_ms) {
+    mut ok := false
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        if prepare(db,scope,execution_id,revision,snapshot,digest,now_ms) {
+            db_execute(db,"INSERT INTO preparations VALUES(?,?,?)",[execution_id,prepared_ref,snapshot["provider"]["id"]])
+            db_execute(db,"COMMIT",[])
+            ok = true
+        } else { db_execute(db,"ROLLBACK",[]) }
+    } except e { try { db_execute(db,"ROLLBACK",[]) } except rollback_error { } }
+    return ok
+}
+export preparation_ref := func(db, scope, execution_id) {
+    rows := db_query(db,"SELECT p.prepared_ref FROM preparations p JOIN executions e ON e.execution_id=p.execution_id WHERE e.scope=? AND e.execution_id=?",[scope,execution_id])
+    if len(rows) != 1 { return null }
+    return rows[0]["prepared_ref"]
+}
+export begin_ability := func(db, operation, key_digest, request_digest, invocation_id) {
+    mut result := {"state":"unavailable"}
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        rows := db_query(db,"SELECT * FROM ability_calls WHERE operation=? AND key_digest=?",[operation,key_digest])
+        if len(rows) == 0 {
+            db_execute(db,"INSERT INTO ability_calls VALUES(?,?,?,?,NULL)",[operation,key_digest,request_digest,invocation_id])
+            result = {"state":"started"}
+        } else {
+            row := rows[0]
+            if row["request_digest"] != request_digest || row["invocation_id"] != invocation_id { result = {"state":"conflict"} }
+            else {
+                if row["receipt_json"] == null { result = {"state":"in_progress"} }
+                else { result = {"state":"replay","receipt":parse_json(row["receipt_json"])} }
+            }
+        }
+        db_execute(db,"COMMIT",[])
+    } except e { try { db_execute(db,"ROLLBACK",[]) } except rollback_error { } }
+    return result
+}
+export complete_ability := func(db, operation, key_digest, request_digest, receipt) {
+    rows := db_execute(db,"UPDATE ability_calls SET receipt_json=? WHERE operation=? AND key_digest=? AND request_digest=? AND invocation_id=? AND receipt_json IS NULL",[to_json(receipt),operation,key_digest,request_digest,receipt["invocation_id"]])
+    return {"ok":rows == 1}
+}
+
+export issued_approval_matches := func(db, scope, execution_id, approval) {
+    rows := db_query(db,"SELECT i.approval_json FROM issued_approvals i JOIN approvals a ON a.approval_id=i.approval_id WHERE a.approval_id=? AND a.scope=? AND a.execution_id=? AND a.consumed=0",[approval["approval_id"],scope,execution_id])
+    return len(rows) == 1 && parse_json(rows[0]["approval_json"]) == approval
+}
+
+export begin_provider_authorization := func(db, scope, execution_id) {
+    rows := db_execute(db,"INSERT OR IGNORE INTO provider_authorizations SELECT execution_id,1 FROM executions WHERE execution_id=? AND scope=? AND state IN ('awaiting_authorization','ready') AND claimed=0 AND snapshot_json IS NOT NULL",[execution_id,scope])
+    return rows == 1
 }

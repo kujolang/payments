@@ -1,0 +1,29 @@
+from src.storage.sqlite import open_store, intake, inspect, prepare, grant, claim, record_observation, recover
+from src.domain.binding import snapshot_digest
+path := env("PAYMENTS_TEST_DB")
+db := open_store(path)
+v := parse_json(read_file("tests/fixtures/domain.json"))
+s := v["snapshot"]
+d := snapshot_digest(s)
+assert(intake(db,"scope","key","request","e1",v["intent"])["ok"],"intake")
+assert(prepare(db,"scope","e1",0,s,d,1000),"prepare")
+a := {"approval_id":"a","binding_digest":"b","nonce":"n","expires_at_ms":2000}
+assert(grant(db,"scope","e1",1,a,d,"i","issuer",1000),"grant")
+assert(claim(db,"scope","e1",2,"a","b",d,"i",1000),"claim")
+assert(record_observation(db,"other","e1",3,"event","digest",v["observation"],"succeeded",v["receipt"])["ok"] == false,"tenant")
+assert(record_observation(db,"scope","e1",3,"event","digest",v["observation"],"succeeded",null)["ok"] == false,"receipt_required")
+// A simulated receipt persistence failure must roll back the evidence insert.
+db_execute(db,"CREATE TRIGGER fail_receipt BEFORE UPDATE OF receipt_json ON executions WHEN NEW.receipt_json IS NOT NULL BEGIN SELECT RAISE(ABORT,'disk_failure'); END",[])
+assert(record_observation(db,"scope","e1",3,"event","digest",v["observation"],"succeeded",v["receipt"])["ok"] == false,"receipt_failure")
+assert(len(db_query(db,"SELECT * FROM observations",[])) == 0,"atomic_evidence")
+assert(inspect(db,"scope","e1")["claimed"] == 1,"claim_survives")
+db_execute(db,"DROP TRIGGER fail_receipt",[])
+assert(recover(db) == 1,"recover")
+assert(record_observation(db,"scope","e1",4,"event","digest",v["observation"],"succeeded",v["receipt"])["ok"],"reconcile_success")
+assert(record_observation(db,"scope","e1",4,"event","digest",v["observation"],"succeeded",v["receipt"])["duplicate"],"duplicate")
+assert(record_observation(db,"scope","e1",5,"event","changed",v["observation"],"failed_no_effect",v["receipt"])["ok"] == false,"conflict")
+assert(inspect(db,"scope","e1")["state"] == "succeeded","terminal_preserved")
+assert(len(db_query(db,"SELECT * FROM incidents",[])) == 1,"incident_retained")
+assert(record_observation(db,"scope","e1",5,"late","late",v["observation"],"pending",null)["ok"] == false,"late_cannot_regress")
+db_close(db)
+print("Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed")

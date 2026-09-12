@@ -1,0 +1,29 @@
+from src.storage.sqlite import inspect, intake, save_preparation, preparation_ref, grant, claim, record_observation, begin_ability, complete_ability, issued_approval_matches, begin_provider_authorization
+
+func new_permit() {
+    // Native handles share identity across callbacks; ordinary captured maps do not.
+    // This connection is invocation-scoped and cannot survive a process restart.
+    memory := db_connect("sqlite",":memory:")
+    db_execute(memory,"CREATE TABLE permit(id INTEGER PRIMARY KEY CHECK(id=1))",[])
+    issue := func() { return db_execute(memory,"INSERT INTO permit VALUES(1)",[]) == 1 }
+    take := func() { return db_execute(memory,"DELETE FROM permit WHERE id=1",[]) == 1 }
+    close := func() { db_close(memory) }
+    return {"issue":issue,"take":take,"close":close}
+}
+export sqlite_port := func(db) {
+    return {
+        "schema":"kujo.payment-store/v1",
+        "inspect":func(scope,id) { return inspect(db,scope,id) },
+        "intake":func(scope,key,digest,id,intent) { return intake(db,scope,key,digest,id,intent) },
+        "save_preparation":func(scope,id,revision,snapshot,digest,ref,now) { return save_preparation(db,scope,id,revision,snapshot,digest,ref,now) },
+        "preparation_ref":func(scope,id) { return preparation_ref(db,scope,id) },
+        "grant":func(scope,id,revision,approval,digest,invocation,issuer,now) { return grant(db,scope,id,revision,approval,digest,invocation,issuer,now) },
+        "claim":func(scope,id,revision,approval,binding,digest,invocation,now) { return claim(db,scope,id,revision,approval,binding,digest,invocation,now) },
+        "record_observation":func(scope,id,revision,evidence,digest,observation,event,receipt) { return record_observation(db,scope,id,revision,evidence,digest,observation,event,receipt) },
+        "begin_ability":func(operation,key,digest,id) { return begin_ability(db,operation,key,digest,id) },
+        "complete_ability":func(operation,key,digest,receipt) { return complete_ability(db,operation,key,digest,receipt) },
+        "issued_approval_matches":func(scope,id,approval) { return issued_approval_matches(db,scope,id,approval) },
+        "begin_provider_authorization":func(scope,id) { return begin_provider_authorization(db,scope,id) },
+        "new_permit":new_permit
+    }
+}
