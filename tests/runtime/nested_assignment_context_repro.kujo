@@ -1,0 +1,31 @@
+from src.domain.binding import intent_digest, snapshot_digest, capabilities_digest, frame
+from src.domain.validation import valid_money, valid_intent, valid_snapshot, valid_capabilities
+
+examples := parse_json(read_file("tests/fixtures/domain.json"))
+table := {"version": "fixture-v1", "exponents": {"USD": 2, "JPY": 0, "KWD": 3}}
+intent_schema := parse_json(read_file("contracts/intent.schema.json"))
+snapshot_schema := parse_json(read_file("contracts/snapshot.schema.json"))
+cap_schema := parse_json(read_file("contracts/capabilities.schema.json"))
+i := examples["intent"]
+c := examples["capabilities"]
+mut s := examples["snapshot"]
+s["intent_digest"] = intent_digest(i)
+s["capabilities_digest"] = capabilities_digest(c)
+assert(valid_intent(i, intent_schema, table, 1000), "intent")
+assert(valid_capabilities(c, cap_schema, 1000), "capabilities")
+assert(valid_snapshot(s, snapshot_schema, i, c, table, 1000, "US"), "snapshot")
+assert(valid_snapshot(s, snapshot_schema, i, c, table, 2000, "US") == false, "expired")
+assert(valid_snapshot(s, snapshot_schema, i, c, table, 1000, "CA") == false, "region")
+for value in [true, 1.5, 5500.0, 0, -1, 9007199254740992, "5500"] {
+    assert(valid_money({"minor": value, "currency": "USD"}, table) == false, "money_type")
+}
+for currency in ["USD", "JPY", "KWD"] { assert(valid_money({"minor": 55, "currency": currency}, table), "exact_money") }
+assert(valid_money({"minor": 55, "currency": "USDC"}, table) == false, "unknown_currency")
+for field in ["execution_id", "intent_digest", "currency_table_version", "capabilities_digest"] {
+    mut changed := parse_json(to_json(s))
+    changed[field] = "different"
+    assert(snapshot_digest(changed) != snapshot_digest(s), "bound_field")
+}
+mut changed := parse_json(to_json(s))
+changed["charge"]["minor"] = 5501
+print("After chained assignment:", to_json(changed["charge"]))
