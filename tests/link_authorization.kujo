@@ -44,10 +44,12 @@ for scenario in ["success","lost_create","malformed","wrong_amount","wrong_curre
     db_close(ledger)
     db_close(db)
 }
-print("Link native authorization: one-shot issuance, ambiguous no-retry, strict native binding, settlement separation and secret suppression passed")
 
 clock := func() { return 1000 }
-http := link_api("SENTINEL_OAUTH_TOKEN",clock)
-assert(http("POST","/spend_requests/create_delegated",{},10000)["code"] == "link_request_denied","no_delegated_create")
-assert(http("GET","/spend_requests/id/../../secrets",null,10000)["code"] == "link_request_denied","path_scope")
-assert(http("POST","/spend_requests",{},5000)["code"] == "link_request_denied","deadline_before_network")
+func verify_transport(transport) {
+assert(transport["call"]("POST","/spend_requests/create_delegated",{},10000)["code"] == "link_request_denied","no_delegated_create")
+assert(transport["call"]("GET","/spend_requests/id/../../secrets",null,10000)["code"] == "link_request_denied","path_scope")
+assert(transport["call"]("POST","/spend_requests",{},5000)["code"] == "link_request_denied","deadline_before_network")
+}
+verify_transport({"call":link_api("SENTINEL_OAUTH_TOKEN",clock)})
+print("Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed")
