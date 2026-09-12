@@ -42,7 +42,7 @@ def discipline(root):
             if module.startswith('src.'):
                 assert (root / (module.replace('.', '/') + '.kujo')).is_file(), f'Unresolved import: {rel}'
             else:
-                assert module == 'ability' and matches[0] in ('application', 'gateway'), f'External import forbidden: {rel}'
+                assert module == 'ability' and matches[0] in ('application', 'gateway', 'executor'), f'External import forbidden: {rel}'
 
 
 def fence(root, expected=0):
@@ -60,6 +60,8 @@ report = fence(ROOT)
 cases = [
     ('client/client.kujo', 'src.providers.fixture.provider'),
     ('client/client.kujo', 'src.storage.sqlite'),
+    ('client/client.kujo', 'src.executor.operator'),
+    ('gateway/operations.kujo', 'src.executor.approval'),
     ('domain/binding.kujo', 'src.providers.fixture.provider'),
     ('gateway/operations.kujo', 'src.application.execution'),
     ('application/execution.kujo', 'src.storage.sqlite'),
@@ -94,4 +96,4 @@ with tempfile.TemporaryDirectory(prefix='payments-fence-') as directory:
             path.unlink()
         else:
             path.write_text(original)
-print(f"Architecture: {report['summary']['files_scanned']} files; Fence passed; 9 forbidden edges and 3 coverage/external mutations rejected")
+print(f"Architecture: {report['summary']['files_scanned']} files; Fence passed; {len(cases)} forbidden edges and 3 coverage/external mutations rejected")

@@ -1,0 +1,37 @@
+from src.storage.sqlite import open_store, intake, prepare, inspect
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest
+from src.executor.approval import review_payment, approve_reviewed_payment
+
+v := parse_json(read_file("tests/fixtures/domain.json"))
+payer := v["intent"]["principal"]
+mut intent := v["intent"]
+mut snapshot := v["snapshot"]
+time_ms := current_timestamp()
+intent["expires_at_ms"] = time_ms+120000
+snapshot["expires_at_ms"] = time_ms+120000
+scope := principal_digest(payer)
+db := open_store(env("PAYMENTS_TEST_DB"))
+store := sqlite_port(db)
+assert(intake(db,scope,"operator-key","operator-digest","exec_1",intent)["ok"],"intake")
+assert(prepare(db,scope,"exec_1",0,snapshot,snapshot_digest(snapshot),time_ms),"prepare")
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+review := review_payment(store,payer,"exec_1",definition,time_ms)
+assert(review["ok"],"review")
+authority := {"payer":payer,"operator":{"type":"human","id":"operator_1","tenant_id":payer["tenant_id"]},"issuer_ref":"local-operator-v1","ttl_ms":60000}
+for changed in ["payer","operator","ttl_ms"] {
+    mut wrong := parse_json(to_json(authority))
+    if changed == "payer" { wrong["payer"] = {"type":"human","id":"other","tenant_id":payer["tenant_id"]} }
+    if changed == "operator" { wrong["operator"] = {"type":"human","id":"operator_1","tenant_id":"other"} }
+    if changed == "ttl_ms" { wrong["ttl_ms"] = 60000.0 }
+    assert(approve_reviewed_payment(store,payer,"exec_1",definition,wrong,review["binding_digest"],time_ms)["ok"] == false,"scope_window")
+}
+assert(approve_reviewed_payment(store,payer,"exec_1",definition,authority,"wrong",time_ms)["ok"] == false,"wrong_review")
+mut changed_definition := parse_json(to_json(definition))
+changed_definition["version"] = "2.0.0"
+assert(approve_reviewed_payment(store,payer,"exec_1",changed_definition,authority,review["binding_digest"],time_ms)["ok"] == false,"definition_changed")
+assert(approve_reviewed_payment(store,payer,"exec_1",definition,authority,review["binding_digest"],time_ms+120000)["ok"] == false,"expired")
+assert(db_query(db,"SELECT count(*) AS n FROM approvals",[])[0]["n"] == 0,"rejections_no_grant")
+assert(inspect(db,scope,"exec_1")["claimed"] == 0,"no_financial_execution")
+db_close(db)
+print(to_json({"ok":true,"payer":payer,"authority":authority,"review_digest":review["binding_digest"]}))

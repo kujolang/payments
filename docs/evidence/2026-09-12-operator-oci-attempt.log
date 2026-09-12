@@ -1,0 +1,12 @@
+Verified cached pinned Kujo runtime
+#0 building with "default" instance using docker-container driver
+
+#1 [internal] booting buildkit
+#1 pulling image moby/buildkit:buildx-stable-1
+#1 pulling image moby/buildkit:buildx-stable-1 21.7s done
+#1 ERROR: request returned 500 Internal Server Error for API route and version http://%2FUsers%2Frobertdevore%2F.docker%2Frun%2Fdocker.sock/v1.54/images/create?fromImage=docker.io%2Fmoby%2Fbuildkit&tag=buildx-stable-1, check if the server supports the requested API version
+------
+ > [internal] booting buildkit:
+------
+WARNING: No output specified with docker-container driver. Build result will only remain in the build cache. To push result image into registry use --push or to load image into docker use --load
+ERROR: failed to build: request returned 500 Internal Server Error for API route and version http://%2FUsers%2Frobertdevore%2F.docker%2Frun%2Fdocker.sock/v1.54/images/create?fromImage=docker.io%2Fmoby%2Fbuildkit&tag=buildx-stable-1, check if the server supports the requested API version

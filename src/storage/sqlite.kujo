@@ -199,3 +199,9 @@ export begin_provider_authorization := func(db, scope, execution_id) {
     rows := db_execute(db,"INSERT OR IGNORE INTO provider_authorizations SELECT execution_id,1 FROM executions WHERE execution_id=? AND scope=? AND state IN ('awaiting_authorization','ready') AND claimed=0 AND snapshot_json IS NOT NULL",[execution_id,scope])
     return rows == 1
 }
+
+export load_approval := func(db, scope, execution_id) {
+    rows := db_query(db,"SELECT i.approval_json FROM issued_approvals i JOIN approvals a ON a.approval_id=i.approval_id JOIN executions e ON e.execution_id=a.execution_id AND e.scope=a.scope WHERE a.scope=? AND a.execution_id=? AND a.consumed=0 AND e.state='ready' AND e.claimed=0",[scope,execution_id])
+    if len(rows) != 1 { return null }
+    return parse_json(rows[0]["approval_json"])
+}

@@ -52,3 +52,5 @@ This proves the recorded profile's synthetic checks, not resistance to kernel/hy
 ## Financial execution
 
 The network service currently accepts and tracks intent only. Its embedding executor API and fixture example exercise authorization/submission/reconciliation; the operator-facing worker/approval flow and Link live adapter are still under construction. Do not inject real payment credentials into this service merely because the synthetic containment probe passes.
+
+The OCI test runner requires Docker Buildx and explicitly loads built images into the local engine before verification. A successful build-cache export alone is insufficient evidence that the tested local image contains current source.

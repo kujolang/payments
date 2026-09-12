@@ -1,0 +1,31 @@
+// Synthetic installation for exercising the real bounded worker across processes.
+from src.storage.sqlite import open_store, intake
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest
+from src.providers.fixture.provider import fixture_provider
+from src.application.worker import worker_step
+
+v := parse_json(read_file(env("PAYMENTS_WORKER_FIXTURE")))
+db := open_store(env("PAYMENTS_TEST_DB"))
+processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+".processor")
+principal := v["intent"]["principal"]
+assert(intake(db,principal_digest(principal),"worker-key","worker-request","exec_1",v["intent"])["ok"],"intake")
+provider := fixture_provider(processor,v["snapshot"],v["capabilities"],env("PAYMENTS_FIXTURE_BEHAVIOR"))
+mut schemas := {}
+for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
+verify := func(snapshot, observation) {
+    rows := db_query(processor,"SELECT snapshot_json FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])
+    return len(rows) == 1 && snapshot_digest(parse_json(rows[0]["snapshot_json"])) == snapshot_digest(snapshot)
+}
+installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":parse_json(read_file("contracts/abilities/execute.json")),"confirmation":{"id":"fixture-ledger-v1","assurance":"provider_confirmed","verify":verify}}
+clock := func() { return current_timestamp() }
+policy := func(snapshot, invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-worker-policy","outcome":"approval_required","reason":"Separate operator approval required.","requirements":["human"],"policy_id":"fixture-worker","policy_version":"1.0.0"} }
+audit := func(phase,invocation,payload) {
+    id := invocation["invocation_id"]+":"+phase
+    db_execute(db,"INSERT OR IGNORE INTO audit VALUES(?,NULL,?)",[id,phase])
+    return {"ok":true,"written":true,"phase":phase,"event_id":id}
+}
+result := worker_step(sqlite_port(db),principal,"exec_1",installed,{"clock_ms":clock,"policy":policy,"audit":audit})
+print(to_json(result))
+db_close(processor)
+db_close(db)

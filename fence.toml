@@ -30,7 +30,7 @@ paths = ["src/providers/contract.kujo"]
 can_depend_on = []
 
 [zones.application]
-paths = ["src/application/execution.kujo"]
+paths = ["src/application/execution.kujo", "src/application/worker.kujo"]
 can_depend_on = ["domain", "ports", "provider_contract"]
 external_allow = ["ability"]
 

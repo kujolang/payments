@@ -19,3 +19,5 @@ See [local fixture](examples/local-fixture/README.md) for a synthetic purchase t
 The injected gateway authentication callback is an embedding boundary. The [deployment guide](docs/deployment.md) documents the scoped-token HTTP service and tested OCI profile. Operator financial authorization, Link execution and remaining live-provider gates are still required before real payment credentials are used.
 
 [Architecture enforcement](docs/architecture-enforcement.md) documents the checked dependency graph and negative tests.
+
+[Operator approval and bounded worker](docs/operator.md) describes the private review/approval command and host-driven lifecycle step.

@@ -1,0 +1,35 @@
+// One bounded lifecycle step. Scheduling, identity, route selection and retries
+// belong to the trusted host/Dispatch, not to another Payments workflow engine.
+from src.application.contracts import valid_store
+from src.application.execution import prepare_execution, request_provider_authorization, execute_payment, reconcile_execution
+from src.domain.binding import principal_digest
+from src.domain.lifecycle import summary
+
+export worker_step := func(store, principal, id, installed, host) {
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    try {
+        row := store["inspect"](principal_digest(principal),id)
+        if row == null { return {"ok":false,"code":"not_found"} }
+        if row["state"] == "succeeded" || row["state"] == "closed" { return {"ok":true,"result":summary(row)} }
+        provider := installed["provider"]
+        schemas := installed["schemas"]
+        clock := host["clock_ms"]
+        if row["claimed"] == 1 {
+            // Claimed rows never enter preparation or submit again, even after crash.
+            return reconcile_execution(store,principal,id,provider,schemas["observation"],installed["confirmation"],clock())
+        }
+        if row["state"] == "awaiting_authorization" {
+            prepared := prepare_execution(store,principal,id,provider,schemas,installed["currency_table"],clock(),installed["region"])
+            if prepared["ok"] == false { return prepared }
+            authorization := request_provider_authorization(store,principal,id,provider,schemas["observation"],clock())
+            if authorization["ok"] == false { return authorization }
+            return {"ok":true,"result":summary(store["inspect"](principal_digest(principal),id))}
+        }
+        if row["state"] != "ready" { return {"ok":false,"code":"invalid_worker_state"} }
+        approval := store["load_approval"](principal_digest(principal),id)
+        if approval == null { return {"ok":false,"code":"approval_unavailable"} }
+        result := execute_payment(store,principal,id,approval,installed["definition"],provider,schemas,installed["currency_table"],installed["region"],host,installed["confirmation"])
+        if has_key(result,"result") == 1 { return {"ok":result["ok"],"result":result["result"]} }
+        return {"ok":false,"code":"execution_deferred"}
+    } except e { return {"ok":false,"code":"worker_failed"} }
+}

@@ -1,4 +1,4 @@
-from src.storage.sqlite import inspect, intake, save_preparation, preparation_ref, grant, claim, record_observation, begin_ability, complete_ability, issued_approval_matches, begin_provider_authorization
+from src.storage.sqlite import inspect, intake, save_preparation, preparation_ref, grant, claim, record_observation, begin_ability, complete_ability, issued_approval_matches, begin_provider_authorization, load_approval
 
 func new_permit() {
     // Native handles share identity across callbacks; ordinary captured maps do not.
@@ -24,6 +24,7 @@ export sqlite_port := func(db) {
         "complete_ability":func(operation,key,digest,receipt) { return complete_ability(db,operation,key,digest,receipt) },
         "issued_approval_matches":func(scope,id,approval) { return issued_approval_matches(db,scope,id,approval) },
         "begin_provider_authorization":func(scope,id) { return begin_provider_authorization(db,scope,id) },
+        "load_approval":func(scope,id) { return load_approval(db,scope,id) },
         "new_permit":new_permit
     }
 }

@@ -1,0 +1,38 @@
+// Trusted local issuer. Never expose these functions as agent tools or HTTP routes.
+// Authentication is the deploying operator's OS boundary; configuration is not a login.
+from ability import approval_binding_digest
+from src.application.execution import execution_invocation, authorize_execution
+from src.domain.binding import principal_digest, snapshot_digest
+
+func current_review(store, payer, id, definition, now_ms) {
+    row := store["inspect"](principal_digest(payer),id)
+    if row == null || row["state"] != "awaiting_authorization" || row["snapshot_json"] == null || row["claimed"] != 0 { return {"ok":false,"code":"not_reviewable"} }
+    snapshot := parse_json(row["snapshot_json"])
+    if snapshot["execution_id"] != id || snapshot["principal"] != payer || snapshot_digest(snapshot) != row["snapshot_digest"] || type(now_ms) != "int" || now_ms >= row["expires_at_ms"] { return {"ok":false,"code":"invalid_review"} }
+    invocation := execution_invocation(row,payer,definition)
+    return {"ok":true,"execution_id":id,"snapshot":snapshot,"binding_digest":approval_binding_digest(invocation),"expires_at_ms":row["expires_at_ms"]}
+}
+export review_payment := func(store, payer, id, definition, now_ms) {
+    try { return current_review(store,payer,id,definition,now_ms) }
+    except e { return {"ok":false,"code":"review_failed"} }
+}
+export approve_reviewed_payment := func(store, payer, id, definition, authority, reviewed_digest, now_ms) {
+    try {
+        // This implementation grants a configured operator authority over one payer,
+        // within the same tenant. Broader delegation belongs in host authorization.
+        if authority["payer"] != payer || authority["operator"]["tenant_id"] != payer["tenant_id"] || authority["issuer_ref"] == "" { return {"ok":false,"code":"operator_scope_denied"} }
+        if type(authority["ttl_ms"]) != "int" || authority["ttl_ms"] < 1 || authority["ttl_ms"] > 300000 { return {"ok":false,"code":"invalid_approval_window"} }
+        review := current_review(store,payer,id,definition,now_ms)
+        if review["ok"] == false { return review }
+        if type(reviewed_digest) != "string" || reviewed_digest != review["binding_digest"] { return {"ok":false,"code":"review_changed"} }
+        mut expires := now_ms + authority["ttl_ms"]
+        if expires > review["expires_at_ms"] { expires = review["expires_at_ms"] }
+        approval := {"schema":"kujo.ability.approval/v1","approval_id":"operator:"+uuid_v4(),"binding_digest":reviewed_digest,"approved_by":authority["operator"],"issued_at_ms":now_ms,"expires_at_ms":expires,"nonce":uuid_v4(),"evidence":{"issuer_ref":authority["issuer_ref"],"method":"local_operator_review"}}
+        // Only the exact locally constructed approval reaches grant. No untrusted
+        // caller-provided approval, signing secret or payment credential is accepted.
+        verify := func(issuer,candidate,invocation) { return issuer == authority["issuer_ref"] && candidate == approval && approval_binding_digest(invocation) == reviewed_digest }
+        result := authorize_execution(store,payer,id,approval,definition,authority["issuer_ref"],verify,now_ms)
+        if result["ok"] == false { return {"ok":false,"code":"approval_not_committed"} }
+        return {"ok":true,"execution_id":id,"status":"ready","approval_ref":approval["approval_id"],"expires_at_ms":expires}
+    } except e { return {"ok":false,"code":"approval_failed"} }
+}

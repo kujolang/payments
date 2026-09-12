@@ -45,3 +45,9 @@ Verification note: the aggregate OCI script encountered a transient host fork/re
 ## Import boundary milestone
 
 The shared principal digest now lives in domain binding code, so intake no longer imports the private execution module. Fence is pinned in a separate development-tool project; normal tests enforce the import graph and reject nine forbidden dependency edges plus three source-coverage/external-import mutations. See docs/architecture-enforcement.md. This is static enforcement, not a runtime sandbox or a completed security gauntlet. The normal service suite and the OCI aggregate suite passed after the change.
+
+## Local operator and bounded worker milestone
+
+Added a trusted local issuer that reviews immutable terms and commits an exact Ability approval, plus a one-step worker that prepares, waits for external/operator authorization, executes through the existing one-use claim or reconciles claimed work. Scheduling stays outside Payments. See docs/operator.md for the OS authentication assumptions and private configuration. Separate-process tests exercise approval binding/expiry/scope, native authorization deduplication, concurrent dispatch, post-charge ambiguity and terminal replay without real money. This does not complete the Link or operator deployment-containment gates.
+
+Verification limitation for this milestone: the normal host suite and expanded Fence mutations passed. The new OCI run failed before any build/component test because Docker returned HTTP 500 while booting BuildKit. The prior OCI receipt belongs to the earlier tested image and does not establish Linux/containment coverage for the new operator/worker code. The runner now explicitly loads Buildx output to avoid testing stale images with a container builder; this updated path still needs a successful engine-backed run.

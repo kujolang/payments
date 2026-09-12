@@ -1,0 +1,24 @@
+// Run only in the trusted operator environment, outside the requesting runtime.
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.executor.approval import review_payment, approve_reviewed_payment
+
+func run_operator() {
+    settings := parse_json(read_file(env("PAYMENTS_OPERATOR_CONFIG")))
+    if json_schema_validate(settings,parse_json(read_file("contracts/operator.schema.json")))["valid"] == false { return {"ok":false,"code":"operator_config_invalid"} }
+    id := env("PAYMENTS_EXECUTION_ID")
+    action := env("PAYMENTS_OPERATOR_ACTION")
+    if regex_match(id,"^[A-Za-z0-9_.:-]{1,128}$") == false || (action != "review" && action != "approve") { return {"ok":false,"code":"operator_request_invalid"} }
+    db := open_store(settings["database"])
+    store := sqlite_port(db)
+    definition := parse_json(read_file("contracts/abilities/execute.json"))
+    mut result := {"ok":false,"code":"operator_failed"}
+    if action == "review" { result = review_payment(store,settings["authority"]["payer"],id,definition,current_timestamp()) }
+    else { result = approve_reviewed_payment(store,settings["authority"]["payer"],id,definition,settings["authority"],env("PAYMENTS_REVIEW_DIGEST"),current_timestamp()) }
+    db_close(db)
+    return result
+}
+mut result := {"ok":false,"code":"operator_failed"}
+try { result = run_operator() } except e { result = {"ok":false,"code":"operator_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }
