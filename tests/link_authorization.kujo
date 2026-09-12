@@ -1,0 +1,53 @@
+from src.providers.link.api import link_api
+from src.providers.link.authorization import open_link_authorizations, request_link_authorization, observe_link_authorization
+v := parse_json(read_file("tests/fixtures/domain.json"))
+snapshot := v["snapshot"]
+for scenario in ["success","lost_create","malformed","wrong_amount","wrong_currency","wrong_network","native_succeeded"] {
+    db := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-"+scenario)
+    open_link_authorizations(db)
+    ledger := db_connect("sqlite",":memory:")
+    db_execute(ledger,"CREATE TABLE calls(method TEXT NOT NULL)",[])
+    api := func(method,path,body,deadline) {
+        db_execute(ledger,"INSERT INTO calls VALUES(?)",[method])
+        if method == "POST" {
+            assert(body["amount"] == 5500 && type(body["amount"]) == "int","exact_amount")
+            assert(body["request_approval"] == true && body["test"] == true,"explicit_native_approval")
+            assert(body["credential_type"] == "shared_payment_token" && body["network_id"] == "network_1","spt_scope")
+            if scenario == "lost_create" { assert(false,"SENTINEL_OAUTH_TOKEN") }
+        }
+        mut native := {"id":"spend_1","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"approved","shared_payment_token":"SENTINEL_SPT","link_pay_token":"SENTINEL_LPT","card":{"number":"SENTINEL_PAN","cvc":"SENTINEL_CVC"},"approval_url":"SENTINEL_APPROVAL_URL"}
+        if scenario == "malformed" { return {"ok":true,"native":{"error":"SENTINEL_API_SECRET"}} }
+        if scenario == "wrong_amount" { native["amount"] = 5500.0 }
+        if scenario == "wrong_currency" { native["currency"] = "eur" }
+        if scenario == "wrong_network" { native["network_id"] = "other" }
+        if scenario == "native_succeeded" { native["status"] = "succeeded" }
+        return {"ok":true,"native":native}
+    }
+    first := request_link_authorization(db,"ref1",snapshot,"network_1","pm_fixture",true,api,10000)
+    second := request_link_authorization(db,"ref1",snapshot,"network_1","pm_fixture",true,api,10000)
+    assert(db_query(ledger,"SELECT count(*) AS n FROM calls WHERE method='POST'",[])[0]["n"] == 1,"one_issuance")
+    if scenario == "success" { assert(first == {"ok":true,"status":"authorized"} && second == first,"authorized") }
+    else {
+        if scenario == "native_succeeded" { assert(first == {"ok":true,"status":"pending_or_unknown"},"not_settlement") }
+        else { assert(first["ok"] == false && second["ok"] == false,"reject_unknown") }
+    }
+    if scenario == "success" {
+        assert(request_link_authorization(db,"ref1",snapshot,"other_network","pm_fixture",true,api,10000)["ok"] == false,"network_change")
+        assert(request_link_authorization(db,"ref1",snapshot,"network_1","pm_changed",true,api,10000)["ok"] == false,"profile_change")
+        assert(request_link_authorization(db,"ref1",snapshot,"network_1","pm_fixture",false,api,10000)["ok"] == false,"test_mode_change")
+    }
+    for result in [first,second] { assert(contains(to_json(result),"SENTINEL") == 0,"no_native_output") }
+    assert(contains(to_json(db_query(db,"SELECT * FROM link_authorizations",[])),"SENTINEL") == 0,"no_native_storage")
+    mut deleted := false
+    try { db_execute(db,"DELETE FROM link_authorizations",[]); deleted = true } except error { }
+    assert(deleted == false,"permanent_issuance")
+    db_close(ledger)
+    db_close(db)
+}
+print("Link native authorization: one-shot issuance, ambiguous no-retry, strict native binding, settlement separation and secret suppression passed")
+
+clock := func() { return 1000 }
+http := link_api("SENTINEL_OAUTH_TOKEN",clock)
+assert(http("POST","/spend_requests/create_delegated",{},10000)["code"] == "link_request_denied","no_delegated_create")
+assert(http("GET","/spend_requests/id/../../secrets",null,10000)["code"] == "link_request_denied","path_scope")
+assert(http("POST","/spend_requests",{},5000)["code"] == "link_request_denied","deadline_before_network")

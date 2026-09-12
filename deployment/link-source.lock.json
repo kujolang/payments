@@ -1,0 +1,19 @@
+{
+  "schema": "kujo.payment-provider-source/v1",
+  "repository": "https://github.com/stripe/link-cli",
+  "commit": "4aa62ba34eaeb884d00041681f5c7801521c0bf8",
+  "reviewed_at": "2026-09-12",
+  "sdk_version": "0.4.1",
+  "cli_version": "0.19.1",
+  "purpose": "Reference contract evidence; no JavaScript SDK or CLI is installed/executed by the native adapter",
+  "sha256": {
+    "packages/sdk/src/config.ts": "6e06eac8f09dc0634ef6f6abf3d0ac335931158ef0e8984074a8d2efe111a851",
+    "packages/sdk/src/resources/base.ts": "907f578a6c7c7af7e9bbc2c32dcbfd64274a2939ae59ce0be2c661aa227d6201",
+    "packages/sdk/src/resources/spend-request.ts": "eb106147ca832d494ca8c565fef2d20b6bb2815a34e4160c366d45286084868e",
+    "packages/sdk/src/resources/interfaces.ts": "adaff3d03e41868812c8b3539693f647303b689c94eabdb4e31b55b7c542553a",
+    "packages/sdk/src/types/index.ts": "ac440a7cb14d3b6668ed13620774dc453e684028ba55d65aea9a83bf455f6323",
+    "packages/cli/src/commands/mpp/pay.tsx": "34141b6330bcb658d73e2301e8ccc66b43653f6e7f840b028af50a3419b36f27",
+    "packages/cli/src/commands/mpp/decode.ts": "ec38de1bd0f6cc18838f5b43ef99d848026503b0e49a6209de281e525e6d4569",
+    "packages/cli/src/utils/format-amount.ts": "60e92716779d11f932d08a0ea6e584828fb96d0da65914daad0b1e1b0b98b8df"
+  }
+}

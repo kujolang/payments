@@ -1,0 +1,27 @@
+// Privileged Link-only transport. Successful native data must never leave this
+// adapter boundary. No CLI, redirects, automatic retry, or raw error propagation.
+export link_api := func(access_token, clock_ms) {
+    assert(type(access_token) == "string" && len(access_token) >= 1 && len(access_token) <= 8192 && regex_match(access_token,"^[A-Za-z0-9._~+/-]+={0,2}$"),"link_token_invalid")
+    return func(method, path, body, deadline_ms) {
+        try {
+            allowed := (method == "POST" && path == "/spend_requests") || (method == "GET" && regex_match(path,"^/spend_requests/[A-Za-z0-9_]{1,128}(\\?include=shared_payment_token)?$"))
+            if allowed == false || type(deadline_ms) != "int" || clock_ms()+5000 >= deadline_ms { return {"ok":false,"code":"link_request_denied"} }
+            mut options := {"method":method,"headers":{"Authorization":"Bearer "+access_token,"Content-Type":"application/json"},"timeout":5,"max_response_bytes":65536,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"}
+            if method == "POST" {
+                encoded := to_json(body)
+                if len(encoded) > 8192 { return {"ok":false,"code":"link_request_denied"} }
+                options["body"] = encoded
+            }
+            response := http_request("https://api.link.com"+path,options)
+            match response {
+                case Ok(value): {
+                    if value["_status"] < 200 || value["_status"] >= 300 { return {"ok":false,"code":"link_outcome_unknown"} }
+                    native := parse_json(value["_body"])
+                    if type(native) != "dict" { return {"ok":false,"code":"link_response_invalid"} }
+                    return {"ok":true,"native":native}
+                }
+                case Err(error): { return {"ok":false,"code":"link_outcome_unknown"} }
+            }
+        } except error { return {"ok":false,"code":"link_outcome_unknown"} }
+    }
+}

@@ -1,0 +1,18 @@
+from src.providers.link.authorization import open_link_authorizations, request_link_authorization
+v := parse_json(read_file("tests/fixtures/domain.json"))
+db := db_connect("sqlite",env("PAYMENTS_LINK_DB"))
+open_link_authorizations(db)
+if env("PAYMENTS_LINK_INIT") == "1" { db_close(db); exit(0) }
+ledger := db_connect("sqlite",env("PAYMENTS_LINK_LEDGER"))
+db_query(ledger,"PRAGMA busy_timeout=5000",[])
+api := func(method,path,body,deadline) {
+    if method == "POST" {
+        db_execute(ledger,"INSERT INTO calls VALUES(?)",[body["idempotency_key"]])
+        if env("PAYMENTS_LINK_LOST") == "1" { assert(false,"SENTINEL_LINK_LOST_RESPONSE") }
+    }
+    return {"ok":true,"native":{"id":"spend_race","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"approved"}}
+}
+result := request_link_authorization(db,"race-ref",v["snapshot"],"network_1","pm_fixture",true,api,10000)
+print(to_json(result))
+db_close(ledger)
+db_close(db)

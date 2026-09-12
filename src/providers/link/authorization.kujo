@@ -1,0 +1,57 @@
+// Private adapter journal: use a provider-owned database, never the model's
+// journal or tool context. Persist references, never native response bodies.
+from src.domain.binding import frame, snapshot_digest
+
+export open_link_authorizations := func(db) {
+    db_query(db,"PRAGMA busy_timeout=5000",[])
+    db_query(db,"PRAGMA journal_mode=WAL",[])
+    db_query(db,"PRAGMA synchronous=FULL",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS link_authorizations(ref TEXT PRIMARY KEY,digest TEXT NOT NULL,account_ref TEXT NOT NULL,network_id TEXT NOT NULL,request_key TEXT NOT NULL UNIQUE,native_id TEXT)",[])
+    db_execute(db,"CREATE UNIQUE INDEX IF NOT EXISTS link_native_once ON link_authorizations(native_id) WHERE native_id IS NOT NULL",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_issuance_tombstone BEFORE DELETE ON link_authorizations BEGIN SELECT RAISE(ABORT,'link_issuance_permanent'); END",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_issuance_immutable BEFORE UPDATE ON link_authorizations WHEN NEW.ref != OLD.ref OR NEW.digest != OLD.digest OR NEW.account_ref != OLD.account_ref OR NEW.network_id != OLD.network_id OR NEW.request_key != OLD.request_key OR (OLD.native_id IS NOT NULL AND NEW.native_id IS NOT OLD.native_id) BEGIN SELECT RAISE(ABORT,'link_issuance_immutable'); END",[])
+}
+func unknown() { return {"ok":false,"code":"link_authorization_unknown"} }
+func matching(native, snapshot, network_id) {
+    if type(native) != "dict" { return false }
+    for field in ["id","amount","currency","credential_type","network_id","status"] { if has_key(native,field) == 0 { return false } }
+    return type(native["id"]) == "string" && regex_match(native["id"],"^[A-Za-z0-9_]{1,128}$") && type(native["amount"]) == "int" && native["amount"] == snapshot["charge"]["minor"] && native["currency"] == to_lower(snapshot["charge"]["currency"]) && native["credential_type"] == "shared_payment_token" && native["network_id"] == network_id
+}
+export observe_link_authorization := func(db, ref, snapshot, api, deadline_ms) {
+    try {
+        rows := db_query(db,"SELECT * FROM link_authorizations WHERE ref=?",[ref])
+        if len(rows) != 1 || rows[0]["digest"] != snapshot_digest(snapshot) || rows[0]["account_ref"] != snapshot["provider"]["account_ref"] || rows[0]["native_id"] == null { return unknown() }
+        row := rows[0]
+        result := api("GET","/spend_requests/"+row["native_id"],null,deadline_ms)
+        if result["ok"] != true { return unknown() }
+        native := result["native"]
+        if matching(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] { return unknown() }
+        if native["status"] == "approved" { return {"ok":true,"status":"authorized"} }
+        // Native succeeded/failed/canceled are not merchant settlement evidence.
+        return {"ok":true,"status":"pending_or_unknown"}
+    } except error { return unknown() }
+}
+export request_link_authorization := func(db, ref, snapshot, network_id, payment_method, test_mode, api, deadline_ms) {
+    try {
+        if type(network_id) != "string" || regex_match(network_id,"^[A-Za-z0-9_]{1,128}$") == false || type(payment_method) != "string" || regex_match(payment_method,"^[A-Za-z0-9_]{1,128}$") == false || type(test_mode) != "bool" { return unknown() }
+        digest := snapshot_digest(snapshot)
+        key := sha256(frame(["kujo.link.spend-request/v1",snapshot["principal"]["tenant_id"],snapshot["provider"]["account_ref"],ref,digest,network_id,payment_method,to_string(test_mode)]))
+        // Reserve before any effect. Issuance idempotency is additional protection,
+        // not permission to retry a lost response with unknown native retention.
+        claimed := db_execute(db,"INSERT OR IGNORE INTO link_authorizations VALUES(?,?,?,?,?,NULL)",[ref,digest,snapshot["provider"]["account_ref"],network_id,key])
+        if claimed == 0 {
+            prior := db_query(db,"SELECT request_key FROM link_authorizations WHERE ref=?",[ref])
+            if len(prior) != 1 || prior[0]["request_key"] != key { return unknown() }
+            return observe_link_authorization(db,ref,snapshot,api,deadline_ms)
+        }
+        body := {"idempotency_key":key,"payment_details":payment_method,"credential_type":"shared_payment_token","network_id":network_id,"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"context":"Authorized Kujo purchase "+ref,"request_approval":true,"test":test_mode}
+        result := api("POST","/spend_requests",body,deadline_ms)
+        if result["ok"] != true { return unknown() }
+        native := result["native"]
+        if type(native) != "dict" || has_key(native,"id") == 0 || type(native["id"]) != "string" || regex_match(native["id"],"^[A-Za-z0-9_]{1,128}$") == false { return unknown() }
+        db_execute(db,"UPDATE link_authorizations SET native_id=? WHERE ref=? AND native_id IS NULL",[native["id"],ref])
+        if matching(native,snapshot,network_id) == false { return unknown() }
+        if native["status"] == "approved" { return {"ok":true,"status":"authorized"} }
+        return {"ok":true,"status":"pending_or_unknown"}
+    } except error { return unknown() }
+}
