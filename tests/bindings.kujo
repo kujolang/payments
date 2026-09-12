@@ -1,0 +1,10 @@
+from src.domain.binding import intent_digest, snapshot_digest, capabilities_digest
+vectors := parse_json(read_file("tests/fixtures/binding-vectors.json"))
+for vector in vectors {
+    mut actual := ""
+    if vector["kind"] == "intent" { actual = intent_digest(vector["value"]) }
+    if vector["kind"] == "snapshot" { actual = snapshot_digest(vector["value"]) }
+    if vector["kind"] == "capabilities" { actual = capabilities_digest(vector["value"]) }
+    assert(actual == vector["sha256"], "binding_mismatch_" + vector["kind"] + "_" + vector["name"])
+}
+print("Cross-language binding vectors passed:", len(vectors))

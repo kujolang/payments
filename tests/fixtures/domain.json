@@ -1,0 +1,196 @@
+{
+  "intent": {
+    "schema": "kujo.payment-intent/v1",
+    "intent_id": "intent_1",
+    "purchase_ref": "purchase_1",
+    "principal": {
+      "type": "user",
+      "id": "user_1",
+      "tenant_id": "tenant_1"
+    },
+    "kind": "purchase",
+    "payee_ref": "merchant_1",
+    "amount": {
+      "mode": "maximum",
+      "minor": 5500,
+      "currency": "USD"
+    },
+    "purpose": "Purchase example",
+    "expires_at_ms": 2000,
+    "payment_profile": "default",
+    "correlation_id": "correlation_1"
+  },
+  "snapshot": {
+    "principal": {
+      "type": "user",
+      "id": "user_1",
+      "tenant_id": "tenant_1"
+    },
+    "execution_id": "exec_1",
+    "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "payee": {
+      "id": "merchant_1",
+      "registry_version": "v1",
+      "display_name": "Example Merchant",
+      "origin": "https://example.com"
+    },
+    "charge": {
+      "minor": 5500,
+      "currency": "USD"
+    },
+    "currency_table_version": "fixture-v1",
+    "request_binding": {
+      "route_id": "mpp_1",
+      "route_version": "v1",
+      "resource_ref": "order_1",
+      "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "payment_profile": {
+      "alias": "default",
+      "version": "v1"
+    },
+    "shipping_profile": null,
+    "provider": {
+      "id": "fixture",
+      "adapter_version": "1.0.0",
+      "account_ref": "account_1"
+    },
+    "execution_class": "machine",
+    "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "expires_at_ms": 2000
+  },
+  "execution": {
+    "schema": "kujo.payment-execution/v1",
+    "execution_id": "exec_1",
+    "intent_id": "intent_1",
+    "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "snapshot": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": null,
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "state": "ready",
+    "revision": 1,
+    "created_at_ms": 1000,
+    "updated_at_ms": 1001,
+    "submission_claimed": false,
+    "evidence_refs": [],
+    "closed_reason": null,
+    "next_action": null
+  },
+  "authorization": {
+    "schema": "kujo.payment-authorization/v1",
+    "authorization_id": "authorization_1",
+    "execution_id": "exec_1",
+    "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "ability_approval_id": "approval_1",
+    "authority_ref": "issuer_1",
+    "provider_authorization_ref": null,
+    "expires_at_ms": 2000,
+    "state": "granted"
+  },
+  "receipt": {
+    "schema": "kujo.payment-receipt/v1",
+    "receipt_id": "receipt_1",
+    "execution_id": "exec_1",
+    "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "outcome": "succeeded",
+    "observed_amount": {
+      "minor": 5500,
+      "currency": "USD"
+    },
+    "observed_at_ms": 1500,
+    "evidence_ref": "evidence_1",
+    "confirmation_rule_ref": "rule_v1",
+    "assurance": "provider_confirmed"
+  },
+  "observation": {
+    "schema": "kujo.payment-observation/v1",
+    "execution_id": "exec_1",
+    "snapshot_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "phase": "execution",
+    "outcome": "succeeded",
+    "observed_at_ms": 1500,
+    "evidence_ref": "evidence_1",
+    "actual_amount": {
+      "minor": 5500,
+      "currency": "USD"
+    },
+    "next_action": null,
+    "retry_after_ms": null
+  },
+  "capabilities": {
+    "schema": "kujo.payment-capabilities/v1",
+    "provider_id": "fixture",
+    "adapter_version": "1.0.0",
+    "actions": [
+      "purchase"
+    ],
+    "execution_classes": [
+      "machine"
+    ],
+    "observed_at_ms": 1000,
+    "valid_until_ms": 2000,
+    "observation_support": {
+      "authorization": true,
+      "execution": true
+    },
+    "replay_protection": {
+      "strategy": "one_shot",
+      "retention_ms": null
+    },
+    "constraints": {
+      "currencies": [
+        "USD"
+      ],
+      "regions": [
+        "US"
+      ],
+      "amount_limits": [
+        {
+          "currency": "USD",
+          "minimum_minor": 1,
+          "maximum_minor": null
+        }
+      ],
+      "authorization_required": true,
+      "credential_expires_at_ms": null,
+      "available": true
+    }
+  }
+}

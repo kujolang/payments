@@ -1,0 +1,89 @@
+func present(obj, key) { if has_key(obj, key) { return true } return false }
+func includes(values, value) { if contains(values, value) { return true } return false }
+func joined(groups) {
+    mut result := []
+    for group in groups { for value in group { result = push(result, value) } }
+    return result
+}
+// Payment-domain binding; Ability keeps its own public approval binding.
+export frame := func(parts) {
+    mut result := ""
+    for part in parts {
+        assert(type(part) == "string", "binding_field_type")
+        result = result + to_string(byte_length(part)) + ":" + part
+    }
+    return result
+}
+func optional(value) {
+    if value == null { return ["0"] }
+    return ["1", to_string(value)]
+}
+func scalar(value) {
+    if type(value) == "bool" {
+        if value { return "true" }
+        return "false"
+    }
+    return to_string(value)
+}
+func nullable(value) {
+    if value == null { return ["0"] }
+    return ["1", scalar(value)]
+}
+func maybe(obj, key) {
+    if present(obj, key) { return obj[key] }
+    return null
+}
+func list_parts(values) {
+    mut parts := [to_string(len(values))]
+    for value in values { parts = push(parts, value) }
+    return parts
+}
+func nullable_set(values) {
+    if values == null { return ["0"] }
+    return joined([["1"], list_parts(sort(values))])
+}
+export intent_parts := func(value) {
+    a := value["amount"]
+    p := value["principal"]
+    mut parts := ["kujo.payment-intent-binding/v1", value["intent_id"], value["purchase_ref"], p["type"], p["id"], p["tenant_id"], value["kind"], value["payee_ref"], a["mode"], to_string(a["minor"]), a["currency"], value["purpose"], to_string(value["expires_at_ms"]), value["payment_profile"], value["correlation_id"]]
+    parts = joined([parts, optional(maybe(value, "shipping_profile")), optional(maybe(value, "provider_preference"))])
+    mut items := []
+    if present(value, "items") { items = value["items"] }
+    parts = push(parts, to_string(len(items)))
+    for item in items { parts = joined([parts, [item["sku"], to_string(item["quantity"])]]) }
+    return parts
+}
+export snapshot_parts := func(value) {
+    p := value["principal"]
+    payee := value["payee"]
+    charge := value["charge"]
+    request := value["request_binding"]
+    profile := value["payment_profile"]
+    provider := value["provider"]
+    mut parts := ["kujo.payment-snapshot-binding/v1", p["type"], p["id"], p["tenant_id"], value["execution_id"], value["intent_digest"], payee["id"], payee["registry_version"], payee["display_name"], payee["origin"], to_string(charge["minor"]), charge["currency"], value["currency_table_version"], request["route_id"], request["route_version"], request["resource_ref"], request["terms_digest"], profile["alias"], profile["version"]]
+    shipping := value["shipping_profile"]
+    if shipping == null { parts = push(parts, "0") }
+    else { parts = joined([parts, ["1", shipping["alias"], shipping["version"]]]) }
+    return joined([parts, [provider["id"], provider["adapter_version"], provider["account_ref"], value["execution_class"], value["capabilities_digest"], to_string(value["expires_at_ms"])]])
+}
+export capability_parts := func(value) {
+    c := value["constraints"]
+    replay := value["replay_protection"]
+    obs := value["observation_support"]
+    mut parts := joined([["kujo.payment-capabilities-binding/v1", value["schema"], value["provider_id"], value["adapter_version"]], list_parts(sort(value["actions"])), list_parts(sort(value["execution_classes"]))])
+    parts = joined([parts, [to_string(value["observed_at_ms"]), to_string(value["valid_until_ms"]), scalar(obs["authorization"]), scalar(obs["execution"]), replay["strategy"]], nullable(replay["retention_ms"]), nullable_set(c["currencies"]), nullable_set(c["regions"])])
+    mut limits := parse_json("{}")
+    for limit in c["amount_limits"] {
+        assert(!present(limits, limit["currency"]), "duplicate_currency_limit")
+        limits[limit["currency"]] := limit
+    }
+    parts = push(parts, to_string(len(limits)))
+    for currency in sort(keys(limits)) {
+        limit := limits[currency]
+        parts = joined([parts, [currency], nullable(limit["minimum_minor"]), nullable(limit["maximum_minor"])])
+    }
+    return joined([parts, nullable(c["authorization_required"]), nullable(c["credential_expires_at_ms"]), nullable(c["available"])])
+}
+export intent_digest := func(value) { return sha256(frame(intent_parts(value))) }
+export snapshot_digest := func(value) { return sha256(frame(snapshot_parts(value))) }
+export capabilities_digest := func(value) { return sha256(frame(capability_parts(value))) }

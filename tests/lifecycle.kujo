@@ -1,0 +1,32 @@
+from src.domain.lifecycle import transition, observation_event, summary
+states := ["awaiting_authorization","ready","executing","reconciliation_required","succeeded","closed"]
+events := ["grant","claim","deny","expire","cancel","unsupported","pending","unknown","succeeded","failed_no_effect"]
+// Independent explicit allowed-pair oracle.
+allowed := ["awaiting_authorization:grant","awaiting_authorization:deny","awaiting_authorization:expire","awaiting_authorization:cancel","awaiting_authorization:unsupported","ready:claim","ready:deny","ready:expire","ready:cancel","ready:unsupported","executing:pending","executing:unknown","executing:succeeded","executing:failed_no_effect","reconciliation_required:pending","reconciliation_required:unknown","reconciliation_required:succeeded","reconciliation_required:failed_no_effect"]
+for state in states {
+    for event in events {
+        mut claimed := false
+        if state == "executing" || state == "reconciliation_required" { claimed = true }
+        mut expected := false
+        if contains(allowed,state + ":" + event) { expected = true }
+        assert(transition(state,event,claimed)["ok"] == expected,"transition_matrix")
+    }
+}
+assert(transition("ready","claim",true)["ok"] == false,"claim_not_recreated")
+examples := parse_json(read_file("tests/fixtures/domain.json"))
+o := examples["observation"]
+schema := parse_json(read_file("contracts/observation.schema.json"))
+charge := o["actual_amount"]
+assert(observation_event(o,schema,"exec_1",o["snapshot_digest"],charge,1500) == "succeeded","observed_success")
+for field in ["execution_id","snapshot_digest","phase","outcome"] {
+    mut changed := parse_json(to_json(o))
+    changed[field] = "wrong"
+    assert(observation_event(changed,schema,"exec_1",o["snapshot_digest"],charge,1500) == "unknown","mismatched_evidence")
+}
+mut changed := parse_json(to_json(o))
+changed["actual_amount"] = {"minor":5501,"currency":"USD"}
+assert(observation_event(changed,schema,"exec_1",o["snapshot_digest"],charge,1500) == "unknown","wrong_charge")
+changed = parse_json(to_json(o))
+changed["outcome"] = "authorized"
+assert(observation_event(changed,schema,"exec_1",o["snapshot_digest"],charge,1500) == "unknown","authorization_not_payment")
+print("Lifecycle: 60 state/event cases and evidence mismatch checks passed")

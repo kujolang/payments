@@ -1,0 +1,75 @@
+{
+  "schema": "kujo.ability/v1",
+  "id": "kujo.payments.execution.reconcile",
+  "version": "1.0.0",
+  "description": "Observe authoritative payment evidence without permission to submit funds.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "execution_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      }
+    },
+    "required": [
+      "execution_id"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "execution_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "status": {
+        "enum": [
+          "awaiting_authorization",
+          "ready",
+          "executing",
+          "reconciliation_required",
+          "succeeded",
+          "closed"
+        ]
+      },
+      "next_action": {
+        "enum": [
+          "none",
+          "await_authorization",
+          "await_provider",
+          "operator_review",
+          "inspect_receipt"
+        ]
+      },
+      "receipt_ref": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "execution_id",
+      "status",
+      "next_action",
+      "receipt_ref"
+    ],
+    "additionalProperties": false
+  },
+  "effects": [
+    {
+      "kind": "external",
+      "resource": "kujo.payments.evidence"
+    },
+    {
+      "kind": "write",
+      "resource": "kujo.payments.execution"
+    }
+  ],
+  "idempotency": {
+    "mode": "keyed"
+  }
+}

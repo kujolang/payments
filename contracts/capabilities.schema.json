@@ -1,0 +1,228 @@
+{
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "kujo.payment-capabilities/v1"
+    },
+    "provider_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "adapter_version": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "purchase"
+        ]
+      },
+      "maxItems": 1
+    },
+    "execution_classes": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "machine",
+          "provider_hosted",
+          "browser_injection"
+        ]
+      },
+      "maxItems": 3
+    },
+    "observed_at_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "valid_until_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "observation_support": {
+      "type": "object",
+      "properties": {
+        "authorization": {
+          "type": "boolean"
+        },
+        "execution": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "authorization",
+        "execution"
+      ],
+      "additionalProperties": false
+    },
+    "replay_protection": {
+      "type": "object",
+      "properties": {
+        "strategy": {
+          "enum": [
+            "provider_key",
+            "one_shot"
+          ]
+        },
+        "retention_ms": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "strategy",
+        "retention_ms"
+      ],
+      "additionalProperties": false
+    },
+    "constraints": {
+      "type": "object",
+      "properties": {
+        "currencies": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "maxItems": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "regions": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "maxItems": 100
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "amount_limits": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              },
+              "minimum_minor": {
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "maximum_minor": {
+                "oneOf": [
+                  {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "currency",
+              "minimum_minor",
+              "maximum_minor"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 100
+        },
+        "authorization_required": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "credential_expires_at_ms": {
+          "oneOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "available": {
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "currencies",
+        "regions",
+        "amount_limits",
+        "authorization_required",
+        "credential_expires_at_ms",
+        "available"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema",
+    "provider_id",
+    "adapter_version",
+    "actions",
+    "execution_classes",
+    "observed_at_ms",
+    "valid_until_ms",
+    "observation_support",
+    "replay_protection",
+    "constraints"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,7 @@
+.local/
+*.db
+*.db-wal
+*.db-shm
+__pycache__/
+kennel_packages/
+.kennel_tmp/

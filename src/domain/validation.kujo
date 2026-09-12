@@ -1,0 +1,84 @@
+func present(obj, key) { if has_key(obj, key) { return true } return false }
+func includes(values, value) { if contains(values, value) { return true } return false }
+from src.domain.binding import intent_digest, capabilities_digest
+
+export valid_money := func(value, table) {
+    if type(value) != "dict" || type(table) != "dict" { return false }
+    if !present(value, "minor") || !present(value, "currency") { return false }
+    n := value["minor"]
+    c := value["currency"]
+    if type(n) != "int" || n < 1 || n > 9007199254740991 || type(c) != "string" { return false }
+    if !present(table, "version") || !present(table, "exponents") { return false }
+    if type(table["version"]) != "string" || table["version"] == "" { return false }
+    if !present(table["exponents"], c) { return false }
+    exponent := table["exponents"][c]
+    return type(exponent) == "int" && exponent >= 0 && exponent <= 4
+}
+func unique(values) {
+    if values == null { return true }
+    mut seen := parse_json("{}")
+    for value in values {
+        if present(seen, value) { return false }
+        seen[value] := true
+    }
+    return true
+}
+export valid_capabilities := func(value, schema, now_ms) {
+    if json_schema_validate(value, schema)["valid"] == false { return false }
+    if type(now_ms) != "int" || value["observed_at_ms"] > now_ms || value["valid_until_ms"] <= now_ms { return false }
+    c := value["constraints"]
+    if unique(value["actions"]) == false || unique(value["execution_classes"]) == false || unique(c["currencies"]) == false || unique(c["regions"]) == false { return false }
+    mut currencies := []
+    for limit in c["amount_limits"] {
+        currencies = push(currencies, limit["currency"])
+        low := limit["minimum_minor"]
+        high := limit["maximum_minor"]
+        if low != null && type(low) != "int" { return false }
+        if high != null && type(high) != "int" { return false }
+        if low != null && high != null && low > high { return false }
+    }
+    return unique(currencies)
+}
+export valid_intent := func(value, schema, table, now_ms) {
+    if json_schema_validate(value, schema)["valid"] == false { return false }
+    if valid_money(value["amount"], table) == false { return false }
+    if type(value["expires_at_ms"]) != "int" || type(now_ms) != "int" || now_ms < 0 || value["expires_at_ms"] <= now_ms { return false }
+    if present(value, "items") {
+        for item in value["items"] {
+            if type(item["quantity"]) != "int" { return false }
+        }
+    }
+    return true
+}
+export valid_snapshot := func(value, schema, intent, capabilities, table, now_ms, region) {
+    if json_schema_validate(value, schema)["valid"] == false { return false }
+    if valid_money(value["charge"], table) == false { return false }
+    if value["currency_table_version"] != table["version"] || value["intent_digest"] != intent_digest(intent) { return false }
+    if value["capabilities_digest"] != capabilities_digest(capabilities) { return false }
+    for field in ["type", "id", "tenant_id"] {
+        if value["principal"][field] != intent["principal"][field] { return false }
+    }
+    if value["payee"]["id"] != intent["payee_ref"] || value["payment_profile"]["alias"] != intent["payment_profile"] { return false }
+    if present(intent, "shipping_profile") {
+        if value["shipping_profile"] == null || value["shipping_profile"]["alias"] != intent["shipping_profile"] { return false }
+    } else { if value["shipping_profile"] != null { return false } }
+    charge := value["charge"]
+    wanted := intent["amount"]
+    if charge["currency"] != wanted["currency"] || charge["minor"] > wanted["minor"] { return false }
+    if wanted["mode"] == "exact" && charge["minor"] != wanted["minor"] { return false }
+    if value["execution_class"] != "machine" || !includes(capabilities["execution_classes"], "machine") || !includes(capabilities["actions"], "purchase") { return false }
+    if value["provider"]["id"] != capabilities["provider_id"] || value["provider"]["adapter_version"] != capabilities["adapter_version"] { return false }
+    if type(value["expires_at_ms"]) != "int" || value["expires_at_ms"] <= now_ms || value["expires_at_ms"] > intent["expires_at_ms"] { return false }
+    if capabilities["observed_at_ms"] > now_ms || capabilities["valid_until_ms"] <= now_ms { return false }
+    c := capabilities["constraints"]
+    if c["available"] != true || c["currencies"] == null || c["regions"] == null { return false }
+    if !includes(c["currencies"], charge["currency"]) || !includes(c["regions"], region) { return false }
+    if c["credential_expires_at_ms"] != null && c["credential_expires_at_ms"] <= now_ms { return false }
+    for limit in c["amount_limits"] {
+        if limit["currency"] == charge["currency"] {
+            if limit["minimum_minor"] != null && charge["minor"] < limit["minimum_minor"] { return false }
+            if limit["maximum_minor"] != null && charge["minor"] > limit["maximum_minor"] { return false }
+        }
+    }
+    return true
+}

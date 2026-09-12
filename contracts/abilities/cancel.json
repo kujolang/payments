@@ -1,0 +1,77 @@
+{
+  "schema": "kujo.ability/v1",
+  "id": "kujo.payments.intent.cancel",
+  "version": "1.0.0",
+  "description": "Cancel an unsubmitted purchase; in-flight payments require observation.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "execution_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "expected_revision": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 9007199254740991
+      }
+    },
+    "required": [
+      "execution_id",
+      "expected_revision"
+    ],
+    "additionalProperties": false
+  },
+  "output_schema": {
+    "type": "object",
+    "properties": {
+      "execution_id": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 128
+      },
+      "status": {
+        "enum": [
+          "awaiting_authorization",
+          "ready",
+          "executing",
+          "reconciliation_required",
+          "succeeded",
+          "closed"
+        ]
+      },
+      "next_action": {
+        "enum": [
+          "none",
+          "await_authorization",
+          "await_provider",
+          "operator_review",
+          "inspect_receipt"
+        ]
+      },
+      "receipt_ref": {
+        "type": [
+          "string",
+          "null"
+        ]
+      }
+    },
+    "required": [
+      "execution_id",
+      "status",
+      "next_action",
+      "receipt_ref"
+    ],
+    "additionalProperties": false
+  },
+  "effects": [
+    {
+      "kind": "write",
+      "resource": "kujo.payments.intent"
+    }
+  ],
+  "idempotency": {
+    "mode": "keyed"
+  }
+}

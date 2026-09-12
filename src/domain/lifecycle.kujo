@@ -1,0 +1,46 @@
+export transition := func(state, event, claimed) {
+    if type(claimed) != "bool" { return {"ok":false,"code":"invalid_transition"} }
+    if (state == "awaiting_authorization" || state == "ready") && claimed { return {"ok":false,"code":"invalid_transition"} }
+    if state == "succeeded" || state == "closed" { return {"ok":false,"code":"terminal_execution"} }
+    if state == "awaiting_authorization" && event == "grant" { return {"ok":true,"state":"ready"} }
+    if (state == "awaiting_authorization" || state == "ready") && (event == "deny" || event == "expire" || event == "cancel" || event == "unsupported") { return {"ok":true,"state":"closed"} }
+    if state == "ready" && event == "claim" && claimed == false { return {"ok":true,"state":"executing"} }
+    if (state == "executing" || state == "reconciliation_required") && claimed {
+        if event == "pending" { return {"ok":true,"state":"executing"} }
+        if event == "unknown" { return {"ok":true,"state":"reconciliation_required"} }
+        if event == "succeeded" { return {"ok":true,"state":"succeeded"} }
+        if event == "failed_no_effect" { return {"ok":true,"state":"closed"} }
+    }
+    return {"ok":false,"code":"invalid_transition"}
+}
+
+export observation_event := func(observation, schema, execution_id, digest, exact_charge, now_ms) {
+    // Financial evidence authenticity and native account/payee correlation are
+    // additional mandatory executor checks; this validates portable consistency.
+    if json_schema_validate(observation, schema)["valid"] == false { return "unknown" }
+    if observation["execution_id"] != execution_id || observation["snapshot_digest"] != digest || observation["phase"] != "execution" { return "unknown" }
+    if type(observation["observed_at_ms"]) != "int" || observation["observed_at_ms"] > now_ms { return "unknown" }
+    outcome := observation["outcome"]
+    if outcome == "succeeded" {
+        amount := observation["actual_amount"]
+        if amount == null || type(amount["minor"]) != "int" || amount["minor"] != exact_charge["minor"] || amount["currency"] != exact_charge["currency"] || observation["evidence_ref"] == null { return "unknown" }
+        return "succeeded"
+    }
+    if outcome == "failed_no_effect" {
+        if observation["actual_amount"] != null || observation["evidence_ref"] == null { return "unknown" }
+        return "failed_no_effect"
+    }
+    if outcome == "pending" && observation["actual_amount"] == null { return "pending" }
+    return "unknown"
+}
+
+export summary := func(row) {
+    mut next := "none"
+    state := row["state"]
+    if state == "awaiting_authorization" { next = "await_authorization" }
+    if state == "ready" || state == "executing" { next = "await_provider" }
+    if state == "reconciliation_required" { next = "operator_review" }
+    mut receipt_ref := null
+    if state == "succeeded" { next = "inspect_receipt"; receipt_ref = "receipt:" + row["execution_id"] }
+    return {"execution_id":row["execution_id"],"status":state,"next_action":next,"receipt_ref":receipt_ref}
+}

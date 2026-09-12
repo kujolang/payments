@@ -1,0 +1,16 @@
+from ability import validate_ability_definition, validate_ability_value
+for name in ["request","inspect","cancel","execute","reconcile"] {
+    definition := parse_json(read_file("contracts/abilities/" + name + ".json"))
+    assert(validate_ability_definition(definition)["ok"],"ability_definition")
+}
+request := parse_json(read_file("contracts/abilities/request.json"))
+status := parse_json(read_file("contracts/abilities/inspect.json"))
+assert(request["idempotency"]["mode"] == "keyed","request_keyed")
+assert(status["idempotency"]["mode"] == "intrinsic","status_fresh")
+assert(validate_ability_value({"execution_id":"e1","token":"fake-secret"},status["input_schema"],"input")["ok"] == false,"closed_gateway_input")
+for name in ["intent","snapshot","capabilities","observation","authorization","execution","receipt"] {
+    schema := parse_json(read_file("contracts/" + name + ".schema.json"))
+    examples := parse_json(read_file("tests/fixtures/domain.json"))
+    assert(json_schema_validate(examples[name],schema)["valid"],"domain_schema")
+}
+print("Pinned Ability definitions and seven domain schemas passed")

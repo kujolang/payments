@@ -1,0 +1,59 @@
+[build]
+artifacts = []
+command = ""
+output = "dist"
+
+[dependencies.ability]
+commit = "e5a74803c822de79e934d2bea82d615d8be3bbee"
+source = "github:kujolang/ability"
+
+[dev-dependencies]
+
+[kujo]
+entry = "src/domain/binding.kujo"
+excludes = [".git", "kennel_packages", "dist", "build", "node_modules"]
+includes = ["README.md"]
+minimum_version = "1.4.0"
+sources = ["."]
+
+[package]
+authors = []
+categories = []
+description = "Authorized buyer-side payment execution and reconciliation."
+documentation = ""
+homepage = ""
+keywords = []
+license = "MIT"
+name = "payments"
+readme = "README.md"
+repository = "https://github.com/kujolang/payments"
+version = "0.1.0"
+
+[package.exports]
+
+[package.metadata]
+
+[package.status]
+notes = "In development; no live provider enabled or deployment certified."
+public_api = false
+stability = "experimental"
+stage = "experimental"
+
+[policy.resolution]
+semver_ranges = false
+
+[policy.source]
+allow_mutable_refs = false
+strict_mutable_refs = false
+
+[registry]
+index = ""
+mirrors = []
+publish = ""
+
+[scripts]
+
+[trust]
+checksum = ""
+signature = ""
+signing_key = ""

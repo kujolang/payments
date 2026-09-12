@@ -1,0 +1,7 @@
+[project]
+name = "payments"
+version = "0.1.0-dev"
+description = "Authorized buyer-side payment execution and reconciliation."
+
+[kujo]
+minimum_version = "1.4.0"

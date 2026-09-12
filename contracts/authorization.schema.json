@@ -1,0 +1,75 @@
+{
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "kujo.payment-authorization/v1"
+    },
+    "authorization_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "execution_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "snapshot_digest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "ability_approval_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "authority_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "provider_authorization_ref": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expires_at_ms": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9007199254740991
+    },
+    "state": {
+      "enum": [
+        "requested",
+        "granted",
+        "consumed",
+        "revoked",
+        "expired"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "authorization_id",
+    "execution_id",
+    "snapshot_digest",
+    "ability_approval_id",
+    "authority_ref",
+    "provider_authorization_ref",
+    "expires_at_ms",
+    "state"
+  ],
+  "additionalProperties": false
+}

@@ -1,0 +1,2801 @@
+[
+  {
+    "kind": "intent",
+    "name": "base",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "309127d476d77d0c906bb36a598ce75aff435d4961a07af75ba1dd652981c276"
+  },
+  {
+    "kind": "intent",
+    "name": "intent_id",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1-changed",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "26aec9c2aad8c00b6eaf530bf1520ffe6704613c5a5c8e88de7e312e697d4506"
+  },
+  {
+    "kind": "intent",
+    "name": "purchase_ref",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1-changed",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "10bf2fad4e173f80de8f8e4a5de01c675359416d3f3d657977b47161eed8f351"
+  },
+  {
+    "kind": "intent",
+    "name": "principal.type",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user-changed",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "5baa62c59c9e55fbc2544355c8e8f7b8e8cb7b966fc4eb82f9431c874b22f228"
+  },
+  {
+    "kind": "intent",
+    "name": "principal.id",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1-changed",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "dc6cc10ecbe21ef856e76ebd31996ef1a8ca12527ec791b50a3f3bd602f58641"
+  },
+  {
+    "kind": "intent",
+    "name": "principal.tenant_id",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1-changed"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "998e9df3ff8c73789bfa32c6b3ecc7c7d3b0bce8125a8e0c5c38211ac6c6d813"
+  },
+  {
+    "kind": "intent",
+    "name": "kind",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase-changed",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "eb8084ff4f921222767c3bc2f8d708653279a1c5edd4a211e4f3d7af5735b091"
+  },
+  {
+    "kind": "intent",
+    "name": "payee_ref",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1-changed",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "982a112e9cfc96681dad67f91cfe8da9914283e78e41f437b1a6170b2c2408b5"
+  },
+  {
+    "kind": "intent",
+    "name": "amount.mode",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum-changed",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "1e5216fae3475d900b959bcfd17c327096a6f77da306134873061e61ce11ef8b"
+  },
+  {
+    "kind": "intent",
+    "name": "amount.minor",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5501,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "a8bc11fccee330c7a1639153970d761ecb1d62cbca333578a40ddbf45aabf2a6"
+  },
+  {
+    "kind": "intent",
+    "name": "amount.currency",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD-changed"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "de0363c30adf51ec85dfbbcbd6a883b91a7e15bec161d7000299309935d82d4a"
+  },
+  {
+    "kind": "intent",
+    "name": "purpose",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example-changed",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "7100c758ac834cb811b8f1ebf2e3c3b16108a3445678aab54d98541302477682"
+  },
+  {
+    "kind": "intent",
+    "name": "expires_at_ms",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2001,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "f55c7fc961158ce6bc78bfaa176b1ca96b7e6e39f0ac4a1be3a0e771b0fab312"
+  },
+  {
+    "kind": "intent",
+    "name": "payment_profile",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default-changed",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "9c5c49aaac1b418430a28585e4b9f1a36f3925854a7f3e570cff16df282269aa"
+  },
+  {
+    "kind": "intent",
+    "name": "correlation_id",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1-changed",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "a7d203a1151a2e70adecdfcd94d9b6f17be3d0b82d710c44686fcea49d3d504a"
+  },
+  {
+    "kind": "intent",
+    "name": "items.0.sku",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1-changed",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "bcce70d3891756586d6c31e81ba6b64f9c49aa8ffebce06801489f00f90ccb57"
+  },
+  {
+    "kind": "intent",
+    "name": "items.0.quantity",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 3
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "33a3f07b071db98e0cc0b9a3298d2f19b50fe5b8134c27bc5a01b97a18db4c48"
+  },
+  {
+    "kind": "intent",
+    "name": "shipping_profile",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home-changed",
+      "provider_preference": "fixture"
+    },
+    "sha256": "64f85bd88bc1bca3ea7147a4cdbc5a16ac1e4b3604d8da1bdb8ff3564545538b"
+  },
+  {
+    "kind": "intent",
+    "name": "provider_preference",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "Purchase example",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture-changed"
+    },
+    "sha256": "1ff825345f03e8221a7b4a35cee48063a4ea2421401febbd12e34889105c5648"
+  },
+  {
+    "kind": "snapshot",
+    "name": "base",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "2559c7e36b38f85be4422894feaa555b9e24837c89b7ebf4a2ece35eb4938f1c"
+  },
+  {
+    "kind": "snapshot",
+    "name": "principal.type",
+    "value": {
+      "principal": {
+        "type": "user-changed",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "a6ad3822af5f8425b07b1960e832ee592078e7a411484569cfac2ea9598a81cb"
+  },
+  {
+    "kind": "snapshot",
+    "name": "principal.id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1-changed",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "cf8325473dc2c626be0d284d3022a81ad32c4697b4d96d36af21647e569ab841"
+  },
+  {
+    "kind": "snapshot",
+    "name": "principal.tenant_id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1-changed"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "11ddd900fb4b8330844884c8b6efbda6a64113cdeb2c3ab9f34fa06ac20a7e29"
+  },
+  {
+    "kind": "snapshot",
+    "name": "execution_id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1-changed",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "8c94c5a8acb92e142fb0eb540c59655787b696d0598833166c9919b7c016792a"
+  },
+  {
+    "kind": "snapshot",
+    "name": "intent_digest",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-changed",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "adeaa9bfc1bd9907fa3ab40f8e63c37608605295459844bfbcdb272c90c9ae6a"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payee.id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1-changed",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "a50e3a738be247cb856ef29311e82d72822687a6b005f1d267944302b7402dc1"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payee.registry_version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1-changed",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "8e00257a3fd7ff442cd1af13fbd3e6b1bfd9f403c03bb86d55c65458a3c36c0c"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payee.display_name",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant-changed",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "b2d045c55062f06e48bbdbe9fec25d68160d64c6f96ad8b566271bc8c5ef054d"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payee.origin",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com-changed"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "202d2cc122b6f958865142d84bb891d86ed5eb2280b625b2100b707aeceb4d1e"
+  },
+  {
+    "kind": "snapshot",
+    "name": "charge.minor",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5501,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "ff8dba5fac09f0037256e62284830f67dab3f1f56caec650d4200af9b8463777"
+  },
+  {
+    "kind": "snapshot",
+    "name": "charge.currency",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD-changed"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "ff2d9e8372421ad52035be29fedaf43545e696e75cd182418ddd10dc8baa93fa"
+  },
+  {
+    "kind": "snapshot",
+    "name": "currency_table_version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1-changed",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "9a279cc8d730aabf14edecb74e5895bb99acc496fa4e6a7ca0a754d7eeba646d"
+  },
+  {
+    "kind": "snapshot",
+    "name": "request_binding.route_id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1-changed",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "eee8331f0fb399d594bb1d953ad7cc753a37080a432795f72cfdd7f895df7d01"
+  },
+  {
+    "kind": "snapshot",
+    "name": "request_binding.route_version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1-changed",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "6ee007ee8f38fd912a050fe606aad7de3b2b9561c8d7c0dc38b30ae5245d1965"
+  },
+  {
+    "kind": "snapshot",
+    "name": "request_binding.resource_ref",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1-changed",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "4e3373b3968329b0a6117011787594f5838bb9ae66269d26672bb0c89f2894bb"
+  },
+  {
+    "kind": "snapshot",
+    "name": "request_binding.terms_digest",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-changed"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "fe8aa93604f5194f6393d46f8d8f5975eecec95bee0863a176a4a5db25ca7f9b"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payment_profile.alias",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default-changed",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "693fe4f5166b85aeaba341bbad29f93626a2af6f1bf4395549ebc88666558520"
+  },
+  {
+    "kind": "snapshot",
+    "name": "payment_profile.version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1-changed"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "c6f46cfa6eb308996200972ea4f15fdf7483ea79ea3959c6689ee0bc8d5389af"
+  },
+  {
+    "kind": "snapshot",
+    "name": "shipping_profile.alias",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home-changed",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "90344291f85d61061fa6925522d5adf334dd6475fe4f9ba5ca3487437516a9ad"
+  },
+  {
+    "kind": "snapshot",
+    "name": "shipping_profile.version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1-changed"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "f35ef8217aa2b29c06f9ce3d7e055c52371f2055f4bc977ace65c842a8c5569d"
+  },
+  {
+    "kind": "snapshot",
+    "name": "provider.id",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture-changed",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "8cfa0e2b4f4d8c7dc9d56758de7aed03710616745c9356f260997e431596c9c8"
+  },
+  {
+    "kind": "snapshot",
+    "name": "provider.adapter_version",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0-changed",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "0e7b8975088e80f23d85e27274f75e170135bcc6af5462fbfdca3edbe1019903"
+  },
+  {
+    "kind": "snapshot",
+    "name": "provider.account_ref",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1-changed"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "e61a00d4f2b7ffa1c47b81b82aaf521f8d6e56084493a88e5b9feeaf03695331"
+  },
+  {
+    "kind": "snapshot",
+    "name": "execution_class",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine-changed",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2000
+    },
+    "sha256": "d3c73b5211ef45c7371ea67f061f5a4dd8f0b936f585bf7e08da1efe9a6828b6"
+  },
+  {
+    "kind": "snapshot",
+    "name": "capabilities_digest",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-changed",
+      "expires_at_ms": 2000
+    },
+    "sha256": "c2b3eb1e0076c34703e4bfcec489ed5f70cf76da5e524197d4344aac1573fd95"
+  },
+  {
+    "kind": "snapshot",
+    "name": "expires_at_ms",
+    "value": {
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "execution_id": "exec_1",
+      "intent_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "payee": {
+        "id": "merchant_1",
+        "registry_version": "v1",
+        "display_name": "Example Merchant",
+        "origin": "https://example.com"
+      },
+      "charge": {
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "currency_table_version": "fixture-v1",
+      "request_binding": {
+        "route_id": "mpp_1",
+        "route_version": "v1",
+        "resource_ref": "order_1",
+        "terms_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "payment_profile": {
+        "alias": "default",
+        "version": "v1"
+      },
+      "shipping_profile": {
+        "alias": "home",
+        "version": "v1"
+      },
+      "provider": {
+        "id": "fixture",
+        "adapter_version": "1.0.0",
+        "account_ref": "account_1"
+      },
+      "execution_class": "machine",
+      "capabilities_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "expires_at_ms": 2001
+    },
+    "sha256": "2e4b5cf0c1a271073d79ae132c3090c6c6b28a60f5482f8d187b23e613f04a44"
+  },
+  {
+    "kind": "capabilities",
+    "name": "base",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "baa25dc1758eb4cc357be2b4c2b2c4da9041db77423704354dddd33d017271c5"
+  },
+  {
+    "kind": "capabilities",
+    "name": "schema",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1-changed",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "da02a22847eecf80a4c61af0290ea78b25d3d3ab52936088deacfbf16828aec3"
+  },
+  {
+    "kind": "capabilities",
+    "name": "provider_id",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture-changed",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "df82b2fc6ba7cf226eccd7d658f65d90437c695f9a5741d5aca9754e0011ce0a"
+  },
+  {
+    "kind": "capabilities",
+    "name": "adapter_version",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0-changed",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "8f62a42c1b2114e8f3a6d3b04670b6c12ebd61498cd188d3fdf7e5c27ef11c87"
+  },
+  {
+    "kind": "capabilities",
+    "name": "actions.0",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase-changed"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "c6cdfa7077a5eeca0d1056b6de9d1fdeaed99b9c109803416f3727917825ebb2"
+  },
+  {
+    "kind": "capabilities",
+    "name": "execution_classes.0",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine-changed"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "7f4f47729b0cb55aea0a2b7e2a8d5c34cdf022fc510e72a79a7725927db65a1d"
+  },
+  {
+    "kind": "capabilities",
+    "name": "observed_at_ms",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1001,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "7935a9b5e144cd1e78300d14398590e3f2e26a5cee18f44e1d9b14f51d7d2cba"
+  },
+  {
+    "kind": "capabilities",
+    "name": "valid_until_ms",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2001,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "89c953ad67698f36ffd1c2ebec1654364ca62979ca09221ce5796ce3bdee1597"
+  },
+  {
+    "kind": "capabilities",
+    "name": "observation_support.authorization",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": false,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "03b69086ffe72c6a114a0f8e4f9eeb61aa8a9e183f89b063805377f61b7720de"
+  },
+  {
+    "kind": "capabilities",
+    "name": "observation_support.execution",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": false
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "2a8e72a5c9f98e50f5cfa8ac34c6d2179a071176d7be843d596e4afd27e579e5"
+  },
+  {
+    "kind": "capabilities",
+    "name": "replay_protection.strategy",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot-changed",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "44d2e83f5b5b7530d2a72918700773519bb5f60205246b90a961caa7b6f8abbf"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.currencies.0",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD-changed"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "53fe9b082871f11d24b84aab2ad490cd8b3d88b967db14fe108da086ab1e2513"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.regions.0",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US-changed"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "d1f20ef57154e0a16bf1ff164fe3e551d6ac2b10af4a23c9eb0f1c7def2ecdd6"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.amount_limits.0.currency",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD-changed",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "0e97870bb59d18242af9e38560f94eb2a0e5d83e48c30c31d460c77a1a902dd2"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.amount_limits.0.minimum_minor",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 2,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "8472333c303abd523387adabba1d1aa93e3f0aad97cd47c2f535bdbb50e59450"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.authorization_required",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": false,
+        "credential_expires_at_ms": null,
+        "available": true
+      }
+    },
+    "sha256": "e17d4bac2126bb4e4790bf44f9ec77342b1f7d1a9abee000469df855b7e5b67f"
+  },
+  {
+    "kind": "capabilities",
+    "name": "constraints.available",
+    "value": {
+      "schema": "kujo.payment-capabilities/v1",
+      "provider_id": "fixture",
+      "adapter_version": "1.0.0",
+      "actions": [
+        "purchase"
+      ],
+      "execution_classes": [
+        "machine"
+      ],
+      "observed_at_ms": 1000,
+      "valid_until_ms": 2000,
+      "observation_support": {
+        "authorization": true,
+        "execution": true
+      },
+      "replay_protection": {
+        "strategy": "one_shot",
+        "retention_ms": null
+      },
+      "constraints": {
+        "currencies": [
+          "USD"
+        ],
+        "regions": [
+          "US"
+        ],
+        "amount_limits": [
+          {
+            "currency": "USD",
+            "minimum_minor": 1,
+            "maximum_minor": null
+          }
+        ],
+        "authorization_required": true,
+        "credential_expires_at_ms": null,
+        "available": false
+      }
+    },
+    "sha256": "e49258fe4e86511488d40290c98e7a53f1f8cf463f4ca59e54a168a98b496a88"
+  },
+  {
+    "kind": "intent",
+    "name": "utf8",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "é",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "1be34e6b18379684187e557b317c0fa661ac3416c3a01ba3d4308a11e0808c8f"
+  },
+  {
+    "kind": "intent",
+    "name": "utf8",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "é",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "7c3c1926d996348ee3a4b97f16d9d1f79cb088fa392577069be7573388e7a69e"
+  },
+  {
+    "kind": "intent",
+    "name": "utf8",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "a:b|c",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "84ddc76ac118bfe262c29b78bf8605f9cc7a695f3ae63e7e8b4b031f3f4e5b63"
+  },
+  {
+    "kind": "intent",
+    "name": "utf8",
+    "value": {
+      "schema": "kujo.payment-intent/v1",
+      "intent_id": "intent_1",
+      "purchase_ref": "purchase_1",
+      "principal": {
+        "type": "user",
+        "id": "user_1",
+        "tenant_id": "tenant_1"
+      },
+      "kind": "purchase",
+      "payee_ref": "merchant_1",
+      "amount": {
+        "mode": "maximum",
+        "minor": 5500,
+        "currency": "USD"
+      },
+      "purpose": "",
+      "expires_at_ms": 2000,
+      "payment_profile": "default",
+      "correlation_id": "correlation_1",
+      "items": [
+        {
+          "sku": "sku-1",
+          "quantity": 2
+        }
+      ],
+      "shipping_profile": "home",
+      "provider_preference": "fixture"
+    },
+    "sha256": "680591313047b0bee9b7a6056afa30ce8219c3be4195ffb11bbc247aff99bbe4"
+  }
+]

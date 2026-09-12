@@ -1,0 +1,105 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "purchase_request",
+      "description": "Request one purchase for separate authorization; returns an execution ID without credentials.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "purchase_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "payee_ref": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "amount": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "enum": [
+                  "exact",
+                  "maximum"
+                ]
+              },
+              "minor": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 9007199254740991
+              },
+              "currency": {
+                "type": "string",
+                "pattern": "^[A-Z]{3}$"
+              }
+            },
+            "required": [
+              "mode",
+              "minor",
+              "currency"
+            ],
+            "additionalProperties": false
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "payment_profile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "shipping_profile": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "provider_preference": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "expires_in_ms": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 86400000
+          }
+        },
+        "required": [
+          "purchase_ref",
+          "payee_ref",
+          "amount",
+          "purpose",
+          "payment_profile",
+          "expires_in_ms"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "purchase_status",
+      "description": "Read the current status of a purchase execution without moving money.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "execution_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "execution_id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  }
+]
