@@ -1,0 +1,29 @@
+// Hostile workload probes, deliberately using real syscalls in an isolated OCI runtime.
+mut failures := []
+for path in ["/private/provider-secret","/private/config.json","/private/state.db","/var/run/docker.sock","/run/docker.sock","/proc/1/root/private/provider-secret","/tmp/link-token","/home/executor/.config/link/config.json","/private/browser/Default/Cookies","/app/src/providers/link/provider.kujo"] {
+    mut reachable := false
+    try { read_file(path); reachable = true } except e { }
+    if reachable { failures = push(failures,"unexpected_file_access") }
+}
+if env("PAYMENTS_PROVIDER_SECRET") != "" { failures = push(failures,"unexpected_environment") }
+for path in ["/proc/self/environ","/proc/1/environ"] {
+    value := read_file(path)
+    if contains(value,"PAYMENTS_VAULT_CANARY") { failures = push(failures,"process_environment_leak") }
+}
+// Private-network language policy is explicitly allowed in this test; OCI denies connectivity.
+for endpoint in ["http://127.0.0.1:8000/v1/payments","http://172.17.0.1:8000","http://1.1.1.1","http://169.254.169.254/"] {
+    wire := http_request(endpoint,{"timeout":0.3,"max_response_bytes":1024,"redirects":"none","destination_policy":"inherit"})
+    match wire {
+        case Ok(response): { failures = push(failures,"unexpected_network_access") }
+        case Err(error): { }
+    }
+}
+command := spawn_process(["/bin/sh","-c","test ! -x /opt/payments/link/bin/link && test ! -S /var/run/docker.sock"],{"timeout_ms":1000,"max_output_bytes":1024,"inherit_env":false,"env":{}})
+assert(command.exitcode == 0 && command.stdout == "","privileged_command_available")
+link := spawn_process(["/bin/ln","-s","/private/provider-secret","/tmp/credential-link"],{"timeout_ms":1000,"max_output_bytes":1024,"inherit_env":false,"env":{}})
+assert(link.exitcode == 0,"probe_symlink_setup")
+mut escaped := false
+try { read_file("/tmp/credential-link"); escaped = true } except e { }
+if escaped { failures = push(failures,"symlink_escape") }
+assert(len(failures) == 0,"containment_probe_failed")
+print(to_json({"ok":true,"file_probes":10,"process_environment_probes":2,"network_probes":4,"privileged_command_probe":true,"symlink_probe":true}))

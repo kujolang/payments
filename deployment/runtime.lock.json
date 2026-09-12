@@ -1,0 +1,7 @@
+{
+  "version": "1.4.0",
+  "platform": "linux-x64",
+  "url": "https://github.com/kujolang/kujo/releases/download/v1.4.0/kujo-v1.4.0-linux-x64.tar.gz",
+  "archive_sha256": "49a4803b70b51a5d6cba04b5aba2bbe8786d19ec15861c18b67c3bac8670233c",
+  "binary_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c"
+}

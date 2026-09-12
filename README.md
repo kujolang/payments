@@ -16,4 +16,4 @@ Kujo 1.4.0 or later is required. Install the commit-pinned Ability dependency wi
 
 See [local fixture](examples/local-fixture/README.md) for a synthetic purchase through the gateway, provider authorization, host Ability approval, one-use submission and authoritative observation. Agent-facing operations are request and status; the executor and provider callbacks remain private to trusted host code.
 
-The injected gateway authentication callback is an embedding boundary. A network server, real identity adapter and tested physical separation are still required before connecting untrusted agent processes or real provider credentials.
+The injected gateway authentication callback is an embedding boundary. The [deployment guide](docs/deployment.md) documents the scoped-token HTTP service and tested OCI profile. Operator financial authorization, Link execution and remaining live-provider gates are still required before real payment credentials are used.

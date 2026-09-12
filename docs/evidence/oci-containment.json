@@ -1,0 +1,24 @@
+{
+  "ok": true,
+  "runtime": {
+    "version": "1.4.0",
+    "platform": "linux-x64",
+    "url": "https://github.com/kujolang/kujo/releases/download/v1.4.0/kujo-v1.4.0-linux-x64.tar.gz",
+    "archive_sha256": "49a4803b70b51a5d6cba04b5aba2bbe8786d19ec15861c18b67c3bac8670233c",
+    "binary_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c"
+  },
+  "gateway_image": "sha256:416d4c41fe38714ba66efc771c756c824fcca6d62bbef3973d051615d88c26d4",
+  "agent_image": "sha256:fa0b71dfaf7b64928fb52ba044d9f51a46c8d98f021f5650d3e2c78f927c2a0b",
+  "docker_server": "29.6.2",
+  "profile": "linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets",
+  "private_canary_positive_control": true,
+  "probes": {
+    "file_probes": 10,
+    "network_probes": 4,
+    "ok": true,
+    "privileged_command_probe": true,
+    "process_environment_probes": 2,
+    "symlink_probe": true
+  },
+  "scope": "Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof."
+}

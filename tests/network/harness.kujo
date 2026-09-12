@@ -1,0 +1,9 @@
+// Trusted test harness: holds only the scoped request credential, no payment secret.
+endpoint := env("PAYMENTS_SERVICE_URL")
+token := env("PAYMENTS_HARNESS_TOKEN")
+payload := {"operation":"request","idempotency_key":"fixture","input":{"purchase_ref":"fixture","payee_ref":"merchant","amount":{"mode":"maximum","minor":100,"currency":"USD"},"purpose":"Containment fixture","payment_profile":"default","expires_in_ms":60000}}
+wire := http_request(endpoint+"/v1/payments",{"method":"POST","headers":{"Authorization":"Bearer "+token,"Content-Type":"application/json"},"body":to_json(payload),"timeout":3,"max_response_bytes":4096,"redirects":"none","pin_dns":true})
+match wire {
+    case Ok(response): { assert(response["_status"] == 200,"fixture_request_denied"); print(response["_body"]) }
+    case Err(error): { assert(false,"fixture_transport_failed") }
+}
