@@ -13,7 +13,7 @@ jobs:
   verify:
     name: ${{ matrix.suite }} / pinned Linux runtime
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +34,14 @@ jobs:
       - name: Synthetic host suite
         if: matrix.suite == 'host'
         run: bash scripts/test.sh
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
+        if: matrix.suite == 'containment'
+      - name: Build pinned Workcell host runtime
+        if: matrix.suite == 'containment'
+        run: |
+          python3 scripts/deployment/setup_workcell.py
+          echo "PAYMENTS_WORKCELL_ROOT=$PWD/deployment/.workcell/workcell" >> "$GITHUB_ENV"
+          echo "PAYMENTS_WORKCELL_KUJO=$PWD/deployment/.workcell/runtime/target/release/kujo" >> "$GITHUB_ENV"
       - name: Current-image components and credential containment
         if: matrix.suite == 'containment'
         run: bash scripts/deployment/test_oci.sh

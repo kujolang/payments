@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "name": "payments-agent",
+  "runtime": {"backend":"docker","image":"kujo-payments-workcell-agent:local","require_digest":true,"image_digest":"sha256:REPLACED_BY_INSTALLED_IMAGE_DIGEST"},
+  "workspace": {"strategy":"isolated-clone","mount_path":"/workspace","run_as":"host"},
+  "command": ["/usr/local/bin/kujo","run","agent.kujo","--interpreter"],
+  "environment": {"allow":[],"set":{"KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS":"true"}},
+  "secrets": [],
+  "resources": {"cpus":1,"memory":"256m","pids":64,"timeout_ms":30000,"max_output_bytes":16384},
+  "network": {"mode":"none"},
+  "filesystem": {"read_only_root":true,"tmpfs":["/tmp"]},
+  "artifacts": {"export":["intent.json"],"max_bytes":8192,"max_files":1,"max_depth":1,"secret_action":"reject"},
+  "cleanup": {"keep_failed":false},
+  "trust_profile":"contained-standard"
+}

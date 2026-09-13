@@ -27,3 +27,5 @@ try { read_file("/tmp/credential-link"); escaped = true } except e { }
 if escaped { failures = push(failures,"symlink_escape") }
 assert(len(failures) == 0,"containment_probe_failed")
 print(to_json({"ok":true,"file_probes":10,"process_environment_probes":2,"network_probes":4,"privileged_command_probe":true,"symlink_probe":true}))
+
+export probe_complete := true

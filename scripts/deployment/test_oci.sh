@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 python3 scripts/deployment/fetch_runtime.py
-for target in gateway agent-probe harness-probe; do
+for target in gateway agent-probe harness-probe workcell-agent; do
     docker buildx build --load --platform linux/amd64 -f deployment/Dockerfile --target "$target" -t "kujo-payments-$target:local" .
 done
 for test in domain bindings contracts approval_bindings lifecycle storage observations execution gateway operator link_authorization mpp link_submission link_provider; do

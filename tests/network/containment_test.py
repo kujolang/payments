@@ -41,6 +41,27 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert json.loads(probe.stdout.strip())['ok'] is True,(probe.stdout,probe.stderr)
         for output in [probe.stdout,probe.stderr,harness.stdout,harness.stderr,docker('logs',name).stdout,json.dumps(summary)]:
             assert canary not in output and token not in output
+        workcell_evidence=None
+        if os.environ.get('PAYMENTS_WORKCELL_ROOT'):
+            image_digest=docker('image','inspect','kujo-payments-workcell-agent:local','--format','{{.Id}}').stdout.strip()
+            workcell_output=Path(tmp)/'workcell'
+            command=['python3','examples/workcell/run.py','--workcell-root',os.environ['PAYMENTS_WORKCELL_ROOT'],'--runtime',os.environ['PAYMENTS_WORKCELL_KUJO'],'--image-digest',image_digest,'--output',str(workcell_output)]
+            workcell=subprocess.run(command,cwd=ROOT,capture_output=True,text=True,timeout=150)
+            assert workcell.returncode==0,(workcell.stdout,workcell.stderr)
+            emitted=json.loads(workcell.stdout);assert emitted['ok'] and emitted['verified']
+            # Receipt verification establishes artifact integrity, not payment
+            # authorization. The server independently validates this untrusted intent.
+            host=docker('run','--rm','--network',name,'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--memory','256m','--pids-limit','64','--env','KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS=true','--env','PAYMENTS_SERVICE_URL=http://'+name+':8000','--env','PAYMENTS_HARNESS_TOKEN='+token,'--env','PAYMENTS_INTENT_JSON='+json.dumps(emitted['intent']),'kujo-payments-harness-probe:local',timeout=15)
+            observed=json.loads(host.stdout);assert observed['result']['status']=='awaiting_authorization'
+            assert observed['result']['execution_id']!=summary['result']['execution_id']
+            for file in workcell_output.rglob('*'):
+                if file.is_file():
+                    for secret in [canary,token]: assert secret.encode() not in file.read_bytes(),file.name
+            for text in [workcell.stdout,workcell.stderr,host.stdout,host.stderr]:
+                assert canary not in text and token not in text
+            workcell_receipt=Path(emitted['receipt_path'])
+            workcell_evidence={'source':json.loads((ROOT/'examples/workcell/source.lock.json').read_text()),'image':image_digest,'run_id':emitted['workcell_run_id'],'receipt_sha256':hashlib.sha256(workcell_receipt.read_bytes()).hexdigest(),'verified':True,'runtime_sha256':emitted['runtime_sha256'],'payment_execution_id':observed['result']['execution_id']}
+            print('Workcell composition passed: isolated hostile probes, verified intent artifact, separate trusted intake and zero credential evidence leakage')
         # Neither service nor agent runs privileged, shares the host PID namespace, or mounts the engine socket.
         info=json.loads(docker('inspect',name).stdout)[0]
         assert info['HostConfig']['Privileged'] is False
@@ -49,6 +70,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert info['Config']['User']=='65532:65532'
         assert all(m['Destination']!='/var/run/docker.sock' for m in info['Mounts'])
         receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
+        if workcell_evidence: receipt['workcell']=workcell_evidence
         evidence=os.environ.get('PAYMENTS_CONTAINMENT_RECEIPT')
         if evidence:Path(evidence).write_text(json.dumps(receipt,indent=2)+'\n')
         print('OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works')

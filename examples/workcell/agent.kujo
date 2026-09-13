@@ -1,0 +1,7 @@
+// Example untrusted workload. The imported adversarial probe must pass before
+// exporting an intent. No network client or payment credential is present.
+from probe import probe_complete
+assert(probe_complete,"isolation_probe")
+assert(env("PAYMENTS_HARNESS_TOKEN") == "" && env("PAYMENTS_CLIENT_TOKEN") == "","request_token_reachable")
+intent := {"purchase_ref":"workcell-fixture","payee_ref":"merchant","amount":{"mode":"maximum","minor":100,"currency":"USD"},"purpose":"Workcell containment fixture","payment_profile":"default","expires_in_ms":60000}
+write_file("intent.json",to_json(intent))

@@ -6,3 +6,4 @@ __pycache__/
 kennel_packages/
 .kennel_tmp/
 deployment/.runtime/
+deployment/.workcell/

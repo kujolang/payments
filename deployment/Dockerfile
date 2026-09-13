@@ -20,3 +20,6 @@ ENTRYPOINT ["/usr/local/bin/kujo", "run", "/app/probe.kujo", "--interpreter"]
 FROM runtime AS harness-probe
 COPY --chown=65532:65532 tests/network/harness.kujo /app/harness.kujo
 ENTRYPOINT ["/usr/local/bin/kujo", "run", "/app/harness.kujo", "--interpreter"]
+
+# Workcell supplies the explicit command and isolated public source workspace.
+FROM runtime AS workcell-agent
