@@ -1,0 +1,29 @@
+{
+  "source_commit": "57097441dc0b4afe1f563ccd1cc8efe3aafa168e",
+  "run_id": 34740892902,
+  "url": "https://github.com/kujolang/payments/actions/runs/34740892902",
+  "jobs": {
+    "host": {
+      "id": 103680299499,
+      "conclusion": "success",
+      "log_sha256": "d24c1b3ac2e0bb27b1639098993698b2edc6dcbce5f299d3b410e4822414ebc1"
+    },
+    "containment": {
+      "id": 103680299412,
+      "conclusion": "success",
+      "log_sha256": "bc2d1fc8b31f099989dc60e17d5569430cd812430bf7092967494a88a579c958"
+    }
+  },
+  "artifact": {
+    "id": 10312149959,
+    "archive_sha256": "facaa9b946ca4f2a33a8046fd806d697c1f423d1aeefe3099838d7981a3eb8cc",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Closed Payments principal compatibility, 36 independent flat identity vectors in VM/interpreter, 278 canonical definition mutations and full synthetic host suite; declared OCI/Workcell containment only. No general nested v1 digest migration, reconciliation dispatch, provider/live acceptance or production all-sink claim."
+}
