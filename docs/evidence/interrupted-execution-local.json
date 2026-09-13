@@ -1,0 +1,44 @@
+{
+  "schema": "kujo.payment-verification-record/v1",
+  "kind": "interrupted-execution-local",
+  "recorded_date": "2026-09-13",
+  "baseline_commit": "37f2a7ae3ffe9516e149bc5989c9f3fd6ea2d3e6",
+  "runtime": {
+    "version": "1.4.0",
+    "platform": "macos-x64",
+    "sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48"
+  },
+  "sources": {
+    "tests/worker.kujo": "febd62e0c6c9d9c8716bde82bbf0030cdad35f99325581f5ff0200338152f733",
+    "tests/network/interrupted_execution_test.py": "7d14f90567d402b93d535dfef1ed54cef28a7601e653fedcc92224d450e0cfcb",
+    "scripts/test.sh": "9f3949aedb9b188e5ff95dc8743c5d111365bc55bb16d892c515067fc7673908"
+  },
+  "logs": {
+    ".local/interrupted-execution.log": {
+      "sha256": "7de749269056f366d04ee6337ff95346ccf6fa9512c8e13c3d9974d084f30efc",
+      "result": "Interrupted execution: five boundaries with killed/live originals, four concurrent pre-claim retries, authenticated scoped cancellation, preserved tombstones/terms, post-claim refusal and no repeated charge passed"
+    },
+    ".local/interrupted-worker-regression.log": {
+      "sha256": "436cb56c1511e49cbe4b339756d70c8fd6ad97fc1aab5385738e705f11d8645a",
+      "result": "Bounded worker: asynchronous operator grant, native authorization dedupe, four-process dispatch race, post-charge reconciliation and terminal replay passed"
+    },
+    ".local/interrupted-architecture.log": {
+      "sha256": "a076455ce6e13d2af0bb7f837fedbc059305d651787c9da824d9b194bb6f6f4a",
+      "result": "Architecture: 36 files; Fence passed; 14 forbidden edges and 5 export/coverage/external mutations rejected"
+    }
+  },
+  "verification": {
+    "checkpoint_count": 5,
+    "original_modes": [
+      "SIGKILL",
+      "still_live"
+    ],
+    "scenario_count": 10,
+    "preclaim_retry_workers": 4,
+    "normal_worker_regression": "passed",
+    "real_money": false,
+    "architecture": "passed"
+  },
+  "scope": "Synthetic native interpreter processes, canonical gateway with fixture authentication, immutable SQLite execution and independent non-deduplicating processor. Safe cancellation or observation only; no financial re-entry, live restore, provider hold cancellation or production isolation claim.",
+  "tested_commit": "8c84135b8758797f5715d9433b13154a1804b7ae"
+}
