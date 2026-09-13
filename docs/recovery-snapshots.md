@@ -27,3 +27,19 @@ Re-enabling operations after loss of the authoritative journal requires separate
 ## Tested scope
 
 `tests/network/recovery_test.py` verifies committed WAL inclusion, a source claim committed after a pre-claim snapshot, denied claims/resume/SQL bypasses from that stale copy, post-claim observation recovery, repeated quarantine, private permissions, publication hash, no overwrite, size refusal and future-schema refusal without source changes. The tests use temporary synthetic journals. They do not establish power-loss durability on every filesystem, live provider reconciliation or protection against a database/host administrator deliberately removing guards.
+
+
+## Verify a published snapshot before use
+
+```sh
+python3 scripts/maintenance/verify_recovery.py \
+  --snapshot-dir /private/recovery/incident-001
+```
+
+The read-only verifier checks bounded manifest parsing (including duplicate keys), the database publication hash, private owned regular files, required frozen core schema and migration lineage, SQLite integrity/foreign keys, the permanent quarantine marker, paused control evidence and normalized claimed-execution state. SQLite WAL/SHM/journal sidecars are refused. It checks file identities and hashes again after reading and emits only a compact integrity/quarantine result. It neither opens the database for writes nor enables spending. Default and maximum time/size bounds match the snapshot creator; a blocking filesystem operation is not a guaranteed hard real-time cancellation point.
+
+Use it on a quiescent original publication in an administrator-controlled directory before making a separate working copy for observation. Reconciliation writes change the database hash, so the original manifest will not verify that modified copy; do not regenerate a hash and treat it as independently authenticated evidence. Re-snapshotting an existing quarantined copy retains its original quarantine lineage, which can differ from the immediate pre-quarantine hash in the new manifest.
+
+Success verifies **core integrity and quarantine**, not source authenticity, freshness, complete financial history, or arbitrary application extensions. `additional_schema_objects` reports objects outside the required core profile; their semantics require separate trusted review. A self-consistent attacker-supplied manifest is not a signature or authorization. Keep trusted custody/provenance for the source and manifest, and never use this result as permission to resume financial execution. It does not bundle or restore private provider/credential journals.
+
+`tests/network/recovery_verification_test.py` covers current and frozen-v1 publications, repeated exports, unchanged file bytes, 20 tamper/quarantine/path cases (including recomputed malicious manifests), and bounds. Existing recovery regressions remain in place.
