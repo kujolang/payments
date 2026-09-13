@@ -1,0 +1,30 @@
+{
+  "schema": "kujo.payments.ci-evidence/v1",
+  "source_commit": "8d44c4d86b021fb7214c3026740570cf2e825801",
+  "run_id": 34727010312,
+  "url": "https://github.com/kujolang/payments/actions/runs/34727010312",
+  "runner": "GitHub hosted ubuntu-24.04",
+  "runtime": {
+    "version": "1.4.0",
+    "platform": "linux-x64",
+    "url": "https://github.com/kujolang/kujo/releases/download/v1.4.0/kujo-v1.4.0-linux-x64.tar.gz",
+    "archive_sha256": "49a4803b70b51a5d6cba04b5aba2bbe8786d19ec15861c18b67c3bac8670233c",
+    "binary_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c"
+  },
+  "kennel_commit": "546dd4205b90825f3e326336941c3068b1add0f0",
+  "jobs": {
+    "host": {
+      "job_id": 103642797161,
+      "url": "https://github.com/kujolang/payments/actions/runs/34727010312/job/103642797161",
+      "conclusion": "success",
+      "log_sha256": "a0b4de3b20cf344d0a2898cbcf3adc24a1c48f34b37f624a635531b6b7df46c9"
+    },
+    "containment": {
+      "job_id": 103642797346,
+      "url": "https://github.com/kujolang/payments/actions/runs/34727010312/job/103642797346",
+      "conclusion": "success",
+      "log_sha256": "5c69f5b5911e6fdd5161fa3b4b3d788ec724627143345c87435d5057d38f5381"
+    }
+  },
+  "scope": "Synthetic host suite and current-image OCI component/canary checks. No live payment, all-sink leak or kernel-escape attestation."
+}

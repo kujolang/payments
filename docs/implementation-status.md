@@ -68,3 +68,11 @@ Implemented the internal five-method Link provider factory, immutable installati
 This supersedes earlier statements that the factory and native merchant HTTP were unimplemented. Production configuration, stable payer-account verification, private approval URL delivery, OAuth lifecycle and authoritative settlement observation remain open. Current OCI coverage, all-sink security conformance, integrations, CI and migration/restore operations also remain release gates. No real money moved.
 
 Verification: the uninterrupted full host suite passed after an earlier attempt hit host process exhaustion. Evidence: docs/evidence/2026-09-12-link-registration.log. The earlier OCI receipt does not cover these new modules.
+
+## Reproducible Linux CI milestone
+
+The workflow at `.github/workflows/verify.yml` now runs the full synthetic host suite and a separate current-image OCI job for pushes, pull requests and manual runs. It has read-only repository permissions, no persisted checkout credentials, no provider secrets and bounded job/process timeouts. Runtime archive/binary checksums and the Kennel source commit are pinned. Kennel installs committed Ability/Fence locks; an independent checkout comparison verifies installed source, and modified dependency contracts fail the build.
+
+Both jobs passed at commit `8d44c4d86b021fb7214c3026740570cf2e825801`: [run 34727010312](https://github.com/kujolang/payments/actions/runs/34727010312). Evidence and selected verification output are in `docs/evidence/linux-ci.json` and the adjacent CI logs. The OCI runner now includes Link authorization, MPP, submission and complete provider fixtures, with interpreter mode on privileged component checks. This closes the earlier current-image validation gap despite the local Docker Desktop failure. The old local OCI receipt remains historical.
+
+CI automation is implemented and verified. This does not close the broader Phase 7 gates: all-sink leak conformance, supported operations/migration/restore, incident stop control and final release audit remain. Native account/settlement confirmation, OAuth/operator delivery, optional integrations and real sandbox/live gates also remain unfinished.

@@ -1,0 +1,15 @@
+Selected verification lines; full job logs linked in linux-ci.json
+2026-09-13T00:04:14.8083651Z Pinned Kennel installed exact Ability and Fence locks without contract changes
+2026-09-13T00:04:24.3753637Z domain validation passed
+2026-09-13T00:04:24.5324009Z Cross-language binding vectors passed: 67
+2026-09-13T00:04:24.6864852Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T00:04:24.8111999Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T00:04:24.9850853Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T00:04:25.1164152Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T00:04:25.8984826Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T00:04:26.2266156Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T00:04:26.5668092Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T00:04:26.7498317Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T00:04:26.9374942Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T00:04:27.5303746Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T00:04:28.5290784Z OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works

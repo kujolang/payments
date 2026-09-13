@@ -1,0 +1,21 @@
+Selected verification lines; full job logs linked in linux-ci.json
+2026-09-13T00:04:14.9895345Z Pinned Kennel installed exact Ability and Fence locks without contract changes
+2026-09-13T00:04:15.0342530Z domain validation passed
+2026-09-13T00:04:15.1024647Z Cross-language binding vectors passed: 67
+2026-09-13T00:04:15.3169040Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T00:04:16.5773491Z Kujo SQLite: 8-process race and SIGKILL before/after dispatch passed; no resumed dispatch
+2026-09-13T00:04:16.6069737Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T00:04:16.6377308Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T00:04:17.0182131Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T00:04:19.7733555Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T00:04:20.3988791Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T00:04:21.7784810Z HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
+2026-09-13T00:04:21.9154672Z Provisioning: private permissions, token suppression and overwrite refusal passed
+2026-09-13T00:04:23.7577138Z Architecture: 23 files; Fence passed; 11 forbidden edges and 3 coverage/external mutations rejected
+2026-09-13T00:04:24.7656897Z Operator: scope, review binding, changed definition, expiry, durable separate-process grant, replay denial and normalized errors passed
+2026-09-13T00:04:26.7411943Z Bounded worker: asynchronous operator grant, native authorization dedupe, four-process dispatch race, post-charge reconciliation and terminal replay passed
+2026-09-13T00:04:27.1855306Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T00:04:27.8865649Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T00:04:29.4166344Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T00:04:31.7180798Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T00:04:32.4068630Z Native merchant HTTP: immutable request/body binding, private credential, duplicate-header/redirect/size/deadline denial and sanitized output passed

@@ -54,3 +54,9 @@ This proves the recorded profile's synthetic checks, not resistance to kernel/hy
 The network service currently accepts and tracks intent only. Its embedding executor API and fixture example exercise authorization/submission/reconciliation; the operator-facing worker/approval flow and Link live adapter are still under construction. Do not inject real payment credentials into this service merely because the synthetic containment probe passes.
 
 The OCI test runner requires Docker Buildx and explicitly loads built images into the local engine before verification. A successful build-cache export alone is insufficient evidence that the tested local image contains current source.
+
+## Clean Linux verification
+
+The [CI run at 8d44c4d](https://github.com/kujolang/payments/actions/runs/34727010312) passed both the synthetic host suite and current-image OCI checks, including the newer operator and Link modules. `docs/evidence/linux-ci.json` records source/runtime pins, job IDs and full-log hashes. This supersedes the earlier missing current-build coverage, not the limits of the containment threat model. The hosted runner image is recorded by GitHub but is not itself a hermetically pinned build environment. The application runtime and container base are pinned.
+
+For a clean Linux checkout, run `python3 scripts/deployment/fetch_runtime.py`, export `KUJO_BIN` to the resulting absolute `deployment/.runtime/kujo` path, then run `python3 scripts/ci/bootstrap.py` and `bash scripts/test.sh`. Docker Buildx is additionally required for `bash scripts/deployment/test_oci.sh`. Bootstrap downloads pinned public development sources; it does not obtain payment credentials or perform a financial operation.
