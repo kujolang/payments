@@ -16,3 +16,7 @@ npm run render -- --quality high --fps 30 --output kujo-payments-alpha-demo.mp4
 CLI is pinned in package.json. Composition uses local GSAP and Departure Mono assets. No account, voice service, real credentials, or payment provider is needed to render. The financial fixture is separate; render never executes it.
 
 BRIEF.md and STORYBOARD.md record editorial intent; sources.json and evidence/ preserve provenance; QA.md and render-metadata.json record verification. index.html is editable source. No video has been published by this workflow.
+
+## Requested narration update
+
+The user requested an ElevenLabs American English voiceover. [Narration script](narration/SCRIPT.md) and [voice selection](narration/voiceover-plan.json) are prepared. Generation is pending a paid-plan connection for promotional use; the delivered MP4 above remains the verified silent version.

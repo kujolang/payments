@@ -1,0 +1,46 @@
+{
+  "status": "blocked_before_generation",
+  "blocker": "Configured ElevenLabs account reports Free; paid-plan generation is required for this promotional use.",
+  "checked_date": "2026-09-13",
+  "provider": "ElevenLabs",
+  "voice_id": "nPczCjzI2devNBz1zQrb",
+  "voice_name": "Brian - Deep, Resonant and Comforting",
+  "voice_category": "premade",
+  "accent": "american",
+  "language": "en",
+  "model_id": "eleven_multilingual_v2",
+  "voice_settings": {
+    "stability": 0.55,
+    "similarity_boost": 0.75,
+    "style": 0.1,
+    "use_speaker_boost": true,
+    "speed": 1.0
+  },
+  "usage": "commercial",
+  "generation_requests_made": 0,
+  "maximum_characters": 1000,
+  "cues": [
+    {
+      "id": "hook",
+      "text": "Kujo Payments is a portable payment layer for agents."
+    },
+    {
+      "id": "request",
+      "text": "Request a merchant and spending limit, without giving the agent payment credentials."
+    },
+    {
+      "id": "authorization",
+      "text": "Bind approval to the action before execution."
+    },
+    {
+      "id": "outcome",
+      "text": "Then inspect the result and receipt. This demo is simulated; no real money moves."
+    },
+    {
+      "id": "cta",
+      "text": "Next: validate the Link adapter in a sandbox, and gather developer feedback."
+    }
+  ],
+  "licensing_source": "https://help.elevenlabs.io/hc/en-us/articles/13313564601361-Can-I-publish-the-content-I-generate-on-the-platform",
+  "next_step": "Recheck the connected account tier after upgrade or connection of a paid account; generate with timestamps only after paid status is confirmed."
+}
