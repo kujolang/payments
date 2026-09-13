@@ -22,11 +22,15 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24.20.0'
       - name: Verify pinned runtime and install locked dependencies
         run: |
           python3 scripts/deployment/fetch_runtime.py
           echo "KUJO_BIN=$PWD/deployment/.runtime/kujo" >> "$GITHUB_ENV"
           python3 scripts/ci/bootstrap.py
+          npm ci --prefix examples/mcp --ignore-scripts --no-audit --no-fund
       - name: Synthetic host suite
         if: matrix.suite == 'host'
         run: bash scripts/test.sh

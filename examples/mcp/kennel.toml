@@ -1,0 +1,6 @@
+[package]
+name = "payments-mcp-example"
+version = "0.1.0"
+[dependencies.mcp]
+source = "github:kujolang/mcp"
+commit = "07845898ee9f2662d0e0e364973d77cdaac04762"

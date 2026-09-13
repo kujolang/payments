@@ -73,8 +73,25 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         assert sdk_result['ok'] and sdk_result['tools']==['purchase_request','purchase_status']
         assert sdk_result['status']['status']=='awaiting_authorization'
         assert token not in sdk.stdout+sdk.stderr and 'SENTINEL_PRIVATE_CALLBACK_SECRET' not in sdk.stdout+sdk.stderr
+        mcp_env={**sdk_env,'PAYMENTS_PURCHASE_JSON':json.dumps({**purchase['input'],'purchase_ref':'mcp-purchase'})}
+        mcp=subprocess.run(['node','examples/mcp/conformance.mjs'],cwd=ROOT,env=mcp_env,capture_output=True,text=True,timeout=45)
+        assert mcp.returncode==0,(mcp.stdout,mcp.stderr)
+        mcp_result=json.loads(mcp.stdout);assert mcp_result['ok'] and mcp_result['tools']==['purchase_request','purchase_status']
+        assert token not in mcp.stdout+mcp.stderr
+        # Guard raw wire numbers before the JS MCP SDK can round them. These
+        # connections fail closed and must not reach financial intake.
+        wire_purchase={**purchase['input'],'purchase_ref':'mcp-invalid-wire'}
+        call={'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'purchase_request','arguments':wire_purchase}}
+        initialize={'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'wire-test','version':'1.0.0'}}}
+        for number in ['5500.0','55e2','5500.0000000000000000001','9007199254740993']:
+            raw=json.dumps(initialize)+'\n'+json.dumps(call).replace('5500',number)+'\n'
+            wire=subprocess.run(['python3','examples/mcp/run.py'],cwd=ROOT,env=mcp_env,input=raw,capture_output=True,text=True,timeout=12)
+            assert wire.returncode!=0 and 'Invalid or oversized payment MCP frame' in wire.stderr,number
+            assert token not in wire.stdout+wire.stderr
+        oversized=subprocess.run(['python3','examples/mcp/run.py'],cwd=ROOT,env=mcp_env,input='x'*8193+'\n',capture_output=True,text=True,timeout=12)
+        assert oversized.returncode!=0 and 'Invalid or oversized payment MCP frame' in oversized.stderr
         with sqlite3.connect(root/'payments.db') as db:
-            assert db.execute('SELECT count(*) FROM executions').fetchone()[0]==3
+            assert db.execute('SELECT count(*) FROM executions').fetchone()[0]==4
             assert db.execute('SELECT sum(claimed) FROM executions').fetchone()[0]==0
         # No request tokens may be persisted in any service artifact.
         for file in root.iterdir():
@@ -84,4 +101,4 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         process.terminate()
         out,err=process.communicate(timeout=5)
         for secret in [token,other,expired]: assert secret not in out+err
-print('HTTP service and pinned Agents SDK projection: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed')
+print('HTTP service, pinned Agents SDK and MCP projections: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed')

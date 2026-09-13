@@ -1,0 +1,22 @@
+// Fixed public-client dispatch. No executor/provider modules or approval inputs.
+from payments_http import http_transport
+from payments_client import purchase_request, purchase_status
+
+func call() {
+    operation := env("PAYMENTS_MCP_OPERATION")
+    assert(operation == "request" || operation == "inspect","unknown_operation")
+    definition := parse_json(read_file("contracts/abilities/"+operation+".json"))
+    value := parse_json(env("PAYMENTS_MCP_INPUT"))
+    assert(json_schema_validate(value,definition["input_schema"])["valid"],"invalid_input")
+    if operation == "request" { assert(type(value["amount"]["minor"]) == "int" && type(value["expires_in_ms"]) == "int","integer_input_required") }
+    transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),definition["output_schema"],env("PAYMENTS_LOCAL_FIXTURE") == "true")
+    if operation == "request" { return purchase_request(transport,value,sha256(to_json(["mcp-example-v1",value["purchase_ref"]]))) }
+    result := purchase_status(transport,value["execution_id"])
+    if result["ok"] { assert(result["result"]["execution_id"] == value["execution_id"],"status_identity") }
+    return result
+}
+mut result := {"ok":false,"code":"payment_unavailable"}
+try { result = call() } except error { }
+// Even native client failure codes are normalized; never echo caught exceptions.
+if result["ok"] == false { result = {"ok":false,"code":"payment_unavailable"} }
+print(to_json(result))

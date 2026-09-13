@@ -1,0 +1,12 @@
+from src.abilities.projection import ability_to_mcp_tool
+mut tools := []
+for operation in ["request","inspect"] {
+    definition := parse_json(read_file("contracts/abilities/"+operation+".json"))
+    assert((operation == "request" && definition["id"] == "kujo.payments.intent.request") || (operation == "inspect" && definition["id"] == "kujo.payments.execution.inspect"),"payment_definition_identity")
+    mut name := "purchase_status"
+    if operation == "request" { name = "purchase_request" }
+    result := ability_to_mcp_tool(definition,{"enabled":true,"name":name,"public":false,"allowed_effects":["read","write","external"]})
+    assert(result["ok"],"payment_projection_failed")
+    tools = push(tools,result["tool"])
+}
+print(to_json({"tools":tools}))

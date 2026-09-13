@@ -10,7 +10,7 @@ Implementation follows the accepted September 12 architecture review in kujolang
 
 ## Development
 
-Kujo 1.4.0 or later is required. Install the commit-pinned Ability dependency with `kennel install` (or `kujo run /path/to/kennel/kennel.kujo --interpreter -- install`). Install the pinned development tool separately with `kennel install --project-dir tools`. Set `KUJO_BIN` to a built Kujo executable and run `bash scripts/test.sh` from this directory. Normal tests use synthetic data and never move money.
+Set `KUJO_BIN` to an absolute Kujo 1.4.0 executable. Run `python3 scripts/ci/bootstrap.py` to install and verify the locked core and optional integration dependencies, then `npm ci --prefix examples/mcp --ignore-scripts --no-audit --no-fund`. The full host suite additionally uses Python 3 and Node (CI pins 24.20.0). Run `bash scripts/test.sh` from this directory. Normal tests use synthetic data and never move money. Core Payments itself has no Node, MCP, Agents SDK or Dispatch dependency.
 
 ## Runnable fixture
 
