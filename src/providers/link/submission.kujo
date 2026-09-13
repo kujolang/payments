@@ -1,17 +1,11 @@
+from src.providers.link.payment_journal import open_link_payment_journal
 // Private MPP submission journal and one-use dispatch. The installed merchant
 // port owns authenticated observation; a 2xx response alone is never settlement.
 from src.providers.link.mpp import validate_mpp_challenge, mpp_credential
 from src.providers.link.authorization import execution_credential
 from src.domain.binding import snapshot_digest
 
-export open_link_submissions := func(db) {
-    db_execute(db,"CREATE TABLE IF NOT EXISTS link_mpp_prepared(ref TEXT PRIMARY KEY,snapshot_digest TEXT NOT NULL,challenge_digest TEXT NOT NULL,challenge_json TEXT NOT NULL)",[])
-    db_execute(db,"CREATE TABLE IF NOT EXISTS link_mpp_dispatches(ref TEXT PRIMARY KEY REFERENCES link_mpp_prepared(ref),claim_id TEXT NOT NULL UNIQUE)",[])
-    for table in ["link_mpp_prepared","link_mpp_dispatches"] {
-        db_execute(db,"CREATE TRIGGER IF NOT EXISTS "+table+"_no_update BEFORE UPDATE ON "+table+" BEGIN SELECT RAISE(ABORT,'link_mpp_immutable'); END",[])
-        db_execute(db,"CREATE TRIGGER IF NOT EXISTS "+table+"_no_delete BEFORE DELETE ON "+table+" BEGIN SELECT RAISE(ABORT,'link_mpp_permanent'); END",[])
-    }
-}
+export open_link_submissions := func(db) { open_link_payment_journal(db,"submission") }
 export prepare_link_submission := func(db, ref, snapshot, header, expected, now_ms) {
     try {
         challenge := validate_mpp_challenge(header,expected,now_ms)

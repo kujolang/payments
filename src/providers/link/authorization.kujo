@@ -1,17 +1,9 @@
+from src.providers.link.payment_journal import open_link_payment_journal
 // Private adapter journal: use a provider-owned database, never the model's
 // journal or tool context. Persist references, never native response bodies.
 from src.domain.binding import frame, snapshot_digest
 
-export open_link_authorizations := func(db) {
-    db_query(db,"PRAGMA busy_timeout=5000",[])
-    db_query(db,"PRAGMA foreign_keys=ON",[])
-    db_query(db,"PRAGMA journal_mode=WAL",[])
-    db_query(db,"PRAGMA synchronous=FULL",[])
-    db_execute(db,"CREATE TABLE IF NOT EXISTS link_authorizations(ref TEXT PRIMARY KEY,digest TEXT NOT NULL,account_ref TEXT NOT NULL,network_id TEXT NOT NULL,request_key TEXT NOT NULL UNIQUE,native_id TEXT)",[])
-    db_execute(db,"CREATE UNIQUE INDEX IF NOT EXISTS link_native_once ON link_authorizations(native_id) WHERE native_id IS NOT NULL",[])
-    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_issuance_tombstone BEFORE DELETE ON link_authorizations BEGIN SELECT RAISE(ABORT,'link_issuance_permanent'); END",[])
-    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_issuance_immutable BEFORE UPDATE ON link_authorizations WHEN NEW.ref != OLD.ref OR NEW.digest != OLD.digest OR NEW.account_ref != OLD.account_ref OR NEW.network_id != OLD.network_id OR NEW.request_key != OLD.request_key OR (OLD.native_id IS NOT NULL AND NEW.native_id IS NOT OLD.native_id) BEGIN SELECT RAISE(ABORT,'link_issuance_immutable'); END",[])
-}
+export open_link_authorizations := func(db) { open_link_payment_journal(db,"authorization") }
 func unknown() { return {"ok":false,"code":"link_authorization_unknown"} }
 export matching_link_authorization := func(native, snapshot, network_id) {
     if type(native) != "dict" { return false }

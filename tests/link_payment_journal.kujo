@@ -1,0 +1,13 @@
+from src.providers.link.payment_journal import open_link_payment_journal
+from src.providers.link.authorization import open_link_authorizations
+from src.providers.link.submission import open_link_submissions
+
+db := db_connect("sqlite",env("PAYMENTS_TEST_DB"))
+mut ok := true
+try {
+    if env("PAYMENTS_JOURNAL_GROUP") == "provider" { open_link_payment_journal(db,"provider") }
+    else if env("PAYMENTS_JOURNAL_GROUP") == "submission" { open_link_submissions(db) }
+    else { open_link_authorizations(db) }
+} except error { ok = false }
+db_close(db)
+print(to_json({"ok":ok}))

@@ -1,9 +1,10 @@
+from src.providers.link.payment_journal import open_link_payment_journal
 // Trusted installation of the five-method SPI. No model argument chooses these
 // callbacks, credentials, account, merchant route or confirmation policy.
 from src.domain.binding import frame, intent_digest, snapshot_digest, capabilities_digest, principal_digest
-from src.providers.link.authorization import open_link_authorizations, request_link_authorization, observe_link_authorization
+from src.providers.link.authorization import request_link_authorization, observe_link_authorization
 from src.providers.link.mpp import validate_mpp_challenge
-from src.providers.link.submission import open_link_submissions, prepare_link_submission, submit_link_once, observe_link_submission
+from src.providers.link.submission import prepare_link_submission, submit_link_once, observe_link_submission
 
 export link_provider := func(db, installed, api, merchant, clock_ms) {
     assert(type(api) == "function" && type(clock_ms) == "function","link_host_ports")
@@ -14,11 +15,7 @@ export link_provider := func(db, installed, api, merchant, clock_ms) {
     assert(merchant["origin"] == installed["snapshot"]["payee"]["origin"] && merchant["body_digest"] == installed["expected"]["body_digest"],"link_merchant_destination")
     for key in ["route_id","route_version","resource_ref"] { assert(merchant[key] == installed["snapshot"]["request_binding"][key],"link_merchant_route_identity") }
     for method in ["probe","pay","observe"] { assert(type(merchant[method]) == "function","link_merchant_port") }
-    open_link_authorizations(db)
-    open_link_submissions(db)
-    db_execute(db,"CREATE TABLE IF NOT EXISTS link_provider_prepared(ref TEXT PRIMARY KEY,scope TEXT NOT NULL,execution_id TEXT NOT NULL,installation_digest TEXT NOT NULL,intent_digest TEXT NOT NULL,snapshot_json TEXT NOT NULL,UNIQUE(scope,execution_id))",[])
-    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_provider_prepared_immutable BEFORE UPDATE ON link_provider_prepared BEGIN SELECT RAISE(ABORT,'link_provider_preparation_immutable'); END",[])
-    db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_provider_prepared_permanent BEFORE DELETE ON link_provider_prepared BEGIN SELECT RAISE(ABORT,'link_provider_preparation_permanent'); END",[])
+    open_link_payment_journal(db,"provider")
     installation_digest := sha256(frame(["kujo.link.installation/v1",snapshot_digest(installed["snapshot"]),capabilities_digest(installed["capabilities"]),to_json(installed["expected"]),installed["payment_method"],to_string(installed["test_mode"]),merchant["binding_digest"]]))
     load := func(ref,context) {
         rows := db_query(db,"SELECT * FROM link_provider_prepared WHERE ref=?",[ref])

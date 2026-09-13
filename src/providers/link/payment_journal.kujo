@@ -1,0 +1,49 @@
+// Frozen legacy provider journal groups. Version 0 is the existing SQLite
+// user_version, not a new protocol version. No silent repair or row migration.
+from src.providers.link.private_store import validate_private_link_store
+
+export open_link_payment_journal := func(db,group) {
+    assert(group == "authorization" || group == "submission" || group == "provider","link_journal_group")
+    authorization := [{"name":"link_authorizations","sql":"CREATE TABLE link_authorizations(ref TEXT PRIMARY KEY,digest TEXT NOT NULL,account_ref TEXT NOT NULL,network_id TEXT NOT NULL,request_key TEXT NOT NULL UNIQUE,native_id TEXT)"},{"name":"link_native_once","sql":"CREATE UNIQUE INDEX link_native_once ON link_authorizations(native_id) WHERE native_id IS NOT NULL"},{"name":"link_issuance_tombstone","sql":"CREATE TRIGGER link_issuance_tombstone BEFORE DELETE ON link_authorizations BEGIN SELECT RAISE(ABORT,'link_issuance_permanent'); END"},{"name":"link_issuance_immutable","sql":"CREATE TRIGGER link_issuance_immutable BEFORE UPDATE ON link_authorizations WHEN NEW.ref != OLD.ref OR NEW.digest != OLD.digest OR NEW.account_ref != OLD.account_ref OR NEW.network_id != OLD.network_id OR NEW.request_key != OLD.request_key OR (OLD.native_id IS NOT NULL AND NEW.native_id IS NOT OLD.native_id) BEGIN SELECT RAISE(ABORT,'link_issuance_immutable'); END"}]
+    submission := [{"name":"link_mpp_prepared","sql":"CREATE TABLE link_mpp_prepared(ref TEXT PRIMARY KEY,snapshot_digest TEXT NOT NULL,challenge_digest TEXT NOT NULL,challenge_json TEXT NOT NULL)"},{"name":"link_mpp_dispatches","sql":"CREATE TABLE link_mpp_dispatches(ref TEXT PRIMARY KEY REFERENCES link_mpp_prepared(ref),claim_id TEXT NOT NULL UNIQUE)"},{"name":"link_mpp_prepared_no_update","sql":"CREATE TRIGGER link_mpp_prepared_no_update BEFORE UPDATE ON link_mpp_prepared BEGIN SELECT RAISE(ABORT,'link_mpp_immutable'); END"},{"name":"link_mpp_prepared_no_delete","sql":"CREATE TRIGGER link_mpp_prepared_no_delete BEFORE DELETE ON link_mpp_prepared BEGIN SELECT RAISE(ABORT,'link_mpp_permanent'); END"},{"name":"link_mpp_dispatches_no_update","sql":"CREATE TRIGGER link_mpp_dispatches_no_update BEFORE UPDATE ON link_mpp_dispatches BEGIN SELECT RAISE(ABORT,'link_mpp_immutable'); END"},{"name":"link_mpp_dispatches_no_delete","sql":"CREATE TRIGGER link_mpp_dispatches_no_delete BEFORE DELETE ON link_mpp_dispatches BEGIN SELECT RAISE(ABORT,'link_mpp_permanent'); END"}]
+    provider := [{"name":"link_provider_prepared","sql":"CREATE TABLE link_provider_prepared(ref TEXT PRIMARY KEY,scope TEXT NOT NULL,execution_id TEXT NOT NULL,installation_digest TEXT NOT NULL,intent_digest TEXT NOT NULL,snapshot_json TEXT NOT NULL,UNIQUE(scope,execution_id))"},{"name":"link_provider_prepared_immutable","sql":"CREATE TRIGGER link_provider_prepared_immutable BEFORE UPDATE ON link_provider_prepared BEGIN SELECT RAISE(ABORT,'link_provider_preparation_immutable'); END"},{"name":"link_provider_prepared_permanent","sql":"CREATE TRIGGER link_provider_prepared_permanent BEFORE DELETE ON link_provider_prepared BEGIN SELECT RAISE(ABORT,'link_provider_preparation_permanent'); END"}]
+    db_query(db,"PRAGMA busy_timeout=5000",[])
+    db_query(db,"PRAGMA foreign_keys=ON",[])
+    db_query(db,"PRAGMA synchronous=FULL",[])
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        objects := db_query(db,"SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'",[])
+        mut expected := []
+        mut has_authorization := false
+        mut has_submission := false
+        mut has_provider := false
+        for object in objects {
+            if object["name"] == "link_provider_prepared" { has_provider = true }
+            if object["name"] == "link_authorizations" { has_authorization = true }
+            if object["name"] == "link_mpp_prepared" || object["name"] == "link_mpp_dispatches" { has_submission = true }
+        }
+        assert(has_submission == false || has_authorization,"link_journal_missing_authorization")
+        assert(group != "submission" || has_authorization,"link_journal_authorization_first")
+        assert(has_provider == false || (has_authorization && has_submission),"link_journal_missing_group")
+        assert(group != "provider" || len(objects) == 0 || has_provider,"link_journal_partial_provider")
+        if has_provider { for definition in provider { expected = push(expected,definition) } }
+        if has_authorization { for definition in authorization { expected = push(expected,definition) } }
+        if has_submission { for definition in submission { expected = push(expected,definition) } }
+        // Exact comparison also rejects fragments, unknown objects and future versions.
+        validate_private_link_store(db,expected,0)
+        mut missing := []
+        if group == "authorization" && has_authorization == false { missing = authorization }
+        if group == "submission" && has_submission == false { missing = submission }
+        if group == "provider" && len(objects) == 0 {
+            for definition in authorization { missing = push(missing,definition) }
+            for definition in submission { missing = push(missing,definition) }
+            for definition in provider { missing = push(missing,definition) }
+        }
+        for definition in missing { db_execute(db,definition["sql"],[]) }
+        db_execute(db,"COMMIT",[])
+        if group == "authorization" || group == "provider" { db_query(db,"PRAGMA journal_mode=WAL",[]) }
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        assert(false,"link_payment_journal_unavailable")
+    }
+}

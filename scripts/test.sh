@@ -39,6 +39,7 @@ python3 tests/network/worker_test.py
 python3 tests/network/reconciliation_test.py
 PAYMENTS_TEST_DB="$store_dir/link-authorization.db" "$KUJO_BIN" run tests/link_authorization.kujo --interpreter
 python3 tests/network/link_issuance_test.py
+python3 tests/network/link_payment_journal_test.py
 python3 tests/network/link_credentials_test.py
 python3 tests/network/link_revocation_test.py
 python3 tests/network/link_enrollment_test.py
