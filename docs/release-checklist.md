@@ -40,6 +40,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Private Link revocation component: local disable before a bounded provider request, separate acknowledgment/unknown status, 12 synthetic failure/race/crash/rotation cases and full local host regressions. Live provider acceptance remains open.
 
+- [x] Private device-enrollment journal, timed host-driven polling, private operator delivery and guarded credential API publication; lifecycle/race/crash tests and 22 fault cases pass locally. Supported account verification, deployment and live acceptance remain open.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

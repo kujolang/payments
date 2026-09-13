@@ -1,0 +1,167 @@
+// Provider-private device enrollment. Host owns scheduling, operator identity,
+// registered client configuration and verified account/vault installation.
+from src.domain.binding import frame
+from src.providers.link.credentials import link_credential_binding_digest, valid_link_token_response
+from src.providers.link.oauth import link_device_form, link_device_token_form
+from src.providers.link.private_store import open_private_link_store
+
+func unavailable() { return {"ok":false,"code":"link_enrollment_unavailable"} }
+func identifier(value) { return type(value) == "string" && regex_match(value,"^[A-Za-z0-9_.:-]{1,128}$") }
+func digest(config) {
+    assert(type(config) == "dict" && len(keys(config)) == 4 && identifier(config["credential_id"]),"enrollment_config")
+    form := link_device_form(config["binding"]["client_id"],config["binding"]["scope"],config["label"])
+    origins := config["origins"]
+    assert(type(origins) == "array" && len(origins) > 0 && len(origins) <= 16,"enrollment_origins")
+    for origin in origins { assert(type(origin) == "string" && regex_match(origin,"^https://[a-z0-9]+([.-][a-z0-9]+)*$"),"enrollment_origin") }
+    return sha256(frame(["kujo.link-enrollment-binding/v1",link_credential_binding_digest(config["binding"]),config["credential_id"],config["label"],to_json(sort(origins))]))
+}
+func allowed_url(url,origins) {
+    if type(url) != "string" || len(url) > 4096 || regex_match(url,"^https://[A-Za-z0-9:/?&=._~!$()*+,;@%-]+$") == false { return false }
+    parts := split(url,"/")
+    if len(parts) < 4 || regex_match(parts[2],"^[a-z0-9]+([.-][a-z0-9]+)*$") == false { return false }
+    return contains(origins,"https://"+parts[2])
+}
+func row_for(db,id,config) {
+    assert(identifier(id),"enrollment_id")
+    rows := db_query(db,"SELECT * FROM link_enrollment_v1 WHERE id=? AND binding_digest=?",[id,digest(config)])
+    if len(rows) != 1 { return null };return rows[0]
+}
+func summary(row) {
+    if row == null { return unavailable() }
+    return {"ok":true,"enrollment_id":row["id"],"state":row["state"],"revision":row["revision"],"expires_at_ms":row["expires_at_ms"],"next_poll_at_ms":row["next_poll_at_ms"]}
+}
+func terminal(db,row,state) {
+    return db_execute(db,"UPDATE link_enrollment_v1 SET state=?,revision=revision+1,device_code=NULL,operator_json=NULL,tokens_json=NULL,next_poll_at_ms=0 WHERE id=? AND binding_digest=? AND revision=? AND state=?",[state,row["id"],row["binding_digest"],row["revision"],row["state"]]) == 1
+}
+func bounded(now,deadline) { return type(now) == "int" && now >= 0 && now <= 9007199168340991 && type(deadline) == "int" && deadline > now+5000 && deadline <= 9007199254740991 }
+export open_link_enrollment := func(db) {
+    definitions := [{"name":"link_enrollment_v1","sql":"CREATE TABLE link_enrollment_v1(id TEXT PRIMARY KEY,binding_digest TEXT NOT NULL,credential_id TEXT NOT NULL UNIQUE,state TEXT NOT NULL CHECK(state IN ('initiating','pending','polling','received','accepting','accepted','rejected','expired','abandoned','unknown')),revision INTEGER NOT NULL CHECK(revision>=0),device_code TEXT,operator_json TEXT,tokens_json TEXT,token_started_ms INTEGER NOT NULL CHECK(token_started_ms>=0),expires_at_ms INTEGER NOT NULL CHECK(expires_at_ms>=0),interval_ms INTEGER NOT NULL CHECK(interval_ms>=0),next_poll_at_ms INTEGER NOT NULL CHECK(next_poll_at_ms>=0),CHECK((state IN ('pending','polling') AND device_code IS NOT NULL AND operator_json IS NOT NULL AND tokens_json IS NULL) OR (state='received' AND device_code IS NULL AND operator_json IS NULL AND tokens_json IS NOT NULL) OR (state IN ('initiating','accepting','accepted','rejected','expired','abandoned','unknown') AND device_code IS NULL AND operator_json IS NULL AND tokens_json IS NULL)))"},{"name":"link_enrollment_identity","sql":"CREATE TRIGGER link_enrollment_identity BEFORE UPDATE ON link_enrollment_v1 WHEN NEW.id!=OLD.id OR NEW.binding_digest!=OLD.binding_digest OR NEW.credential_id!=OLD.credential_id OR NEW.revision!=OLD.revision+1 BEGIN SELECT RAISE(ABORT,'enrollment_identity_immutable'); END"},{"name":"link_enrollment_permanent","sql":"CREATE TRIGGER link_enrollment_permanent BEFORE DELETE ON link_enrollment_v1 BEGIN SELECT RAISE(ABORT,'enrollment_identity_permanent'); END"}]
+    open_private_link_store(db,definitions,1)
+}
+export inspect_link_enrollment := func(db,id,config) {
+    try { return summary(row_for(db,id,config)) } except error { return unavailable() }
+}
+export abandon_link_enrollment := func(db,id,config,revision) {
+    try {
+        row := row_for(db,id,config)
+        if row == null || type(revision) != "int" || revision != row["revision"] || contains(["accepted","rejected","expired","abandoned","unknown"],row["state"]) { return unavailable() }
+        if terminal(db,row,"abandoned") == false { return unavailable() }
+        return summary(row_for(db,id,config))
+    } except error { return unavailable() }
+}
+export start_link_enrollment := func(db,id,config,device,clock_ms,deadline_ms) {
+    try {
+        started := clock_ms()
+        if identifier(id) == false || bounded(started,deadline_ms) == false { return unavailable() }
+        binding := digest(config)
+        won := db_execute(db,"INSERT OR IGNORE INTO link_enrollment_v1 VALUES(?,?,?,'initiating',0,NULL,NULL,NULL,0,0,0,0)",[id,binding,config["credential_id"]])
+        row := row_for(db,id,config)
+        if won != 1 { return summary(row) }
+        mut result := {"ok":false}
+        try { result = device("start",config["binding"]["client_id"],config["binding"]["scope"],config["label"],deadline_ms) } except error { result = {"ok":false} }
+        mut accepted := false
+        try {
+            now := clock_ms();native := result["native"]
+            assert(type(result["ok"]) == "bool" && result["ok"] == true && result["outcome"] == "received" && type(now) == "int" && now >= started && now < deadline_ms,"enrollment_response")
+            form := link_device_token_form(config["binding"]["client_id"],native["device_code"])
+            assert(type(native["user_code"]) == "string" && len(native["user_code"]) > 0 && len(native["user_code"]) <= 128 && regex_match(native["user_code"],"^[A-Za-z0-9 -]+$"),"enrollment_user_code")
+            assert(allowed_url(native["verification_uri"],config["origins"]) && allowed_url(native["verification_uri_complete"],config["origins"]),"enrollment_url")
+            ttl := native["expires_in"]
+            mut interval := 5;if has_key(native,"interval") { interval = native["interval"] }
+            assert(type(ttl) == "int" && ttl > 0 && ttl <= 86400 && type(interval) == "int" && interval >= 1 && interval <= 3600 && now < started+ttl*1000,"enrollment_lifetime")
+            payload := {"enrollment_id":id,"credential_ref":config["credential_id"],"expected_binding":config["binding"],"client_label":config["label"],"user_code":native["user_code"],"verification_url":native["verification_uri"],"verification_url_complete":native["verification_uri_complete"],"expires_at_ms":started+ttl*1000}
+            accepted = db_execute(db,"UPDATE link_enrollment_v1 SET state='pending',revision=revision+1,device_code=?,operator_json=?,expires_at_ms=?,interval_ms=?,next_poll_at_ms=? WHERE id=? AND binding_digest=? AND state='initiating' AND revision=0",[native["device_code"],to_json(payload),started+ttl*1000,interval*1000,now+interval*1000,id,binding]) == 1
+        } except error { accepted = false }
+        if accepted == false { terminal(db,row,"unknown") }
+        return summary(row_for(db,id,config))
+    } except error { return unavailable() }
+}
+export deliver_link_enrollment := func(db,id,config,deliver,clock_ms,deadline_ms) {
+    try {
+        row := row_for(db,id,config);started := clock_ms()
+        if row == null || row["state"] != "pending" || type(started) != "int" || started >= row["expires_at_ms"] || type(deadline_ms) != "int" || started >= deadline_ms { return unavailable() }
+        payload := parse_json(row["operator_json"])
+        if len(keys(payload)) != 8 || payload["enrollment_id"] != id || payload["credential_ref"] != config["credential_id"] || payload["client_label"] != config["label"] || payload["expires_at_ms"] != row["expires_at_ms"] || link_credential_binding_digest(payload["expected_binding"]) != link_credential_binding_digest(config["binding"]) { return unavailable() }
+        if allowed_url(payload["verification_url"],config["origins"]) == false || allowed_url(payload["verification_url_complete"],config["origins"]) == false { return unavailable() }
+        mut limit := deadline_ms;if limit > row["expires_at_ms"] { limit = row["expires_at_ms"] }
+        result := deliver(payload,limit)
+        now := clock_ms();current := row_for(db,id,config)
+        if type(result) != "bool" || result != true || now < started || now >= limit || current == null || current["revision"] != row["revision"] { return unavailable() }
+        return {"ok":true,"enrollment_id":id}
+    } except error { return unavailable() }
+}
+export poll_link_enrollment := func(db,id,config,device,clock_ms,deadline_ms) {
+    try {
+        row := row_for(db,id,config);started := clock_ms()
+        if row == null || bounded(started,deadline_ms) == false { return unavailable() }
+        if row["state"] != "pending" { return summary(row) }
+        if started >= row["expires_at_ms"] { terminal(db,row,"expired");return summary(row_for(db,id,config)) }
+        if started < row["next_poll_at_ms"] { return summary(row) }
+        mut limit := deadline_ms;if limit > row["expires_at_ms"] { limit = row["expires_at_ms"] }
+        if bounded(started,limit) == false { return summary(row) }
+        won := db_execute(db,"UPDATE link_enrollment_v1 SET state='polling',revision=revision+1 WHERE id=? AND binding_digest=? AND state='pending' AND revision=?",[id,row["binding_digest"],row["revision"]])
+        if won != 1 { return summary(row_for(db,id,config)) }
+        reserved := row_for(db,id,config)
+        if reserved["state"] != "polling" || reserved["revision"] != row["revision"]+1 { return summary(reserved) }
+        mut result := {"ok":false}
+        try { result = device("poll",config["binding"]["client_id"],row["device_code"],"",limit) } except error { result = {"ok":false} }
+        mut accepted := false
+        try {
+            now := clock_ms();assert(type(now) == "int" && now >= started && now < deadline_ms && now < row["expires_at_ms"] && type(result["ok"]) == "bool" && result["ok"] == true,"enrollment_poll_response")
+            outcome := result["outcome"]
+            if outcome == "pending" || outcome == "slow_down" {
+                mut interval := row["interval_ms"];if outcome == "slow_down" { interval = interval+5000 }
+                assert(interval <= 86400000,"enrollment_interval")
+                accepted = db_execute(db,"UPDATE link_enrollment_v1 SET state='pending',revision=revision+1,interval_ms=?,next_poll_at_ms=? WHERE id=? AND binding_digest=? AND state='polling' AND revision=?",[interval,now+interval,id,row["binding_digest"],reserved["revision"]]) == 1
+            } else if outcome == "expired" || outcome == "rejected" { accepted = terminal(db,reserved,outcome) }
+            else if outcome == "received" {
+                native := result["native"];assert(valid_link_token_response(native,config["binding"],started),"enrollment_token_contract")
+                assert(started+native["expires_in"]*1000 > now,"enrollment_token_expiry")
+                tokens := {"access_token":native["access_token"],"refresh_token":native["refresh_token"],"token_type":native["token_type"],"expires_in":native["expires_in"],"scope":native["scope"]}
+                accepted = db_execute(db,"UPDATE link_enrollment_v1 SET state='received',revision=revision+1,device_code=NULL,operator_json=NULL,tokens_json=?,token_started_ms=?,expires_at_ms=?,next_poll_at_ms=0 WHERE id=? AND binding_digest=? AND state='polling' AND revision=?",[to_json(tokens),started,started+native["expires_in"]*1000,id,row["binding_digest"],reserved["revision"]]) == 1
+            }
+        } except error { accepted = false }
+        if accepted == false { terminal(db,reserved,"unknown") }
+        return summary(row_for(db,id,config))
+    } except error { return unavailable() }
+}
+export accept_link_enrollment := func(db,id,config,accept_tokens,clock_ms,deadline_ms) {
+    try {
+        row := row_for(db,id,config);started := clock_ms()
+        if row == null || bounded(started,deadline_ms) == false || type(accept_tokens) != "function" { return unavailable() }
+        if row["state"] != "received" { return summary(row) }
+        if started >= row["expires_at_ms"] { terminal(db,row,"expired");return summary(row_for(db,id,config)) }
+        mut limit := deadline_ms;if limit > row["expires_at_ms"] { limit = row["expires_at_ms"] }
+        if bounded(started,limit) == false { return summary(row) }
+        tokens := parse_json(row["tokens_json"])
+        if valid_link_token_response(tokens,config["binding"],row["token_started_ms"]) == false { terminal(db,row,"unknown");return summary(row_for(db,id,config)) }
+        if terminal(db,row,"accepting") == false { return summary(row_for(db,id,config)) }
+        reserved := row_for(db,id,config)
+        if reserved["state"] != "accepting" || reserved["revision"] != row["revision"]+1 { return summary(reserved) }
+        mut accepted := false
+        try {
+            // The host must verify provider account binding before installing.
+            // This callback is privileged, never a generic tool or receipt sink.
+            value := accept_tokens(config["credential_id"],config["binding"],tokens,row["token_started_ms"],limit)
+            now := clock_ms()
+            accepted = type(value) == "bool" && value == true && type(now) == "int" && now >= started && now < deadline_ms && now < row["expires_at_ms"]
+        } except error { accepted = false }
+        mut target := "unknown";if accepted { target = "accepted" }
+        terminal(db,reserved,target)
+        return summary(row_for(db,id,config))
+    } except error { return unavailable() }
+}
+
+// Compose around the matching private credential API before installing a route.
+// An active vault row alone cannot publish an interrupted enrollment.
+export link_enrollment_api := func(db,id,config,api) {
+    expected := digest(config)
+    assert(identifier(id) && type(api) == "function","enrollment_api_config")
+    return func(method,path,body,deadline_ms) {
+        try {
+            rows := db_query(db,"SELECT state FROM link_enrollment_v1 WHERE id=? AND binding_digest=?",[id,expected])
+            if len(rows) != 1 || rows[0]["state"] != "accepted" { return unavailable() }
+            return api(method,path,body,deadline_ms)
+        } except error { return unavailable() }
+    }
+}

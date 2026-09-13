@@ -1,0 +1,95 @@
+from src.providers.link.enrollment import open_link_enrollment, start_link_enrollment, inspect_link_enrollment, deliver_link_enrollment, poll_link_enrollment, accept_link_enrollment, abandon_link_enrollment, link_enrollment_api
+from src.providers.link.credentials import open_link_credentials, install_link_credentials
+from src.providers.link.oauth import link_device_form, link_device_token_form, link_device_response, link_oauth_device
+
+db := db_connect("sqlite",env("PAYMENTS_ENROLL_DB"));open_link_enrollment(db)
+ledger := db_connect("sqlite",env("PAYMENTS_ENROLL_DB")+".provider");db_execute(ledger,"CREATE TABLE IF NOT EXISTS calls(phase TEXT)",[])
+config := {"credential_id":"credential_1","binding":{"tenant_id":"tenant","payer_ref":"payer","account_ref":"account","client_id":"registered_fixture","scope":"offline spend"},"label":"Kujo Payments","origins":["https://app.link.com"]}
+action := env("PAYMENTS_ENROLL_ACTION");mode := env("PAYMENTS_ENROLL_MODE")
+now := parse_int(env("PAYMENTS_ENROLL_NOW"))
+mut enrollment_id := env("PAYMENTS_ENROLL_ID");if enrollment_id == "" { enrollment_id = "enrollment_1" }
+initial_calls := db_query(ledger,"SELECT count(*) AS n FROM calls",[])[0]["n"]
+clock := func() {
+    if db_query(ledger,"SELECT count(*) AS n FROM calls",[])[0]["n"] > initial_calls {
+        if mode == "late" { return now+10000 }
+        if mode == "rollback" { return 0 }
+    }
+    return now
+}
+if mode == "write_failure" {
+    mut target := "pending";if action == "poll" { target = "received" };if action == "accept" { target = "accepted" }
+    db_execute(db,"CREATE TRIGGER injected_failure BEFORE UPDATE ON link_enrollment_v1 WHEN NEW.state='"+target+"' BEGIN SELECT RAISE(ABORT,'synthetic_write_failure'); END",[])
+}
+func stop(phase) {
+    if env("PAYMENTS_ENROLL_STOP") == phase { write_file(env("PAYMENTS_ENROLL_MARKER"),"ready");sleep(30000);assert(false,"supervisor_must_kill") }
+}
+device := func(phase,client,value,label,deadline) {
+    assert(client == "registered_fixture" && deadline > now,"request_binding")
+    db_execute(ledger,"INSERT INTO calls VALUES(?)",[phase]);stop(phase)
+    if mode == "throw" { assert(false,"SENTINEL_NATIVE_ERROR") }
+    if mode == "abandon" { r := inspect_link_enrollment(db,enrollment_id,config);assert(abandon_link_enrollment(db,enrollment_id,config,r["revision"])["ok"],"concurrent_abandon") }
+    if phase == "start" {
+        assert(value == "offline spend" && label == "Kujo Payments","start_binding")
+        native := {"device_code":"SENTINEL_DEVICE_CODE","user_code":"SENTINEL USER CODE","verification_uri":"https://app.link.com/verify","verification_uri_complete":"https://app.link.com/verify?code=SENTINEL_URL","expires_in":120,"interval":5,"extra":"SENTINEL_EXTRA"}
+        if mode == "url" { native["verification_uri_complete"] = "https://evil.example/verify" }
+        if mode == "interval" { native["interval"] = 0 }
+        if mode == "default_interval" { native = {"device_code":"SENTINEL_DEVICE_CODE","user_code":"SENTINEL USER CODE","verification_uri":"https://app.link.com/verify","verification_uri_complete":"https://app.link.com/verify?code=SENTINEL_URL","expires_in":120} }
+        return {"ok":true,"outcome":"received","native":native}
+    }
+    assert(value == "SENTINEL_DEVICE_CODE","device_code_private")
+    if mode == "pending" || mode == "slow_down" || mode == "rejected" || mode == "expired" { return {"ok":true,"outcome":mode} }
+    tokens := {"access_token":"SENTINEL_ENROLL_ACCESS","refresh_token":"SENTINEL_ENROLL_REFRESH","token_type":"Bearer","scope":"spend offline","expires_in":60,"extra":"SENTINEL_EXTRA"}
+    if mode == "scope" { tokens["scope"] = "other" }
+    if mode == "details" { tokens["authorization_details"] = [{"type":"unreviewed"}] }
+    return {"ok":true,"outcome":"received","native":tokens}
+}
+if mode == "wrong_binding" { binding := config["binding"];binding["payer_ref"] = "other";config["binding"] = binding }
+if mode == "wrong_origin" { config["origins"] = ["https://other.example"] }
+if action == "start" { print(to_json(start_link_enrollment(db,enrollment_id,config,device,clock,now+10000))) }
+else if action == "api" {
+    api := func(method,path,body,deadline) { db_execute(ledger,"INSERT INTO calls VALUES('api')",[]);return {"ok":true} }
+    guarded := link_enrollment_api(db,enrollment_id,config,api)
+    print(to_json(guarded("GET","/userinfo",{},now+10000)))
+}
+else if action == "inspect" { print(to_json(inspect_link_enrollment(db,enrollment_id,config))) }
+else if action == "poll" { print(to_json(poll_link_enrollment(db,enrollment_id,config,device,clock,now+10000))) }
+else if action == "abandon" { r := inspect_link_enrollment(db,enrollment_id,config);print(to_json(abandon_link_enrollment(db,enrollment_id,config,r["revision"]))) }
+else if action == "deliver" {
+    deliver := func(payload,deadline) {
+        assert(payload["user_code"] == "SENTINEL USER CODE" && payload["verification_url_complete"] == "https://app.link.com/verify?code=SENTINEL_URL","private_renderer_payload")
+        assert(has_key(payload,"device_code") == 0,"no_device_secret_to_renderer")
+        assert(payload["expected_binding"]["payer_ref"] == "payer" && payload["expected_binding"]["scope"] == "offline spend" && payload["client_label"] == "Kujo Payments","operator_expected_terms")
+        db_execute(ledger,"INSERT INTO calls VALUES('deliver')",[])
+        if mode == "abandon" { r := inspect_link_enrollment(db,enrollment_id,config);abandon_link_enrollment(db,enrollment_id,config,r["revision"]) }
+        if mode == "throw" { assert(false,"SENTINEL_RENDERER_ERROR") }
+        return true
+    }
+    print(to_json(deliver_link_enrollment(db,enrollment_id,config,deliver,clock,now+10000)))
+} else if action == "accept" {
+    accept := func(id,binding,tokens,started,deadline) {
+        assert(id == "credential_1" && binding["account_ref"] == "account" && tokens["refresh_token"] == "SENTINEL_ENROLL_REFRESH" && has_key(tokens,"extra") == 0,"private_install_binding")
+        db_execute(ledger,"INSERT INTO calls VALUES('accept')",[]);stop("accept")
+        if mode == "deny" { return false }
+        // Synthetic account attestation only; no real provider identity asserted.
+        vault := db_connect("sqlite",env("PAYMENTS_ENROLL_DB")+".vault");open_link_credentials(vault)
+        installed := install_link_credentials(vault,id,binding,tokens,started);db_close(vault)
+        stop("after_install")
+        return installed["ok"]
+    }
+    print(to_json(accept_link_enrollment(db,enrollment_id,config,accept,clock,now+10000)))
+} else if action == "forms" {
+    assert(link_device_form("fixture","spend offline","Kujo Payments") == "client_id=fixture&scope=spend+offline&connection_label=Kujo+Payments&client_hint=Kujo+Payments","device_form")
+    assert(link_device_token_form("fixture","abc+/==") == "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&client_id=fixture&device_code=abc%2B%2F%3D%3D","poll_form")
+    for code in ["authorization_pending","slow_down","access_denied","expired_token","authorization_failed"] {
+        result := link_device_response(400,{"error":code,"error_description":"SENTINEL_RAW"},"poll")
+        assert(result["ok"] && contains(to_json(result),"SENTINEL") == 0,"closed_error_mapping")
+    }
+    assert(link_device_response(500,{"error":"authorization_pending"},"poll")["ok"] == false,"status_binding")
+    native := link_oauth_device(clock)
+    assert(native("start","bad&client","offline spend","Kujo",now+10000)["ok"] == false,"bad_client_no_network")
+    assert(native("poll","fixture","bad&code","",now+10000)["ok"] == false,"bad_code_no_network")
+    assert(native("start","fixture","offline spend","Kujo",now+5000)["ok"] == false,"deadline_no_network")
+    print(to_json({"ok":true}))
+}
+if mode == "write_failure" { db_execute(db,"DROP TRIGGER injected_failure",[]) }
+db_close(ledger);db_close(db)

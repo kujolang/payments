@@ -1,5 +1,5 @@
-// Private native refresh/revocation. Device enrollment and live client/account
-// verification are separate unfinished gates; no CLI client ID is copied.
+// Private native OAuth transports. Live client/account
+// verification remains a separate gate; no CLI client ID is copied.
 func form_token(value) {
     assert(type(value) == "string" && len(value) > 0 && len(value) <= 8192 && regex_match(value,"^[A-Za-z0-9._~+/-]+={0,2}$"),"oauth_token_invalid")
     return replace(replace(replace(value,"+","%2B"),"/","%2F"),"=","%3D")
@@ -39,6 +39,49 @@ export link_oauth_revoke := func(clock_ms) {
             response := http_request("https://login.link.com/device/revoke",{"method":"POST","headers":{"Content-Type":"application/x-www-form-urlencoded"},"body":body,"timeout":5,"max_response_bytes":32768,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"})
             match response {
                 case Ok(value): { accepted := value["_status"] >= 200 && value["_status"] < 300;return {"ok":accepted} }
+                case Err(error): { return {"ok":false} }
+            }
+        } except error { return {"ok":false} }
+    }
+}
+
+func form_text(value,maximum) {
+    assert(type(value) == "string" && len(value) > 0 && len(value) <= maximum && len(trim(value)) > 0 && regex_match(value,"^[A-Za-z0-9_:./ -]+$"),"oauth_text_invalid")
+    return replace(replace(replace(value,":","%3A"),"/","%2F")," ","+")
+}
+export link_device_form := func(client_id,scope,label) {
+    assert(type(client_id) == "string" && regex_match(client_id,"^[A-Za-z0-9_-]{1,128}$"),"oauth_client_invalid")
+    return "client_id="+client_id+"&scope="+form_text(scope,2048)+"&connection_label="+form_text(label,128)+"&client_hint="+form_text(label,128)
+}
+export link_device_token_form := func(client_id,code) {
+    assert(type(client_id) == "string" && regex_match(client_id,"^[A-Za-z0-9_-]{1,128}$"),"oauth_client_invalid")
+    return "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&client_id="+client_id+"&device_code="+form_token(code)
+}
+export link_device_response := func(status,native,phase) {
+    try {
+        if type(status) != "int" || type(native) != "dict" || contains(["start","poll"],phase) == false { return {"ok":false} }
+        if status >= 200 && status < 300 { return {"ok":true,"outcome":"received","native":native} }
+        if phase == "poll" && status == 400 && type(native["error"]) == "string" {
+            code := native["error"]
+            if code == "authorization_pending" { return {"ok":true,"outcome":"pending"} }
+            if code == "slow_down" { return {"ok":true,"outcome":"slow_down"} }
+            if code == "expired_token" { return {"ok":true,"outcome":"expired"} }
+            if code == "access_denied" || code == "authorization_failed" { return {"ok":true,"outcome":"rejected"} }
+        }
+        return {"ok":false}
+    } except error { return {"ok":false} }
+}
+export link_oauth_device := func(clock_ms) {
+    return func(phase,client_id,value,label,deadline_ms) {
+        try {
+            if type(deadline_ms) != "int" || clock_ms()+5000 >= deadline_ms { return {"ok":false} }
+            mut body := "";mut path := ""
+            if phase == "start" { body = link_device_form(client_id,value,label);path = "/device/code" }
+            else if phase == "poll" { body = link_device_token_form(client_id,value);path = "/device/token" }
+            else { return {"ok":false} }
+            response := http_request("https://login.link.com"+path,{"method":"POST","headers":{"Content-Type":"application/x-www-form-urlencoded"},"body":body,"timeout":5,"max_response_bytes":32768,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"})
+            match response {
+                case Ok(result): { return link_device_response(result["_status"],parse_json(result["_body"]),phase) }
                 case Err(error): { return {"ok":false} }
             }
         } except error { return {"ok":false} }

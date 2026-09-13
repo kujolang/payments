@@ -65,7 +65,7 @@ These are implementation requirements derived from reviewed source, not implemen
 
 ## Private credential rotation component
 
-`credentials.kujo` now provides a private, versioned SQLite credential journal, scoped installation, metadata-only inspection, generation-bound refresh, local disable and a credential-backed API callback. `oauth.kujo` implements fixed-origin native refresh and revocation requests, with validated form encoding, a five-second network timeout, bounded response size, DNS pinning, private-address denial, no redirects and no retry. The callback is privileged adapter data; it is not an agent tool or a public package export. Device enrollment, authenticated operator delivery installation and live revocation acceptance remain unfinished; the private delivery component is described below.
+`credentials.kujo` now provides a private, versioned SQLite credential journal, scoped installation, metadata-only inspection, generation-bound refresh, local disable and a credential-backed API callback. `oauth.kujo` implements fixed-origin native refresh and revocation requests, with validated form encoding, a five-second network timeout, bounded response size, DNS pinning, private-address denial, no redirects and no retry. The callback is privileged adapter data; it is not an agent tool or a public package export. Supported device enrollment installation, authenticated operator delivery and live revocation acceptance remain unfinished; the private delivery component is described below.
 
 The vault is separate from the core payment and Ability journals. Opening either kind of database as the other is rejected; the credential store also checks exact versioned table/trigger definitions under a write transaction. The host supplies the database connection and must provide a private directory, file permissions, process/network isolation and any at-rest encryption. The fixture uses a private temporary parent and a mode-0600 vault. The OCI test uses its separately mounted synthetic service directory; its test permissions are not a production vault prescription. No microVM, secure-memory erasure, secure deletion or encrypted-backup claim follows from SQLite storage.
 
@@ -102,3 +102,7 @@ The reviewed [UserInfoResource](https://github.com/stripe/link-cli/blob/4aa62ba3
 ## Private provider revocation component
 
 The [revocation operation](link-revocation.md) disables the local generation before one bounded provider request and reports endpoint acknowledgment separately from local state. It cannot recall in-flight credentials or recover remote status after a lost response. Device enrollment, supported client/account identity and provider acceptance remain open.
+
+## Private device enrollment component
+
+The [device enrollment journal](link-enrollment.md) reserves initiation and token exchange, schedules only explicit pending responses through host-driven steps, privately delivers user confirmation and hands filtered tokens to a required trusted acceptance callback. It does not attest a provider account, perform financial authorization or atomically publish a credential installation. Registered client support, account verification, authenticated deployment and acceptance remain open.
