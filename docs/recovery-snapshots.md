@@ -14,7 +14,7 @@ A successful result produces `payments.db` and `manifest.json`, both mode 0600 i
 
 ## What the copy can do
 
-The SQLite backup includes committed WAL pages without copying live database files piecemeal. The tool validates integrity, foreign keys and the supported core schema marker. A permanent quarantine marker and SQL guards prevent financial claims, new native authorization reservations and normal resume. Reopening through Kujo retains those guards. Paused state is set with an immutable control event; executing claims become reconciliation-required without clearing their tombstones. A second snapshot of a recovery copy retains its original quarantine lineage.
+The SQLite backup includes committed WAL pages without copying live database files piecemeal. The tool validates integrity, foreign keys and the frozen v1/v2 core SQL profile. A permanent quarantine marker and SQL guards prevent financial claims, new native authorization reservations and normal resume. Reopening through Kujo retains those guards. Paused state is set with an immutable control event; executing claims become reconciliation-required without clearing their tombstones. A second snapshot of a recovery copy retains its original quarantine lineage.
 
 Status inspection, evidence review and observation of retained claimed executions remain possible. Configure any reconciliation executor with the correct separately retained provider journal and observation authority. Missing provider references stay unknown; they do not authorize new issuance or submission. This tool handles only the core journal. It does not bundle Link's private journal, credentials, profiles or application configuration, and is not a complete disaster-recovery system.
 
@@ -22,7 +22,7 @@ Status inspection, evidence review and observation of retained claimed execution
 
 A snapshot may precede a charge whose claim is absent from that snapshot. Neither its hash, its unused approvals nor an empty claim table proves that charge did not happen. Therefore there is no supported switch to make a recovery copy spend again. Do not drop the quarantine marker, clear receipts or transplant old approvals into a new live store. Restore a quarantined copy through this tool; manually replacing live database files bypasses the maintenance boundary and is unsupported.
 
-Re-enabling operations after loss of the authoritative journal requires separately verified financial-history recovery and preservation of all replay evidence. Cross-journal backup coordination, schema migration, evidence merge, retention and interrupted Ability-invocation recovery remain release requirements. A live original database remains governed by its own incident control and original claims; creating a snapshot never resumes it.
+Re-enabling operations after loss of the authoritative journal requires separately verified financial-history recovery and preservation of all replay evidence. A quarantined v1 copy can use the explicit [v1-to-v2 migration](schema-migrations.md), retaining quarantine. Cross-journal backup coordination, evidence merge, retention and interrupted Ability-invocation recovery remain release requirements. A live original database remains governed by its own incident control and original claims; creating a snapshot never resumes it.
 
 ## Tested scope
 

@@ -92,3 +92,9 @@ Added a bounded administrative SQLite snapshot tool that includes committed WAL 
 This implements a core-journal recovery artifact, not complete disaster recovery or live restoration. Provider journals/configuration are separate; safe financial-history merge, schema migrations and interrupted Ability recovery remain open. See docs/recovery-snapshots.md for supported operations, partial-publication handling and explicit limits.
 
 Verification: both Linux jobs passed at `1dd0596`, [run 34727839884](https://github.com/kujolang/payments/actions/runs/34727839884). The full host suite includes the stale-snapshot, WAL, quarantine and schema-refusal tests. Evidence: docs/evidence/recovery-ci.json.
+
+## Explicit v1-to-v2 schema migration milestone
+
+New core journals initialize transactionally as private schema version 2. Existing v2 journals validate frozen required SQL definitions and migration provenance instead of silently repairing missing guards. A separate administrator entrypoint upgrades the exact frozen complete v1 baseline, preserving financial rows and restore quarantine, atomically recording its provenance and leaving the store paused. Normal open refuses v1 until explicitly migrated; this does not change canonical payment/Ability schema versions.
+
+Concurrent initialization/upgrades, consumed approval/claim/receipt preservation, schema drift rejection, audit failure and SIGKILL rollback are covered by native Kujo process tests. See docs/schema-migrations.md. Earlier experimental schema variants, coordinated backup/history merge and interrupted Ability recovery remain outside the implemented migration path.
