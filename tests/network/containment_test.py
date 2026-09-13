@@ -1,5 +1,5 @@
 """OCI acceptance probe: untrusted agent has no network or private mounts."""
-import hashlib,hmac,json,os,socket,subprocess,tempfile,time,urllib.request,uuid
+import hashlib,hmac,json,os,shutil,socket,subprocess,tempfile,time,urllib.request,uuid
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 DOCKER=os.environ.get('DOCKER_BIN','docker')
@@ -61,6 +61,8 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
                 assert canary not in text and token not in text
             workcell_receipt=Path(emitted['receipt_path'])
             workcell_evidence={'source':json.loads((ROOT/'examples/workcell/source.lock.json').read_text()),'image':image_digest,'run_id':emitted['workcell_run_id'],'receipt_sha256':hashlib.sha256(workcell_receipt.read_bytes()).hexdigest(),'verified':True,'runtime_sha256':emitted['runtime_sha256'],'payment_execution_id':observed['result']['execution_id']}
+            preserved=os.environ.get('PAYMENTS_WORKCELL_EVIDENCE')
+            if preserved: shutil.copytree(workcell_output,Path(preserved))
             print('Workcell composition passed: isolated hostile probes, verified intent artifact, separate trusted intake and zero credential evidence leakage')
         # Neither service nor agent runs privileged, shares the host PID namespace, or mounts the engine socket.
         info=json.loads(docker('inspect',name).stdout)[0]
@@ -70,7 +72,10 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert info['Config']['User']=='65532:65532'
         assert all(m['Destination']!='/var/run/docker.sock' for m in info['Mounts'])
         receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
-        if workcell_evidence: receipt['workcell']=workcell_evidence
+        if workcell_evidence:
+            receipt['workcell']=workcell_evidence
+            preserved=os.environ.get('PAYMENTS_WORKCELL_EVIDENCE')
+            if preserved: (Path(preserved)/'boundary.json').write_text(json.dumps(receipt,indent=2)+'\n')
         evidence=os.environ.get('PAYMENTS_CONTAINMENT_RECEIPT')
         if evidence:Path(evidence).write_text(json.dumps(receipt,indent=2)+'\n')
         print('OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works')

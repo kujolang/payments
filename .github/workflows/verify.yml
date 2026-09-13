@@ -44,6 +44,16 @@ jobs:
           echo "PAYMENTS_WORKCELL_KUJO=$PWD/deployment/.workcell/runtime/target/release/kujo" >> "$GITHUB_ENV"
       - name: Current-image components and credential containment
         if: matrix.suite == 'containment'
-        run: bash scripts/deployment/test_oci.sh
+        run: |
+          export PAYMENTS_WORKCELL_EVIDENCE="$RUNNER_TEMP/payments-workcell-evidence"
+          bash scripts/deployment/test_oci.sh
+      - name: Retain synthetic Workcell evidence
+        if: matrix.suite == 'containment' && success()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: payments-workcell-evidence
+          path: ${{ runner.temp }}/payments-workcell-evidence
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify tracked inputs were not rewritten
         run: git diff --exit-code
