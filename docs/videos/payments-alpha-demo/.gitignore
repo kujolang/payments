@@ -1,0 +1,7 @@
+node_modules/
+.hyperframes/
+.hf-tmp/
+preview/
+snapshots/
+work-*/
+.*.hf-transaction-*/

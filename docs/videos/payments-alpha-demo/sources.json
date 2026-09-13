@@ -1,0 +1,37 @@
+{
+  "source_commit": "e84f7b02e87ee5d24bbd1af30a55eb931b3908d9",
+  "recorded_date": "2026-09-13",
+  "fixture_command": "PAYMENTS_DEMO_DIR=<fresh local directory> kujo run examples/local-fixture/main.kujo --interpreter",
+  "runtime": "Kujo 1.4.0 macOS x64",
+  "exit_code": 0,
+  "output_sha256": "19dc400849f2cdf4f80dadc1e6b986aeafb1e6704bf980862f89a0dc5373eb0e",
+  "sources": [
+    {
+      "path": "examples/local-fixture/main.kujo",
+      "claim": "Synthetic bounded request and simulated approval/execution"
+    },
+    {
+      "path": "evidence/output.txt",
+      "claim": "Actual awaiting_authorization and succeeded summaries from the fixture"
+    },
+    {
+      "path": "docs/evidence/interrupted-execution-ci.json",
+      "claim": "Separate synthetic CI evidence; not a live provider run"
+    },
+    {
+      "path": "src/providers/link/provider.kujo",
+      "claim": "Link adapter implementation exists; not exercised in this film"
+    },
+    {
+      "path": "docs/release-checklist.md",
+      "claim": "Provider provisioning, authoritative settlement verification and deployment acceptance remain required"
+    }
+  ],
+  "limitations": [
+    "Single-process synthetic fixture",
+    "Link adapter not exercised in this demo",
+    "No real money or credentials",
+    "IDs omitted in visible output excerpts",
+    "Kujo compiler emitted existing type warnings; fixture completed exit 0"
+  ]
+}

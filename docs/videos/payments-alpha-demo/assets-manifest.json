@@ -1,0 +1,20 @@
+[
+  {
+    "path": "assets/fonts/DepartureMono-LICENSE.txt",
+    "sha256": "b65e42750f3cb65437a97f4dfd781c58f199259949db2341012be60e32500e83",
+    "source": "Kujo release-video skill vendored project assets",
+    "rights": "Departure Mono SIL OFL-1.1, see local license; GSAP license URL in bundled source header"
+  },
+  {
+    "path": "assets/fonts/DepartureMono-Regular.woff2",
+    "sha256": "5b4fed1daa90708aa9c6ee1190abca9dc22164a1c1def0020386e46b61038cfb",
+    "source": "Kujo release-video skill vendored project assets",
+    "rights": "Departure Mono SIL OFL-1.1, see local license; GSAP license URL in bundled source header"
+  },
+  {
+    "path": "assets/gsap.min.js",
+    "sha256": "a992e24e9726b97cf7320b0a88d2262459c9a11cb919e6d9765dd6eb88bbeead",
+    "source": "Kujo release-video skill vendored project assets",
+    "rights": "Departure Mono SIL OFL-1.1, see local license; GSAP license URL in bundled source header"
+  }
+]

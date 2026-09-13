@@ -1,0 +1,9 @@
+{
+  "payee_ref": "merchant_1",
+  "amount": {
+    "mode": "maximum",
+    "minor": 5500,
+    "currency": "USD"
+  },
+  "payment_profile": "default"
+}

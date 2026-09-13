@@ -1,0 +1,2 @@
+{"execution_id":"execution:54c331cc5344c2d8072bbb55d013d18bec3bcd4ec0683fc23b204109da436666","next_action":"await_authorization","receipt_ref":null,"status":"awaiting_authorization"}
+{"execution_id":"execution:54c331cc5344c2d8072bbb55d013d18bec3bcd4ec0683fc23b204109da436666","next_action":"inspect_receipt","receipt_ref":"receipt:execution:54c331cc5344c2d8072bbb55d013d18bec3bcd4ec0683fc23b204109da436666","status":"succeeded"}

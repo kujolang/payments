@@ -1,0 +1,27 @@
+{
+  "video_type": "short-product-launch",
+  "goal": "Share a truthful developer alpha demonstration",
+  "audience": "Agent developers and Stripe Link engineers",
+  "primary_message": "Intent, authorization, inspectable outcome",
+  "cta": "github.com/kujolang/payments",
+  "duration_target": 20,
+  "aspect_ratio": "1:1",
+  "fps": 30,
+  "source_kind": "local_repository",
+  "source": "https://github.com/kujolang/payments/tree/e84f7b02e87ee5d24bbd1af30a55eb931b3908d9",
+  "release_or_feature_name": "Kujo Payments",
+  "version": "developer alpha",
+  "proof_assets": [],
+  "must_show": [
+    "Synthetic demo / no real money",
+    "Link sandbox validation next"
+  ],
+  "must_not_show": [
+    "Production-ready claims",
+    "Stripe endorsement"
+  ],
+  "voiceover": false,
+  "music": false,
+  "captions": false,
+  "base_workflow": "product-launch-video"
+}
