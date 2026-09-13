@@ -16,7 +16,7 @@ A committed pause blocks new SQLite financial claims and new native authorizatio
 
 Pause leaves intake, status, existing authorization observation and financial reconciliation available. It does not revoke a claim won before the pause, stop an in-flight process or reverse a provider operation. For an incident requiring immediate cessation, also quiesce privileged workers and revoke outbound/provider authority as appropriate; retain all journals and reconcile uncertain effects. An administrator with direct database/host control can bypass these controls and is outside the requesting-agent threat model.
 
-Resume enables future claims; it is not a retry command. If pause races an Ability invocation after its idempotency reservation but before approval consumption, the invocation may retain a rejected Ability receipt while the payment remains unclaimed. Resume never erases that receipt or invents another invocation/approval. Such interrupted invocations require a separately reviewed recovery procedure; automatic reopening is not implemented. Already-claimed payments remain observation-only under every mode.
+Resume enables future claims; it is not a retry command. If pause races an Ability invocation after its idempotency reservation but before approval consumption, the invocation may retain a rejected Ability receipt while the payment remains unclaimed. Resume never erases that receipt or invents another invocation/approval. The [interrupted execution procedure](interrupted-execution.md) uses existing conditional cancellation to abandon an unclaimed purchase while retaining its history. Automatic reopening is not implemented. Already-claimed payments remain observation-only under every mode.
 
 ## Restore restriction
 

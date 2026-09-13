@@ -25,7 +25,37 @@ audit := func(phase,invocation,payload) {
     db_execute(db,"INSERT OR IGNORE INTO audit VALUES(?,NULL,?)",[id,phase])
     return {"ok":true,"written":true,"phase":phase,"event_id":id}
 }
-result := worker_step(sqlite_port(db),principal,"exec_1",installed,{"clock_ms":clock,"policy":policy,"audit":audit,"reconciliation_key":uuid_v4()})
+// Test-only fault seams surround real committed store operations. No production
+// hook or timeout-based ownership transfer is introduced.
+func checkpoint(name) {
+    if env("PAYMENTS_WORKER_STOP") == name {
+        write_file(env("PAYMENTS_TEST_MARKER"),"ready")
+        deadline := current_timestamp()+30000
+        while file_exists(env("PAYMENTS_TEST_RELEASE")) == false && current_timestamp() < deadline { sleep(20) }
+        assert(file_exists(env("PAYMENTS_TEST_RELEASE")),"test_release_timeout")
+    }
+}
+store := sqlite_port(db)
+begin := store["begin_ability"]
+claim := store["claim"]
+record := store["record_observation"]
+store["begin_ability"] = func(operation,key,digest,id) {
+    checkpoint("before_begin")
+    value := begin(operation,key,digest,id)
+    checkpoint("after_begin")
+    return value
+}
+store["claim"] = func(scope,id,revision,approval,binding,digest,invocation,now) {
+    checkpoint("before_claim")
+    value := claim(scope,id,revision,approval,binding,digest,invocation,now)
+    if value { checkpoint("after_claim") }
+    return value
+}
+store["record_observation"] = func(scope,id,revision,evidence,digest,observation,event,receipt) {
+    checkpoint("before_observation")
+    return record(scope,id,revision,evidence,digest,observation,event,receipt)
+}
+result := worker_step(store,principal,"exec_1",installed,{"clock_ms":clock,"policy":policy,"audit":audit,"reconciliation_key":uuid_v4()})
 print(to_json(result))
 db_close(processor)
 db_close(db)

@@ -28,3 +28,5 @@ Cancellation's state commit and Ability receipt completion are separate. A crash
 `tests/network/cancellation_test.py` uses the actual authenticated gateway, native Kujo storage/approval/claim helpers and a separate non-deduplicating fake processor ledger. It covers unchanged v1 output, explicit v2 revisions, operation scopes, cross-tenant denial, invalid revisions, exact replay, changed-input replay denial, stale revisions, live pause, eight four-claim/four-cancel races, post-claim denial and a real quarantined recovery copy. Normal CI never moves money. Definition identity mutation tests cover all six pinned definitions.
 
 These fixtures establish behavior for the declared SQLite deployment. They are not proof of arbitrary external stores, stale backup recovery, physical credential isolation or provider-side cancellation.
+
+The [interrupted execution suite](interrupted-execution.md) additionally exercises cancellation against actual financial Ability invocations at five process interruption checkpoints, with killed and still-live originals. It verifies safe abandonment without reopening an invocation or discarding approval/provider evidence.
