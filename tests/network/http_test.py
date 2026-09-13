@@ -1,5 +1,5 @@
 """Real-process request/status transport tests; synthetic application tokens only."""
-import hashlib,hmac,json,os,socket,sqlite3,subprocess,tempfile,time,urllib.request,urllib.error
+import hashlib,hmac,json,os,socket,sqlite3,subprocess,tempfile,time,urllib.request,urllib.error,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def digest(token):
@@ -74,11 +74,24 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         assert sdk_result['status']['status']=='awaiting_authorization'
         assert token not in sdk.stdout+sdk.stderr and 'SENTINEL_PRIVATE_CALLBACK_SECRET' not in sdk.stdout+sdk.stderr
         mcp_env={**sdk_env,'PAYMENTS_PURCHASE_JSON':json.dumps({**purchase['input'],'purchase_ref':'mcp-purchase'})}
-        mcp=subprocess.run(['node','examples/mcp/conformance.mjs'],cwd=ROOT,env=mcp_env,capture_output=True,text=True,timeout=45)
+        # Fixture-only executable observer: record closed phase names, never argv/env/input.
+        measurement_log=root/'mcp-native-counts';measurement_log.write_text('')
+        wrapper=root/'measured-kujo'
+        wrapper.write_text('#!'+sys.executable+'\nimport os,sys\n'+
+            'phase="project" if sys.argv[2]=="project.kujo" else os.environ.get("PAYMENTS_MCP_OPERATION", "invalid")\n'+
+            'assert phase in ["project","request","inspect"]\n'+
+            'fd=os.open('+repr(str(measurement_log))+',os.O_WRONLY|os.O_APPEND)\nos.write(fd,(phase+"\\n").encode());os.close(fd)\n'+
+            'os.execv('+repr(os.environ['KUJO_BIN'])+',['+repr(os.environ['KUJO_BIN'])+']+sys.argv[1:])\n')
+        wrapper.chmod(0o700)
+        mcp_env.update(KUJO_BIN=str(wrapper),PAYMENTS_MCP_MEASUREMENT_LOG=str(measurement_log))
+        mcp=subprocess.run(['node' ,'examples/mcp/conformance.mjs'],cwd=ROOT,env=mcp_env,capture_output=True,text=True,timeout=45)
         assert mcp.returncode==0,(mcp.stdout,mcp.stderr)
         mcp_result=json.loads(mcp.stdout);assert mcp_result['ok'] and mcp_result['tools']==['purchase_request','purchase_status']
         assert token not in mcp.stdout+mcp.stderr
-        print('MCP measurements: '+json.dumps(mcp_result['metrics'],sort_keys=True))
+        metrics=mcp_result['metrics'];assert metrics['native_process_counts']=={'project':1,'request':13,'inspect':9}
+        metrics['runtime_sha256']=hashlib.sha256(Path(os.environ['KUJO_BIN']).read_bytes()).hexdigest()
+        print('MCP measurements: '+json.dumps(metrics,sort_keys=True))
+        mcp_env['KUJO_BIN']=os.environ['KUJO_BIN']
         # Guard raw wire numbers before the JS MCP SDK can round them. These
         # connections fail closed and must not reach financial intake.
         wire_purchase={**purchase['input'],'purchase_ref':'mcp-invalid-wire'}

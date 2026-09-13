@@ -259,3 +259,8 @@ The exact privileged seed also runs in normal host CI. Its local synthetic test 
 ## Containment controller failure diagnostics
 
 The synthetic containment controller now suppresses raw subprocess exceptions and captured stdout/stderr in readiness/probe/Workcell failure assertions. Python timeout and launch exceptions can otherwise include secret-bearing argument arrays; captured decoding errors can expose output. Three actual local subprocess fixtures exercise timeout with emitted private output, missing executable with a private path, and invalid UTF-8 after a private sentinel; formatted exceptions contain no sentinel. Workcell artifact scans now also check relative filenames before evidence export. This fixes the test-controller diagnostic boundary, not production telemetry or provider conformance. Hosted regression verification of this follow-up is pending.
+
+
+## Repeated MCP runtime-cost measurements
+
+The existing real HTTP/MCP conformance suite now records eight warm replay/status samples each, response-envelope bytes and actual native process counts through a fixture-only observer. It checks five repeated catalog discoveries and a 250 ms idle window, and enforces explicit descriptor/summary/envelope byte budgets. Local HTTP/SDK/MCP conformance passed on Kujo 1.3.1 and Node 24.20.0; no financial claims were created. See `docs/performance.md` and source/runtime-hashed `docs/evidence/mcp-performance-local.json`. This is an instrumented local baseline, not a token count, supported-provider benchmark or production latency claim. Hosted verification of this measurement follow-up is pending; broader release performance evaluation remains open.
