@@ -14,6 +14,11 @@
     "packages/sdk/src/types/index.ts": "ac440a7cb14d3b6668ed13620774dc453e684028ba55d65aea9a83bf455f6323",
     "packages/cli/src/commands/mpp/pay.tsx": "34141b6330bcb658d73e2301e8ccc66b43653f6e7f840b028af50a3419b36f27",
     "packages/cli/src/commands/mpp/decode.ts": "ec38de1bd0f6cc18838f5b43ef99d848026503b0e49a6209de281e525e6d4569",
-    "packages/cli/src/utils/format-amount.ts": "60e92716779d11f932d08a0ea6e584828fb96d0da65914daad0b1e1b0b98b8df"
-  }
+    "packages/cli/src/utils/format-amount.ts": "60e92716779d11f932d08a0ea6e584828fb96d0da65914daad0b1e1b0b98b8df",
+    "packages/cli/src/auth/auth-resource.ts": "84d779e86e56fa216ded9a81a918dc1add324955d64f55e40a6f8e207dd66270",
+    "packages/cli/src/auth/types.ts": "378565540e6d3124bff07d9a345a22862f2dd6522d0ce55812172607adf3ee6c",
+    "packages/cli/src/auth/session.ts": "1f84b059d439604aa0ae94c0c3a5802cea82f8aac5973d8c6e655ae971410636",
+    "packages/cli/src/auth/config.ts": "388fd93050a4ae49172fcc1820e1726a8f6ecb7642199bc6a463a19f38fb39b4"
+  },
+  "additional_auth_reviewed_at": "2026-09-13"
 }

@@ -1,0 +1,30 @@
+{
+  "source_commit": "04741e9ccef15986b8d59a82b88989b06588aa87",
+  "run_id": 34732966439,
+  "url": "https://github.com/kujolang/payments/actions/runs/34732966439",
+  "jobs": {
+    "host": {
+      "id": 103659081604,
+      "conclusion": "success",
+      "log_sha256": "c7907edf89898f0a338fcd95ee695f302f99d91d5c2907df4fe20613ed7130bf"
+    },
+    "containment": {
+      "id": 103659081759,
+      "conclusion": "success",
+      "log_sha256": "db9c080b8b0a3c42588c7afc82dfb52187c243102bc362fa09e369cddfab3ac0"
+    }
+  },
+  "ability": {
+    "commit": "fe6775d27b1742196e16f6c46f73c6cec906fe73",
+    "run_id": 34732688161,
+    "conclusion": "success",
+    "scope": "Additive facade export and public-import cross-language test; legacy runtime/serializer source unchanged"
+  },
+  "workcell_artifact": {
+    "id": 10309294537,
+    "archive_sha256": "9bdb525fb879a0c771307509d46a37c87ebecba5637a3a5a8c74a905b6c70046",
+    "verified_manifest_files": 6,
+    "cleanup_status": "complete"
+  },
+  "scope": "236 independent v2 definition mutation vectors in VM/interpreter; frozen legacy digest collision rejected; actual gateway/grant/execution denial before claim or approval consumption; full host suite, architecture mutations and current-image Workcell containment. No general v2 migration or real-money claim."
+}
