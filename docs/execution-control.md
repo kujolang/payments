@@ -20,7 +20,7 @@ Resume enables future claims; it is not a retry command. If pause races an Abili
 
 ## Restore restriction
 
-This switch is not rollback detection or a backup-restore implementation. A copied old database can lack financial claims that exist at the provider. Do not open a restored database for execution. Supported restore must enter observation-only operation before any worker can claim, preserve replay tombstones and reconcile against authoritative provider state. Restore, migration and recovery tooling remain release gates.
+This switch is not rollback detection or a backup-restore implementation. A copied old database can lack financial claims that exist at the provider. Do not open a restored database for execution. Supported restore must enter observation-only operation before any worker can claim, preserve replay tombstones and reconcile against authoritative provider state. An observation-only snapshot tool now enforces a permanent restore quarantine; see [recovery snapshots](recovery-snapshots.md). Complete disaster recovery, live-history merge and migration remain release gates.
 
 ## Verification
 

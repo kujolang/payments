@@ -84,3 +84,9 @@ Added a private database-administrator pause/resume entrypoint, revision-checked
 A stop cannot revoke an earlier winning claim. A stop racing an already-started Ability invocation can retain its rejection receipt; automatic reopening is intentionally absent pending a reviewed recovery procedure. Supported backup/restore, schema migration and interrupted-invocation recovery remain unfinished release requirements. This milestone does not establish rollback-safe restoration.
 
 Verification: full host and current-image containment jobs passed at `ff96074`, [run 34727473797](https://github.com/kujolang/payments/actions/runs/34727473797). Evidence: docs/evidence/execution-control-ci.json. The stop/Ability race is fault-injected in tests/execution.kujo; tests/network/worker_test.py verifies both normal paused-to-active execution and reconciliation of an earlier charge while paused.
+
+## Quarantined recovery snapshot milestone
+
+Added a bounded administrative SQLite snapshot tool that includes committed WAL pages, validates the core journal and publishes only after permanent observation-only quarantine. Shared SQL guards block claims, native authorization reservations and normal resume on recovery copies. Source journals remain unchanged; retained executing claims become reconciliation-required in the copy. Native store opening now refuses foreign or future schema markers before schema initialization.
+
+This implements a core-journal recovery artifact, not complete disaster recovery or live restoration. Provider journals/configuration are separate; safe financial-history merge, schema migrations and interrupted Ability recovery remain open. See docs/recovery-snapshots.md for supported operations, partial-publication handling and explicit limits.
