@@ -26,7 +26,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         docker('network','create','--internal',name);created=True
         seed=docker('run','--rm','--network','none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--pids-limit','64','--memory','256m','--mount',f'type=bind,src={private},dst=/private','--mount',f'type=bind,src={ROOT / "tests/network/credential_vault_seed.kujo"},dst=/app/seed.kujo,readonly','--mount',f'type=bind,src={ROOT / "tests/fixtures/domain.json"},dst=/app/domain.json,readonly','--env','PAYMENTS_PROVIDER_SECRET='+canary,'--entrypoint','/usr/local/bin/kujo','kujo-payments-gateway:local','run','/app/seed.kujo','--interpreter')
         assert json.loads(seed.stdout)=={'ok':True}
-        assert canary not in seed.stdout+seed.stderr
+        assert canary not in seed.stdout+seed.stderr and hashlib.sha256(canary.encode()).hexdigest() not in seed.stdout+seed.stderr
         docker('run','-d','--name',name,'--network',name,'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--pids-limit','64','--memory','512m','--tmpfs','/tmp:rw,nosuid,nodev,noexec,size=16m','--mount',f'type=bind,src={private},dst=/private','--env','PAYMENTS_SERVICE_CONFIG=/private/config.json','--env','PAYMENTS_PROVIDER_SECRET='+canary,'--env','KUJO_HTTP_SERVER_READ_TIMEOUT_MS=500','kujo-payments-gateway:local')
         deadline=time.monotonic()+20
         while 'Server listening on' not in docker('logs',name).stdout:
@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
             state=docker('inspect',name,'--format','{{.State.Status}}').stdout.strip()
             assert state=='running',docker('logs',name).stdout+docker('logs',name).stderr
             time.sleep(.1)
-        docker('exec',name,'/bin/sh','-c','test -r /private/provider-secret && test -r /private/link-vault.db && test -r /private/link-approval-outbox.db && test -r /private/operator-approval.json && test -n "$PAYMENTS_PROVIDER_SECRET"')
+        docker('exec',name,'/bin/sh','-c','test -r /private/provider-secret && test -r /private/link-vault.db && test -r /private/link-approval-outbox.db && test -r /private/operator-approval.json && test -r /private/link-enrollment.db && test -r /private/operator-enrollment.json && test -n "$PAYMENTS_PROVIDER_SECRET"')
         # Separate trusted harness reaches the service on the private Docker network.
         # Its scoped request token never enters the hostile workload.
         harness=docker('run','--rm','--network',name,'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--memory','256m','--pids-limit','64','--env','KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS=true','--env','PAYMENTS_SERVICE_URL=http://'+name+':8000','--env','PAYMENTS_HARNESS_TOKEN='+token,'kujo-payments-harness-probe:local',timeout=15)
@@ -42,8 +42,8 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert summary['result']['status']=='awaiting_authorization'
         probe=docker('run','--rm','--network','none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--pids-limit','64','--memory','256m','--tmpfs','/tmp:rw,nosuid,nodev,noexec,size=16m','--env','KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS=true','kujo-payments-agent-probe:local',timeout=20)
         assert json.loads(probe.stdout.strip())['ok'] is True,(probe.stdout,probe.stderr)
-        for output in [probe.stdout,probe.stderr,harness.stdout,harness.stderr,docker('logs',name).stdout,json.dumps(summary)]:
-            assert canary not in output and token not in output
+        for output in [probe.stdout,probe.stderr,harness.stdout,harness.stderr,docker('logs',name).stdout,docker('logs',name).stderr,json.dumps(summary)]:
+            assert canary not in output and token not in output and hashlib.sha256(canary.encode()).hexdigest() not in output
         workcell_evidence=None
         if os.environ.get('PAYMENTS_WORKCELL_ROOT'):
             image_digest=docker('image','inspect','kujo-payments-workcell-agent:local','--format','{{.Id}}').stdout.strip()
@@ -59,9 +59,9 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
             assert observed['result']['execution_id']!=summary['result']['execution_id']
             for file in workcell_output.rglob('*'):
                 if file.is_file():
-                    for secret in [canary,token]: assert secret.encode() not in file.read_bytes(),file.name
+                    for secret in [canary,token,hashlib.sha256(canary.encode()).hexdigest()]: assert secret.encode() not in file.read_bytes(),file.name
             for text in [workcell.stdout,workcell.stderr,host.stdout,host.stderr]:
-                assert canary not in text and token not in text
+                assert canary not in text and token not in text and hashlib.sha256(canary.encode()).hexdigest() not in text
             workcell_receipt=Path(emitted['receipt_path'])
             workcell_evidence={'source':json.loads((ROOT/'examples/workcell/source.lock.json').read_text()),'image':image_digest,'run_id':emitted['workcell_run_id'],'receipt_sha256':hashlib.sha256(workcell_receipt.read_bytes()).hexdigest(),'verified':True,'runtime_sha256':emitted['runtime_sha256'],'payment_execution_id':observed['result']['execution_id']}
             preserved=os.environ.get('PAYMENTS_WORKCELL_EVIDENCE')
@@ -74,7 +74,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert info['HostConfig']['ReadonlyRootfs'] is True
         assert info['Config']['User']=='65532:65532'
         assert all(m['Destination']!='/var/run/docker.sock' for m in info['Mounts'])
-        receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'private_credential_vault_positive_control':True,'private_approval_outbox_positive_control':True,'private_reviewed_operator_sink_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
+        receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'private_credential_vault_positive_control':True,'private_approval_outbox_positive_control':True,'private_reviewed_operator_sink_positive_control':True,'private_enrollment_device_positive_control':True,'private_enrollment_tokens_positive_control':True,'private_enrollment_operator_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
         if workcell_evidence:
             receipt['workcell']=workcell_evidence
             preserved=os.environ.get('PAYMENTS_WORKCELL_EVIDENCE')
