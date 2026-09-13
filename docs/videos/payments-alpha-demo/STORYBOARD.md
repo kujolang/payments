@@ -1,18 +1,19 @@
 ---
-title: Kujo Payments developer alpha
-duration: 20
+title: Kujo Payments narrated developer alpha
+duration: 21
 width: 1080
 height: 1080
 fps: 30
 music: none
+voiceover: narration/brian-normalized.wav
 ---
 
-| Time | Beat | On screen | Source |
-| --- | --- | --- | --- |
-| 0–3 | Hook | Payments start with intent. Kujo Payments. | Product design; title typography |
-| 3–7 | Request | $55 USD maximum; actual request fields. | examples/local-fixture/main.kujo |
-| 7–12 | Authorization | awaiting_authorization; await_authorization. Simulated approval. | evidence/output.txt line 1 |
-| 12–17 | Outcome | succeeded; inspect_receipt. Simulated confirmation. | evidence/output.txt line 2 |
-| 17–20 | CTA | Developer alpha. Link adapter: sandbox validation next. Repo URL. | Current source + outstanding live acceptance |
+| Time | Beat | Narration |
+| --- | --- | --- |
+| 0–3.424 | hook | Kujo Payments is a portable payment layer for agents. |
+| 3.424–7.836 | intent | Request a merchant and spending limit, without giving the agent payment credentials. |
+| 7.836–10.634 | approval | Bind approval to the action before execution. |
+| 10.634–15.986 | result | Then inspect the result and receipt. This demo is simulated; no real money moves. |
+| 15.986–21 | cta | Next: validate the Link adapter in a sandbox, and gather developer feedback. |
 
-Persistent simulation marker throughout. Product excerpts occupy 14/20 seconds. IDs omitted from visual excerpts for readability. No fabricated transaction or merchant UI. Restrained upward reveals, code-line stagger, progress rule; hard scene boundaries preserve readability. Closing CTA holds for three seconds.
+Existing fixture panels remain. Scene changes precede their spoken groups by 0.1s; audio begins at 0.25s. Synthetic labels are persistent. Attribution goes in the post, never burned into the video.

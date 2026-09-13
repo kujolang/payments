@@ -1,6 +1,5 @@
 {
-  "status": "blocked_before_generation",
-  "blocker": "Configured ElevenLabs account reports Free; paid-plan generation is required for this promotional use.",
+  "status": "rendered_and_verified",
   "checked_date": "2026-09-13",
   "provider": "ElevenLabs",
   "voice_id": "nPczCjzI2devNBz1zQrb",
@@ -16,31 +15,46 @@
     "use_speaker_boost": true,
     "speed": 1.0
   },
-  "usage": "commercial",
-  "generation_requests_made": 0,
+  "usage": "noncommercial",
+  "generation_requests_made": 1,
   "maximum_characters": 1000,
   "cues": [
     {
       "id": "hook",
-      "text": "Kujo Payments is a portable payment layer for agents."
+      "text": "Kujo Payments is a portable payment layer for agents.",
+      "speech_start": 0.25,
+      "speech_end": 3.083
     },
     {
       "id": "request",
-      "text": "Request a merchant and spending limit, without giving the agent payment credentials."
+      "text": "Request a merchant and spending limit, without giving the agent payment credentials.",
+      "speech_start": 3.524,
+      "speech_end": 7.495
     },
     {
       "id": "authorization",
-      "text": "Bind approval to the action before execution."
+      "text": "Bind approval to the action before execution.",
+      "speech_start": 7.936,
+      "speech_end": 10.409
     },
     {
       "id": "outcome",
-      "text": "Then inspect the result and receipt. This demo is simulated; no real money moves."
+      "text": "Then inspect the result and receipt. This demo is simulated; no real money moves.",
+      "speech_start": 10.734,
+      "speech_end": 15.389
     },
     {
       "id": "cta",
-      "text": "Next: validate the Link adapter in a sandbox, and gather developer feedback."
+      "text": "Next: validate the Link adapter in a sandbox, and gather developer feedback.",
+      "speech_start": 16.086,
+      "speech_end": 20.173
     }
   ],
   "licensing_source": "https://help.elevenlabs.io/hc/en-us/articles/13313564601361-Can-I-publish-the-content-I-generate-on-the-platform",
-  "next_step": "Recheck the connected account tier after upgrade or connection of a paid account; generate with timestamps only after paid status is confirmed."
+  "next_step": "User may attach the narrated MP4 for declared noncommercial use and put provider attribution in the accompanying post.",
+  "user_clarification": "User explicitly states noncommercial use; attribution belongs in the post, not the video.",
+  "generation_tier": "free",
+  "attribution_placement": "Publication post title/text, no on-screen attribution",
+  "duration_seconds": 21,
+  "audio_offset_seconds": 0.25
 }

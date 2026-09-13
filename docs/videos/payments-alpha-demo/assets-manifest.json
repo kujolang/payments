@@ -16,5 +16,17 @@
     "sha256": "a992e24e9726b97cf7320b0a88d2262459c9a11cb919e6d9765dd6eb88bbeead",
     "source": "Kujo release-video skill vendored project assets",
     "rights": "Departure Mono SIL OFL-1.1, see local license; GSAP license URL in bundled source header"
+  },
+  {
+    "path": "narration/brian-original.mp3",
+    "sha256": "3bbb07db9fc7d4185e837c599cd8bdd28728f64de035a419f832385fd0593a5d",
+    "source": "ElevenLabs stock Brian voice; see narration/generation-receipt.json",
+    "rights": "Generated on Free plan for user-declared noncommercial use; attribution in publication post per narration/RIGHTS.md"
+  },
+  {
+    "path": "narration/brian-normalized.wav",
+    "sha256": "44da0ee20114f733243cf305f7a97a94a7691e05177607f4d81fb0c967bcdd89",
+    "source": "ElevenLabs stock Brian voice; see narration/generation-receipt.json",
+    "rights": "Generated on Free plan for user-declared noncommercial use; attribution in publication post per narration/RIGHTS.md"
   }
 ]

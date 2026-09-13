@@ -1,6 +1,6 @@
 # Proposed voiceover transcript
 
-Status: script prepared; speech not generated. The existing MP4 remains silent.
+Status: generated as one ElevenLabs take; provider alignment drives scene timing. The original silent MP4 is retained separately.
 
 Voice: ElevenLabs Brian — Deep, Resonant and Comforting. Stock male American English voice, confirmed from the provider voice metadata on 2026-09-13.
 

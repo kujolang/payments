@@ -4,7 +4,7 @@
   "audience": "Agent developers and Stripe Link engineers",
   "primary_message": "Intent, authorization, inspectable outcome",
   "cta": "github.com/kujolang/payments",
-  "duration_target": 20,
+  "duration_target": 21,
   "aspect_ratio": "1:1",
   "fps": 30,
   "source_kind": "local_repository",
@@ -20,8 +20,12 @@
     "Production-ready claims",
     "Stripe endorsement"
   ],
-  "voiceover": false,
+  "voiceover": true,
   "music": false,
   "captions": false,
-  "base_workflow": "product-launch-video"
+  "base_workflow": "product-launch-video",
+  "voice": {
+    "name": "Brian",
+    "voice_id": "nPczCjzI2devNBz1zQrb"
+  }
 }

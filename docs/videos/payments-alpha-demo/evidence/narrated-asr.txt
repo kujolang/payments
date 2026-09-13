@@ -1,0 +1,5 @@
+ Koojo Payments is a portable payment layer for agents.
+ Request a merchant and spending limit without giving the agent payment credentials.
+ Bind approval to the action before execution, then inspect the result and receipt.
+ This demo is simulated, no real money moves.
+ Next, validate the link adapter in a sandbox and gather developer feedback.

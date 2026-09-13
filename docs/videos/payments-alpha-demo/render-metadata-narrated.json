@@ -1,0 +1,22 @@
+{
+  "artifact": "kujo-payments-alpha-narrated.mp4",
+  "sha256": "550227781f5af1352695f4185b2882883ab28ddbe882d50a81b938ec459d761b",
+  "bytes": 1576627,
+  "duration_seconds": 21,
+  "width": 1080,
+  "height": 1080,
+  "fps": 30,
+  "video_codec": "h264",
+  "pixel_format": "yuv420p",
+  "audio_codec": "aac",
+  "sample_rate": 48000,
+  "audio": "ElevenLabs Brian American English stock voice",
+  "audio_offset_seconds": 0.25,
+  "spoken_end_seconds": 20.173,
+  "usage": "noncommercial (explicit user clarification)",
+  "attribution_placement": "Accompanying publication post, not on video",
+  "hyperframes_version": "0.8.36",
+  "command": "npx --yes hyperframes@0.8.36 render --quality high --fps 30 --output kujo-payments-alpha-narrated.mp4",
+  "verification": "Browser checks, final-frame contact sheet, full decode, ffprobe, final audio ASR text comparison",
+  "published": false
+}

@@ -1,53 +1,33 @@
 {
-  "duration": 20,
+  "duration": 21,
   "fps": 30,
-  "audio": null,
+  "audio": "narration/brian-normalized.wav",
+  "audio_offset": 0.25,
   "beats": [
     {
       "id": "hook",
       "start": 0,
-      "end": 3
+      "end": 3.424
     },
     {
-      "id": "request",
-      "start": 3,
-      "end": 7
+      "id": "intent",
+      "start": 3.424,
+      "end": 7.836
     },
     {
-      "id": "authorization",
-      "start": 7,
-      "end": 12
+      "id": "approval",
+      "start": 7.836,
+      "end": 10.634
     },
     {
-      "id": "outcome",
-      "start": 12,
-      "end": 17
+      "id": "result",
+      "start": 10.634,
+      "end": 15.986
     },
     {
       "id": "cta",
-      "start": 17,
-      "end": 20
+      "start": 15.986,
+      "end": 21
     }
-  ],
-  "review_times": [
-    0,
-    1.5,
-    2.966667,
-    3,
-    3.033333,
-    5,
-    6.966667,
-    7,
-    7.033333,
-    9.5,
-    11.966667,
-    12,
-    12.033333,
-    14.5,
-    16.966667,
-    17,
-    17.033333,
-    18.5,
-    19.966667
   ]
 }

@@ -10,12 +10,12 @@
 </style>
 </head>
 <body>
-<div id="root" data-composition-id="main" data-start="0" data-duration="20" data-width="1080" data-height="1080">
+<div id="root" data-composition-id="main" data-start="0" data-duration="21" data-width="1080" data-height="1080">
 <div class="masthead"><span>KUJO / PAYMENTS</span><span class="alpha">DEVELOPER ALPHA</span></div>
-<section id="hook" class="clip scene hook" data-start="0" data-duration="3" data-track-index="1">
+<section id="hook" class="clip scene hook" data-start="0" data-duration="3.424" data-track-index="1">
 <div class="scene-inner"><p class="eyebrow">AGENT PAYMENT EXECUTION</p><h1 class="headline"><span>Payments</span><span>start with</span><span>intent.</span></h1><div class="hero-rule"></div><p class="subhead">Kujo Payments</p></div>
 </section>
-<section id="intent" class="clip scene" data-start="3" data-duration="4" data-track-index="1">
+<section id="intent" class="clip scene" data-start="3.424" data-duration="4.412" data-track-index="1">
 <div class="scene-inner"><p class="eyebrow">01 / REQUEST</p><h2 class="scene-title">Up to $55 USD.</h2><div class="terminal"><div class="terminal-top">local-fixture / request input excerpt</div><pre class="terminal-body"><span class="code-line"><span class="key">"payee_ref":</span> <span class="val">"merchant_1"</span>,</span>
 <span class="code-line"><span class="key">"amount":</span> {</span>
 <span class="code-line">  <span class="key">"mode":</span> <span class="val">"maximum"</span>,</span>
@@ -24,36 +24,37 @@
 <span class="code-line">},</span>
 <span class="code-line"><span class="key">"payment_profile":</span> <span class="val">"default"</span></span></pre></div><p class="terminal-note">Selected fields from the synthetic example.</p></div>
 </section>
-<section id="approval" class="clip scene result" data-start="7" data-duration="5" data-track-index="1">
+<section id="approval" class="clip scene result" data-start="7.836" data-duration="2.798" data-track-index="1">
 <div class="scene-inner"><p class="eyebrow">02 / AUTHORIZE</p><h2 class="scene-title">Approval comes first.</h2><div class="terminal"><div class="terminal-top">local-fixture / actual output excerpt</div><pre class="terminal-body"><span class="code-line"><span class="key">"status":</span></span>
 <span class="code-line">  <span class="val">"awaiting_authorization"</span></span>
 
 <span class="code-line"><span class="key">"next_action":</span></span>
 <span class="code-line">  <span class="val">"await_authorization"</span></span></pre></div><p class="terminal-note">Selected fields; execution ID omitted.</p><div class="outcome"><i class="square"></i><p>Simulated approval<small>Fixture issuer binds the action.</small></p></div></div>
 </section>
-<section id="result" class="clip scene result" data-start="12" data-duration="5" data-track-index="1">
+<section id="result" class="clip scene result" data-start="10.634" data-duration="5.352" data-track-index="1">
 <div class="scene-inner"><p class="eyebrow">03 / CONFIRM</p><h2 class="scene-title">A result you can inspect.</h2><div class="terminal"><div class="terminal-top">local-fixture / actual output excerpt</div><pre class="terminal-body"><span class="code-line"><span class="key">"status":</span></span>
 <span class="code-line">  <span class="val">"succeeded"</span></span>
 
 <span class="code-line"><span class="key">"next_action":</span></span>
 <span class="code-line">  <span class="val">"inspect_receipt"</span></span></pre></div><p class="terminal-note">Selected fields; execution and receipt IDs omitted.</p><div class="outcome"><i class="square"></i><p>Simulated confirmation<small>No provider API or real charge in this demo.</small></p></div></div>
 </section>
-<section id="cta" class="clip scene cta" data-start="17" data-duration="3" data-track-index="1">
+<section id="cta" class="clip scene cta" data-start="15.986" data-duration="5.014" data-track-index="1">
 <div class="scene-inner"><p class="eyebrow">BUILD WITH US</p><h2 class="headline"><span>Kujo</span><span>Payments.</span></h2><p class="cta-badge">Developer alpha</p><p class="subhead">Link adapter: sandbox validation next</p><p class="url">github.com/kujolang/payments</p></div>
 </section>
+<audio id="narration" src="narration/brian-normalized.wav" data-start="0.25" data-duration="19.923" data-track-index="2" data-volume="1"></audio>
 <div class="footer"><span>SYNTHETIC DEMO · NO REAL MONEY</span><span>KUJO</span></div><div class="progress"></div>
 </div>
 <script>
 const tl = gsap.timeline({paused:true});
-const scenes=[['hook',0],['intent',3],['approval',7],['result',12],['cta',17]];
+const scenes=[["hook", 0], ["intent", 3.424], ["approval", 7.836], ["result", 10.634], ["cta", 15.986]];
 scenes.forEach(([id,start])=>{
   tl.fromTo('#'+id+' .scene-inner',{opacity:id==='hook'?1:0,y:id==='hook'?0:20},{opacity:1,y:0,duration:.34,ease:'power2.out',immediateRender:false},start);
 });
 tl.fromTo('#hook .hero-rule',{scaleX:0},{scaleX:1,duration:.6,ease:'power2.out'},.45);
-tl.fromTo('#intent .code-line',{opacity:0},{opacity:1,duration:.15,stagger:.045,immediateRender:false},3.25);
-tl.fromTo('#approval .outcome',{opacity:0,y:10},{opacity:1,y:0,duration:.4,immediateRender:false},8.15);
-tl.fromTo('#result .outcome',{opacity:0,y:10},{opacity:1,y:0,duration:.4,immediateRender:false},13.15);
-tl.fromTo('.progress',{scaleX:0},{scaleX:1,duration:20,ease:'none'},0);
+tl.fromTo('#intent .code-line',{opacity:0},{opacity:1,duration:.15,stagger:.045,immediateRender:false},3.574);
+tl.fromTo('#approval .outcome',{opacity:0,y:10},{opacity:1,y:0,duration:.4,immediateRender:false},8.636000000000001);
+tl.fromTo('#result .outcome',{opacity:0,y:10},{opacity:1,y:0,duration:.4,immediateRender:false},11.434000000000001);
+tl.fromTo('.progress',{scaleX:0},{scaleX:1,duration:21,ease:'none'},0);
 window.__timelines = window.__timelines || {};
 window.__timelines.main=tl;
 </script>

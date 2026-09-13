@@ -1,0 +1,43 @@
+1
+00:00:00,250 --> 00:00:03,083
+Kujo Payments is a portable payment layer
+for agents.
+
+2
+00:00:03,524 --> 00:00:06,218
+Request a merchant and spending limit,
+without giving the
+
+3
+00:00:06,264 --> 00:00:07,495
+agent payment credentials.
+
+4
+00:00:07,936 --> 00:00:10,409
+Bind approval to the action before
+execution.
+
+5
+00:00:10,734 --> 00:00:12,557
+Then inspect the result and receipt.
+
+6
+00:00:12,882 --> 00:00:14,159
+This demo is simulated;
+
+7
+00:00:14,333 --> 00:00:15,389
+no real money moves.
+
+8
+00:00:16,086 --> 00:00:16,399
+Next:
+
+9
+00:00:16,446 --> 00:00:19,371
+validate the Link adapter in a sandbox,
+and gather developer
+
+10
+00:00:19,418 --> 00:00:20,173
+feedback.

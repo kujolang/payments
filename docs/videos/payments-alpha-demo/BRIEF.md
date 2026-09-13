@@ -1,13 +1,11 @@
-# Kujo Payments — developer alpha demo
+# Kujo Payments — narrated developer alpha demo
 
-20 seconds · 1080×1080 · 30 fps · silent, readable in a social feed.
+21 seconds · 1080×1080 · 30 fps · ElevenLabs Brian American English narration.
 
-Selected ten-style preset: **short-product-launch**. Native workflow: product-launch-video, local repository brief. Audience: agent developers and Stripe Link engineers. User requested an attachable quick example video; rendering is authorized, publication is not.
+Selected ten-style preset: short-product-launch. Native workflow: product-launch-video, local repository brief. Audience: agent developers and Stripe Link engineers. User requested narration and explicitly clarified noncommercial use; ElevenLabs attribution belongs in the accompanying post, not on screen. No publication was authorized.
 
-One message: request a bounded purchase, authorize it, inspect the outcome.
+One message: a portable payment layer where agents request bounded purchases, approval binds the action, and outcomes are inspectable. Narration finishes with Link sandbox validation and developer feedback as next steps.
 
-Source is the actual synthetic local fixture, not a live Link transaction. Every frame must retain “SYNTHETIC DEMO / NO REAL MONEY”. Terminal panels are designed presentations of actual input/output excerpts, not an existing GUI. Approval and processor confirmation are simulated. The single-process fixture does not demonstrate physical credential isolation.
+Source is the actual synthetic local fixture, not a live Link transaction. All frames retain SYNTHETIC DEMO / NO REAL MONEY. Terminal panels present selected actual input/output fields, not an existing GUI. Approval and confirmation are simulated. This single-process fixture does not prove physical credential isolation. No endorsement or production-readiness claim.
 
-CTA: github.com/kujolang/payments. Release label: developer alpha. Link adapter implemented; sandbox validation next. No Stripe endorsement, live-payment success, production readiness, universal security, or PCI compliance claims.
-
-No narration, soundtrack, paid media, external publishing, or payment activity.
+Original silent 20-second MP4 remains available. Narrated source is retimed from provider character alignment, with a short closing hold. No background music or burned-in attribution. Plain transcript and optional SRT accompany the narrated MP4. Free-plan narration is for this user-declared noncommercial use only; publication attribution requirements are documented in narration/RIGHTS.md.
