@@ -10,11 +10,11 @@ source = "github:kujolang/ability"
 [dev-dependencies]
 
 [kujo]
-entry = "src/client/client.kujo"
-excludes = [".git", "kennel_packages", "dist", "build", "node_modules"]
-includes = ["README.md"]
+entry = "payments.kujo"
+excludes = [".git", ".local", ".kennel_tmp", "kennel_packages", "dist", "build", "node_modules", "docs/evidence"]
+includes = ["README.md", "kennel.lock", "docs"]
 minimum_version = "1.4.0"
-sources = ["."]
+sources = ["payments.kujo", "payments_http.kujo", "src", "contracts", "scripts/maintenance"]
 
 [package]
 authors = []
@@ -30,8 +30,8 @@ repository = "https://github.com/kujolang/payments"
 version = "0.1.0"
 
 [package.exports]
-client = "src/client/client.kujo"
-http_client = "src/client/http.kujo"
+client = "payments.kujo"
+http_client = "payments_http.kujo"
 
 [package.metadata]
 

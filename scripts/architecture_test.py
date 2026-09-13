@@ -27,7 +27,7 @@ assert FENCE.is_file(), 'Install tools/kennel.toml with Kennel first'
 def discipline(root):
     """Close Fence's default external allow and unclassified-source gaps."""
     config = read_toml(root / 'fence.toml')
-    for path in (root / 'src').rglob('*.kujo'):
+    for path in [*(root / 'src').rglob('*.kujo'), root/'payments.kujo', root/'payments_http.kujo']:
         rel = path.relative_to(root).as_posix()
         matches = [name for name, z in config['zones'].items()
                    if any(fnmatch.fnmatchcase(rel, pattern) for pattern in z['paths'])]
@@ -39,6 +39,9 @@ def discipline(root):
             match = re.fullmatch(r'from ([A-Za-z_][A-Za-z0-9_.]*) import [A-Za-z_][A-Za-z0-9_]*(?:, *[A-Za-z_][A-Za-z0-9_]*)*', source)
             assert match, f'Use auditable single-line from imports: {rel}'
             module = match[1]
+            if matches[0] == 'client_exports':
+                expected = {'payments.kujo':'src.client.client','payments_http.kujo':'src.client.http'}
+                assert module == expected[rel], f'Public client export imports forbidden module: {rel}'
             if module.startswith('src.'):
                 assert (root / (module.replace('.', '/') + '.kujo')).is_file(), f'Unresolved import: {rel}'
             else:
@@ -51,6 +54,7 @@ def fence(root, expected=0):
     assert result.returncode == expected, (result.returncode, result.stdout, result.stderr)
     report = json.loads(result.stdout[result.stdout.index('{'):])
     assert not report['skipped_files'], report
+    assert report['summary']['files_scanned'] == len(list((root/'src').rglob('*.kujo'))), 'Incomplete Fence source coverage'
     assert (report['summary']['errors'] > 0) == (expected != 0), report
     return report
 
@@ -77,6 +81,18 @@ with tempfile.TemporaryDirectory(prefix='payments-fence-') as directory:
     temp = Path(directory)
     shutil.copytree(ROOT / 'src', temp / 'src')
     shutil.copyfile(ROOT / 'fence.toml', temp / 'fence.toml')
+    for shim in ['payments.kujo','payments_http.kujo']:
+        shutil.copyfile(ROOT/shim,temp/shim)
+    for shim in ['payments.kujo','payments_http.kujo']:
+        path=temp/shim;original=path.read_text()
+        path.write_text(original+'\nfrom src.providers.link.credentials import forbidden_probe\n')
+        try:
+            discipline(temp)
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('Public export admitted provider import')
+        path.write_text(original)
     for source, target in cases:
         path = temp / 'src' / source
         original = path.read_text()
@@ -99,4 +115,4 @@ with tempfile.TemporaryDirectory(prefix='payments-fence-') as directory:
             path.unlink()
         else:
             path.write_text(original)
-print(f"Architecture: {report['summary']['files_scanned']} files; Fence passed; {len(cases)} forbidden edges and 3 coverage/external mutations rejected")
+print(f"Architecture: {report['summary']['files_scanned']} files; Fence passed; {len(cases)} forbidden edges and 5 export/coverage/external mutations rejected")
