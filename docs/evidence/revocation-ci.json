@@ -1,0 +1,29 @@
+{
+  "source_commit": "59ed9c8bdb1764356843aa56596697e246ce358b",
+  "run_id": 34742759652,
+  "url": "https://github.com/kujolang/payments/actions/runs/34742759652",
+  "jobs": {
+    "host": {
+      "id": 103685153603,
+      "conclusion": "success",
+      "log_sha256": "970dcaf9a959d9783e95aae4bc216d867b87ef6f995230167324a96bb80f8f0e"
+    },
+    "containment": {
+      "id": 103685153549,
+      "conclusion": "success",
+      "log_sha256": "1691ec0d03dc119ed2569ba230aeec8c8a627ab78c29a63efdc3c5c9b8cdb748"
+    }
+  },
+  "artifact": {
+    "id": 10312587505,
+    "archive_sha256": "c9e388678c2aa5d1678155f3d5027888768a30ecfc8b6e446a28b16610bdcb44",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Private Link revocation: 12 fault, binding, form, deadline, concurrency, crash and refresh-race cases; full synthetic host suite and declared OCI/Workcell containment. Local disable precedes one native request. Endpoint acknowledgment is not durable remote revocation status; no live provider/account or enrollment acceptance claim."
+}
