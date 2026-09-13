@@ -1,0 +1,11 @@
+{
+  "source_commit": "ad41ec9306bfede0c3580ec142c48dbc6306b60d",
+  "kennel_commit": "546dd4205b90825f3e326336941c3068b1add0f0",
+  "runtime_version": "1.4.0",
+  "runtime_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+  "log_sha256": "02a64cdac9dee29364476bea674f9e9af50cda205d89f3e38ce4faa576db96e3",
+  "fixture_archive_files": 89,
+  "fixture_archive_bytes": 121838,
+  "exit_code": 0,
+  "scope": "Synthetic native packaging/extraction and actual Kennel file-package installation/validation; payments/payments_http imports exercised in VM/interpreter. No release or registry publication, HTTP call, provider acceptance, or full local host-suite rerun."
+}
