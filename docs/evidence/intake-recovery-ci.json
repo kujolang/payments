@@ -1,0 +1,29 @@
+{
+  "source_commit": "c030e501e7d60b848babe6fad1dd976d66b74d53",
+  "run_id": 34742185301,
+  "url": "https://github.com/kujolang/payments/actions/runs/34742185301",
+  "jobs": {
+    "host": {
+      "id": 103683632009,
+      "conclusion": "success",
+      "log_sha256": "be0d022bc2200e0e8d8f4d72dc580f51c3bd731bdfb2c30b47937bf5490b4499"
+    },
+    "containment": {
+      "id": 103683632287,
+      "conclusion": "success",
+      "log_sha256": "8db4a26afc896aaa5a2240d6187d0ac4af9b01a82b2192454d0f00473b6141b1"
+    }
+  },
+  "artifact": {
+    "id": 10313476491,
+    "archive_sha256": "acdd8c0396660c3349129d604dadff5ac262f7a5244f3808fd1af87d1f3b76ac",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Existing-contract intake recovery: three interruption boundaries with killed/live originals and four fresh-key contenders, unchanged terms/expiry, no approval or financial claim; full synthetic host suite and declared OCI/Workcell containment. No journal re-entry, financial execution recovery, coordinated backup or live provider acceptance claim."
+}
