@@ -1,0 +1,5 @@
+from src.storage.sqlite import open_store
+mut ok := false
+try { db := open_store(env("PAYMENTS_TEST_DB")); db_close(db); ok = true } except error { }
+print(to_json({"ok":ok}))
+if ok == false { exit(1) }

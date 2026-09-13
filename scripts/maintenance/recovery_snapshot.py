@@ -30,6 +30,18 @@ def digest_file(path, maximum, deadline):
     return digest.hexdigest()
 
 
+def validate_schema(connection):
+    versions = connection.execute('SELECT version FROM payments_meta').fetchall()
+    if len(versions) != 1 or type(versions[0][0]) is not int or versions[0][0] not in (1, 2):
+        raise ValueError('unsupported schema')
+    version = versions[0][0]
+    for expected in json.loads((ROOT/f'contracts/storage/v{version}-baseline.json').read_text()):
+        actual = connection.execute('SELECT type,sql FROM sqlite_master WHERE name=?',
+                                    (expected['name'],)).fetchall()
+        if actual != [(expected['type'], expected['sql'])]:
+            raise ValueError('schema drift')
+
+
 def snapshot(source, destination, timeout=30, max_bytes=256*1024*1024):
     if not 0 < timeout <= 300 or not 4096 <= max_bytes <= 16*1024**3:
         raise ValueError('invalid maintenance bounds')
@@ -50,9 +62,7 @@ def snapshot(source, destination, timeout=30, max_bytes=256*1024*1024):
                 raise TimeoutError('snapshot deadline')
         uri = source.resolve().as_uri() + '?mode=ro'
         with closing(sqlite3.connect(uri, uri=True, timeout=5)) as original:
-            versions = original.execute('SELECT version FROM payments_meta').fetchall()
-            if versions != [(1,)] or type(versions[0][0]) is not int:
-                raise ValueError('unsupported schema')
+            validate_schema(original)
             page_size = original.execute('PRAGMA page_size').fetchone()[0]
             if original.execute('PRAGMA page_count').fetchone()[0] * page_size > max_bytes:
                 raise ValueError('snapshot size')
@@ -63,6 +73,7 @@ def snapshot(source, destination, timeout=30, max_bytes=256*1024*1024):
         source_digest = digest_file(staged, max_bytes, deadline)
         with closing(sqlite3.connect(staged, timeout=5)) as copy:
             copy.set_progress_handler(lambda: int(time.monotonic() > deadline), 1000)
+            validate_schema(copy)
             if copy.execute('PRAGMA integrity_check').fetchall() != [('ok',)]:
                 raise ValueError('integrity failure')
             if copy.execute('PRAGMA foreign_key_check').fetchall():

@@ -1,0 +1,157 @@
+[
+  {
+    "type": "table",
+    "name": "ability_calls",
+    "sql": "CREATE TABLE ability_calls(operation TEXT NOT NULL,key_digest TEXT NOT NULL,request_digest TEXT NOT NULL,invocation_id TEXT NOT NULL,receipt_json TEXT,PRIMARY KEY(operation,key_digest))"
+  },
+  {
+    "type": "table",
+    "name": "approvals",
+    "sql": "CREATE TABLE approvals(approval_id TEXT PRIMARY KEY,execution_id TEXT NOT NULL REFERENCES executions(execution_id),scope TEXT NOT NULL,snapshot_digest TEXT NOT NULL,invocation_id TEXT NOT NULL,binding_digest TEXT NOT NULL,issuer_ref TEXT NOT NULL,nonce TEXT NOT NULL,expires_at_ms INTEGER NOT NULL,consumed INTEGER NOT NULL DEFAULT 0 CHECK(consumed IN (0,1)),UNIQUE(issuer_ref,nonce))"
+  },
+  {
+    "type": "table",
+    "name": "audit",
+    "sql": "CREATE TABLE audit(event_id TEXT PRIMARY KEY,execution_id TEXT,phase TEXT NOT NULL)"
+  },
+  {
+    "type": "table",
+    "name": "execution_control",
+    "sql": "CREATE TABLE execution_control(id INTEGER PRIMARY KEY CHECK(id=1),mode TEXT NOT NULL CHECK(mode IN ('active','paused')),revision INTEGER NOT NULL CHECK(revision>=0))"
+  },
+  {
+    "type": "table",
+    "name": "execution_control_events",
+    "sql": "CREATE TABLE execution_control_events(revision INTEGER PRIMARY KEY,mode TEXT NOT NULL,actor_ref TEXT NOT NULL,changed_at_ms INTEGER NOT NULL)"
+  },
+  {
+    "type": "table",
+    "name": "executions",
+    "sql": "CREATE TABLE executions(execution_id TEXT PRIMARY KEY, scope TEXT NOT NULL, purchase_ref TEXT NOT NULL, request_digest TEXT NOT NULL, intent_json TEXT NOT NULL, snapshot_json TEXT, snapshot_digest TEXT, state TEXT NOT NULL CHECK(state IN ('awaiting_authorization','ready','executing','reconciliation_required','succeeded','closed')), revision INTEGER NOT NULL DEFAULT 0, expires_at_ms INTEGER NOT NULL, claimed INTEGER NOT NULL DEFAULT 0 CHECK(claimed IN (0,1)), invocation_id TEXT, closed_reason TEXT, receipt_json TEXT, UNIQUE(scope,purchase_ref), CHECK(claimed=0 OR state NOT IN ('ready','awaiting_authorization')))"
+  },
+  {
+    "type": "table",
+    "name": "incidents",
+    "sql": "CREATE TABLE incidents(execution_id TEXT NOT NULL REFERENCES executions(execution_id),evidence_id TEXT NOT NULL,digest TEXT NOT NULL,code TEXT NOT NULL,PRIMARY KEY(execution_id,evidence_id,digest,code))"
+  },
+  {
+    "type": "table",
+    "name": "issued_approvals",
+    "sql": "CREATE TABLE issued_approvals(approval_id TEXT PRIMARY KEY REFERENCES approvals(approval_id),approval_json TEXT NOT NULL)"
+  },
+  {
+    "type": "table",
+    "name": "observations",
+    "sql": "CREATE TABLE observations(execution_id TEXT NOT NULL REFERENCES executions(execution_id),evidence_id TEXT NOT NULL,digest TEXT NOT NULL,observation_json TEXT NOT NULL,PRIMARY KEY(execution_id,evidence_id))"
+  },
+  {
+    "type": "table",
+    "name": "payments_meta",
+    "sql": "CREATE TABLE payments_meta(version INTEGER PRIMARY KEY CHECK(version=2))"
+  },
+  {
+    "type": "table",
+    "name": "preparations",
+    "sql": "CREATE TABLE preparations(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),prepared_ref TEXT NOT NULL,provider_id TEXT NOT NULL)"
+  },
+  {
+    "type": "table",
+    "name": "provider_authorizations",
+    "sql": "CREATE TABLE provider_authorizations(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),started INTEGER NOT NULL CHECK(started=1))"
+  },
+  {
+    "type": "table",
+    "name": "request_keys",
+    "sql": "CREATE TABLE request_keys(scope TEXT NOT NULL,key_hash TEXT NOT NULL,request_digest TEXT NOT NULL,execution_id TEXT NOT NULL REFERENCES executions(execution_id),PRIMARY KEY(scope,key_hash))"
+  },
+  {
+    "type": "table",
+    "name": "restore_quarantine",
+    "sql": "CREATE TABLE restore_quarantine(id INTEGER PRIMARY KEY CHECK(id=1),source_digest TEXT NOT NULL,restored_at_ms INTEGER NOT NULL)"
+  },
+  {
+    "type": "table",
+    "name": "schema_history",
+    "sql": "CREATE TABLE schema_history(version INTEGER PRIMARY KEY,from_version INTEGER NOT NULL,source_digest TEXT,actor_ref TEXT NOT NULL,applied_at_ms INTEGER NOT NULL)"
+  },
+  {
+    "type": "trigger",
+    "name": "immutable_snapshot",
+    "sql": "CREATE TRIGGER immutable_snapshot BEFORE UPDATE OF snapshot_json,snapshot_digest ON executions WHEN OLD.snapshot_json IS NOT NULL AND (NEW.snapshot_json IS NOT OLD.snapshot_json OR NEW.snapshot_digest IS NOT OLD.snapshot_digest) BEGIN SELECT RAISE(ABORT,'immutable_snapshot'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "immutable_terminal",
+    "sql": "CREATE TRIGGER immutable_terminal BEFORE UPDATE OF state,receipt_json ON executions WHEN OLD.state IN ('succeeded','closed') AND (NEW.state!=OLD.state OR NEW.receipt_json IS NOT OLD.receipt_json) BEGIN SELECT RAISE(ABORT,'immutable_terminal'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_claim",
+    "sql": "CREATE TRIGGER permanent_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=1 AND NEW.claimed!=1 BEGIN SELECT RAISE(ABORT,'permanent_claim'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_control_events_DELETE",
+    "sql": "CREATE TRIGGER permanent_control_events_DELETE BEFORE DELETE ON execution_control_events BEGIN SELECT RAISE(ABORT,'permanent_control_events'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_control_events_UPDATE",
+    "sql": "CREATE TRIGGER permanent_control_events_UPDATE BEFORE UPDATE ON execution_control_events BEGIN SELECT RAISE(ABORT,'permanent_control_events'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_execution",
+    "sql": "CREATE TRIGGER permanent_execution BEFORE DELETE ON executions BEGIN SELECT RAISE(ABORT,'permanent_execution'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_execution_control",
+    "sql": "CREATE TRIGGER permanent_execution_control BEFORE DELETE ON execution_control BEGIN SELECT RAISE(ABORT,'permanent_execution_control'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_restore_marker_delete",
+    "sql": "CREATE TRIGGER permanent_restore_marker_delete BEFORE DELETE ON restore_quarantine BEGIN SELECT RAISE(ABORT,'permanent_restore_quarantine'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_restore_marker_update",
+    "sql": "CREATE TRIGGER permanent_restore_marker_update BEFORE UPDATE ON restore_quarantine BEGIN SELECT RAISE(ABORT,'permanent_restore_quarantine'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_schema_history_DELETE",
+    "sql": "CREATE TRIGGER permanent_schema_history_DELETE BEFORE DELETE ON schema_history BEGIN SELECT RAISE(ABORT,'permanent_schema_history'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "permanent_schema_history_UPDATE",
+    "sql": "CREATE TRIGGER permanent_schema_history_UPDATE BEFORE UPDATE ON schema_history BEGIN SELECT RAISE(ABORT,'permanent_schema_history'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "quarantine_claim",
+    "sql": "CREATE TRIGGER quarantine_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=0 AND NEW.claimed=1 AND EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "quarantine_native_authorization",
+    "sql": "CREATE TRIGGER quarantine_native_authorization BEFORE INSERT ON provider_authorizations WHEN EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "quarantine_resume",
+    "sql": "CREATE TRIGGER quarantine_resume BEFORE UPDATE OF mode ON execution_control WHEN NEW.mode='active' AND EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "stopped_claim",
+    "sql": "CREATE TRIGGER stopped_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=0 AND NEW.claimed=1 AND NOT EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active') BEGIN SELECT RAISE(ABORT,'execution_paused'); END"
+  },
+  {
+    "type": "trigger",
+    "name": "stopped_native_authorization",
+    "sql": "CREATE TRIGGER stopped_native_authorization BEFORE INSERT ON provider_authorizations WHEN NOT EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active') BEGIN SELECT RAISE(ABORT,'execution_paused'); END"
+  }
+]

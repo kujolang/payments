@@ -1,22 +1,24 @@
 from src.domain.lifecycle import transition
-// Trusted persistence port. It does not authenticate callers or issue approvals.
-// Only a successful claim return in the current invocation may authorize dispatch.
-export open_store := func(path) {
-    db := db_connect("sqlite", path)
-    // Never silently initialize a foreign database or rewrite a future schema.
+
+func schema_version(db) {
     tables := db_query(db,"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",[])
-    if len(tables) > 0 {
-        marker := db_query(db,"SELECT name FROM sqlite_master WHERE type='table' AND name='payments_meta'",[])
-        assert(len(marker) == 1,"payments_schema_unknown")
-        versions := db_query(db,"SELECT version FROM payments_meta",[])
-        assert(len(versions) == 1 && type(versions[0]["version"]) == "int" && versions[0]["version"] == 1,"payments_schema_unsupported")
-    }
-    db_query(db, "PRAGMA journal_mode=WAL", [])
-    db_query(db, "PRAGMA synchronous=FULL", [])
-    db_query(db, "PRAGMA foreign_keys=ON", [])
-    db_query(db, "PRAGMA busy_timeout=5000", [])
-    db_execute(db, "CREATE TABLE IF NOT EXISTS payments_meta(version INTEGER PRIMARY KEY CHECK(version=1))", [])
-    db_execute(db, "INSERT OR IGNORE INTO payments_meta VALUES(1)", [])
+    if len(tables) == 0 { return 0 }
+    marker := db_query(db,"SELECT name FROM sqlite_master WHERE type='table' AND name='payments_meta'",[])
+    assert(len(marker) == 1,"payments_schema_unknown")
+    versions := db_query(db,"SELECT version FROM payments_meta",[])
+    assert(len(versions) == 1 && type(versions[0]["version"]) == "int","payments_schema_invalid")
+    version := versions[0]["version"]
+    assert(version == 1 || version == 2,"payments_schema_unsupported")
+    return version
+}
+func configure(db) {
+    db_query(db,"PRAGMA journal_mode=WAL",[])
+    db_query(db,"PRAGMA synchronous=FULL",[])
+    db_query(db,"PRAGMA foreign_keys=ON",[])
+}
+func initialize_schema(db) {
+    db_execute(db, "CREATE TABLE IF NOT EXISTS payments_meta(version INTEGER PRIMARY KEY CHECK(version=2))", [])
+    db_execute(db, "INSERT OR IGNORE INTO payments_meta VALUES(2)", [])
     db_execute(db, "CREATE TABLE IF NOT EXISTS executions(execution_id TEXT PRIMARY KEY, scope TEXT NOT NULL, purchase_ref TEXT NOT NULL, request_digest TEXT NOT NULL, intent_json TEXT NOT NULL, snapshot_json TEXT, snapshot_digest TEXT, state TEXT NOT NULL CHECK(state IN ('awaiting_authorization','ready','executing','reconciliation_required','succeeded','closed')), revision INTEGER NOT NULL DEFAULT 0, expires_at_ms INTEGER NOT NULL, claimed INTEGER NOT NULL DEFAULT 0 CHECK(claimed IN (0,1)), invocation_id TEXT, closed_reason TEXT, receipt_json TEXT, UNIQUE(scope,purchase_ref), CHECK(claimed=0 OR state NOT IN ('ready','awaiting_authorization')))", [])
     db_execute(db, "CREATE TABLE IF NOT EXISTS request_keys(scope TEXT NOT NULL,key_hash TEXT NOT NULL,request_digest TEXT NOT NULL,execution_id TEXT NOT NULL REFERENCES executions(execution_id),PRIMARY KEY(scope,key_hash))", [])
     db_execute(db, "CREATE TABLE IF NOT EXISTS approvals(approval_id TEXT PRIMARY KEY,execution_id TEXT NOT NULL REFERENCES executions(execution_id),scope TEXT NOT NULL,snapshot_digest TEXT NOT NULL,invocation_id TEXT NOT NULL,binding_digest TEXT NOT NULL,issuer_ref TEXT NOT NULL,nonce TEXT NOT NULL,expires_at_ms INTEGER NOT NULL,consumed INTEGER NOT NULL DEFAULT 0 CHECK(consumed IN (0,1)),UNIQUE(issuer_ref,nonce))", [])
@@ -41,8 +43,86 @@ export open_store := func(path) {
         db_execute(db,"CREATE TRIGGER IF NOT EXISTS permanent_control_events_"+event+" BEFORE "+event+" ON execution_control_events BEGIN SELECT RAISE(ABORT,'permanent_control_events'); END",[])
     }
     for statement in parse_json(read_file("contracts/storage/quarantine.sql.json")) { db_execute(db,statement,[]) }
+    db_execute(db,"CREATE TABLE IF NOT EXISTS schema_history(version INTEGER PRIMARY KEY,from_version INTEGER NOT NULL,source_digest TEXT,actor_ref TEXT NOT NULL,applied_at_ms INTEGER NOT NULL)",[])
+    for event in ["UPDATE","DELETE"] { db_execute(db,"CREATE TRIGGER IF NOT EXISTS permanent_schema_history_"+event+" BEFORE "+event+" ON schema_history BEGIN SELECT RAISE(ABORT,'permanent_schema_history'); END",[]) }
+}
+
+func validate_history(db) {
+    rows := db_query(db,"SELECT from_version,source_digest FROM schema_history WHERE version=2",[])
+    assert(len(rows) == 1,"payments_schema_history_missing")
+    row := rows[0]
+    assert((row["from_version"] == 0 && row["source_digest"] == null) || (row["from_version"] == 1 && row["source_digest"] == sha256(read_file("contracts/storage/v1-baseline.json"))),"payments_schema_history_invalid")
+}
+
+// Schema creation is one transaction. Only a successful current-invocation claim
+// authorizes dispatch; neither schema initialization nor migration creates one.
+export open_store := func(path) {
+    db := db_connect("sqlite",path)
+    try {
+        db_query(db,"PRAGMA busy_timeout=5000",[])
+        initial := schema_version(db)
+        assert(initial != 1,"payments_schema_migration_required")
+        if initial == 2 { validate_schema(db,"contracts/storage/v2-baseline.json"); validate_history(db) }
+        configure(db)
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        version := schema_version(db)
+        assert(version == 0 || version == 2,"payments_schema_migration_required")
+        if version == 0 { initialize_schema(db) }
+        if version == 0 { db_execute(db,"INSERT INTO schema_history VALUES(2,0,NULL,'initialization',?)",[current_timestamp()]) }
+        validate_schema(db,"contracts/storage/v2-baseline.json")
+        validate_history(db)
+        db_execute(db,"COMMIT",[])
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        db_close(db)
+        assert(false,"payments_store_open_failed")
+    }
     return db
 }
+func validate_schema(db, path) {
+    for expected in parse_json(read_file(path)) {
+        actual := db_query(db,"SELECT type,sql FROM sqlite_master WHERE name=?",[expected["name"]])
+        assert(len(actual) == 1 && actual[0]["type"] == expected["type"] && actual[0]["sql"] == expected["sql"],"payments_schema_drift")
+    }
+}
+func validate_v1(db) {
+    validate_schema(db,"contracts/storage/v1-baseline.json")
+    assert(len(db_query(db,"SELECT name FROM sqlite_master WHERE name='schema_history' OR name LIKE 'permanent_schema_history_%'",[])) == 0,"payments_migration_history_conflict")
+}
+export migrate_store := func(path, actor_ref, now_ms) {
+    assert(type(actor_ref) == "string" && regex_match(actor_ref,"^[A-Za-z0-9_.:-]{1,128}$") && type(now_ms) == "int" && now_ms >= 0,"payments_migration_authority")
+    db := db_connect("sqlite",path)
+    try {
+        db_query(db,"PRAGMA busy_timeout=5000",[])
+        version := schema_version(db)
+        assert(version == 1 || version == 2,"payments_migration_source_required")
+        if version == 1 { validate_v1(db) }
+        configure(db)
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        current := schema_version(db)
+        if current == 1 {
+            validate_v1(db)
+            integrity := db_query(db,"PRAGMA integrity_check",[])
+            assert(len(integrity) == 1 && integrity[0]["integrity_check"] == "ok" && len(db_query(db,"PRAGMA foreign_key_check",[])) == 0,"payments_migration_integrity")
+            db_execute(db,"UPDATE execution_control SET mode='paused',revision=revision+1 WHERE id=1",[])
+            control := db_query(db,"SELECT mode,revision FROM execution_control WHERE id=1",[])
+            assert(len(control) == 1 && control[0]["mode"] == "paused","payments_migration_control")
+            db_execute(db,"INSERT INTO execution_control_events VALUES(?,'paused',?,?)",[control[0]["revision"],actor_ref,now_ms])
+            db_execute(db,"DROP TABLE payments_meta",[])
+            initialize_schema(db)
+            db_execute(db,"INSERT INTO schema_history VALUES(2,1,?,?,?)",[sha256(read_file("contracts/storage/v1-baseline.json")),actor_ref,now_ms])
+        } else { assert(current == 2,"payments_migration_version_changed") }
+        validate_schema(db,"contracts/storage/v2-baseline.json")
+        validate_history(db)
+        db_execute(db,"COMMIT",[])
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        db_close(db)
+        assert(false,"payments_migration_failed")
+    }
+    return db
+}
+
 export inspect := func(db, scope, execution_id) {
     rows := db_query(db, "SELECT * FROM executions WHERE scope=? AND execution_id=?", [scope, execution_id])
     if len(rows) == 0 { return null }

@@ -1,0 +1,75 @@
+{
+  "ability_calls": [],
+  "approvals": [
+    [
+      "approval",
+      "exec_control",
+      "scope",
+      "1c506dd18a81646f9adfbaaa98be7b52fa3d220fb65d35fb551e2c580a4404a3",
+      "invocation",
+      "binding",
+      "issuer",
+      "nonce",
+      2000,
+      0
+    ]
+  ],
+  "audit": [],
+  "execution_control": [
+    [
+      1,
+      "paused",
+      1
+    ]
+  ],
+  "execution_control_events": [
+    [
+      1,
+      "paused",
+      "operator",
+      1000
+    ]
+  ],
+  "executions": [
+    [
+      "exec_control",
+      "scope",
+      "purchase_1",
+      "request",
+      "{\"amount\":{\"currency\":\"USD\",\"minor\":5500,\"mode\":\"maximum\"},\"correlation_id\":\"correlation_1\",\"expires_at_ms\":2000,\"intent_id\":\"intent_1\",\"kind\":\"purchase\",\"payee_ref\":\"merchant_1\",\"payment_profile\":\"default\",\"principal\":{\"id\":\"user_1\",\"tenant_id\":\"tenant_1\",\"type\":\"user\"},\"purchase_ref\":\"purchase_1\",\"purpose\":\"Purchase example\",\"schema\":\"kujo.payment-intent/v1\"}",
+      "{\"capabilities_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"charge\":{\"currency\":\"USD\",\"minor\":5500},\"currency_table_version\":\"fixture-v1\",\"execution_class\":\"machine\",\"execution_id\":\"exec_1\",\"expires_at_ms\":2000,\"intent_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"payee\":{\"display_name\":\"Example Merchant\",\"id\":\"merchant_1\",\"origin\":\"https://example.com\",\"registry_version\":\"v1\"},\"payment_profile\":{\"alias\":\"default\",\"version\":\"v1\"},\"principal\":{\"id\":\"user_1\",\"tenant_id\":\"tenant_1\",\"type\":\"user\"},\"provider\":{\"account_ref\":\"account_1\",\"adapter_version\":\"1.0.0\",\"id\":\"fixture\"},\"request_binding\":{\"resource_ref\":\"order_1\",\"route_id\":\"mpp_1\",\"route_version\":\"v1\",\"terms_digest\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"},\"shipping_profile\":null}",
+      "1c506dd18a81646f9adfbaaa98be7b52fa3d220fb65d35fb551e2c580a4404a3",
+      "ready",
+      2,
+      2000,
+      0,
+      null,
+      null,
+      null
+    ]
+  ],
+  "incidents": [],
+  "issued_approvals": [
+    [
+      "approval",
+      "{\"approval_id\":\"approval\",\"binding_digest\":\"binding\",\"expires_at_ms\":2000,\"nonce\":\"nonce\"}"
+    ]
+  ],
+  "observations": [],
+  "payments_meta": [
+    [
+      1
+    ]
+  ],
+  "preparations": [],
+  "provider_authorizations": [],
+  "request_keys": [
+    [
+      "scope",
+      "key",
+      "request",
+      "exec_control"
+    ]
+  ],
+  "restore_quarantine": []
+}

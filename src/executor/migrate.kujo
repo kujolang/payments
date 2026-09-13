@@ -1,0 +1,14 @@
+// Offline administrator command. Quiesce existing workers before upgrading.
+from src.storage.sqlite import migrate_store, inspect_execution_control
+func migrate() {
+    settings := parse_json(read_file(env("PAYMENTS_CONTROL_CONFIG")))
+    assert(json_schema_validate(settings,parse_json(read_file("contracts/control.schema.json")))["valid"],"migration_config")
+    db := migrate_store(settings["database"],settings["actor_ref"],current_timestamp())
+    result := {"ok":true,"schema_version":2,"control":inspect_execution_control(db)}
+    db_close(db)
+    return result
+}
+mut result := {"ok":false,"code":"migration_failed"}
+try { result = migrate() } except error { result = {"ok":false,"code":"migration_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }
