@@ -1,0 +1,9 @@
+{
+  "source_commit": "3725000a2632bcf429b6d71664c2de1c80d07e76",
+  "command": "KUJO_BIN=<verified local Kujo 1.4.0> bash scripts/test.sh",
+  "exit_code": 0,
+  "runtime_version": "1.4.0",
+  "runtime_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+  "log_sha256": "ebd2e56ce9e0c220d260d0d66aa83c80ba166bbf6abd2ef7bea9a87bce8e27b9",
+  "scope": "Full local synthetic host suite including declared private-journal recovery sets. No Linux containment, full financial-history recovery, credential reinstall, live spending restore or provider acceptance claim."
+}

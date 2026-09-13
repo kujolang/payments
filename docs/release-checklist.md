@@ -42,6 +42,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Private device-enrollment journal, timed host-driven polling, private operator delivery and guarded credential API publication; lifecycle/race/crash tests and 22 fault cases pass locally. Supported account verification, deployment and live acceptance remain open.
 
+- [x] Declared private-journal recovery capture with a shared SQLite write barrier, permanent core quarantine, member verification and real crash fixtures. This preserves private evidence; complete financial-history recovery and live restore remain open.
+
 ## Required before real-money release
 
 - [x] Resolve compatibility for the frozen Payments profile: complete v2 definition admission, flat approval binding and independent domain replay checks. General Ability v1 nested serialization remains unresolved upstream and is excluded from this scoped decision; see [identity compatibility](identity-compatibility.md).
