@@ -1,0 +1,29 @@
+{
+  "source_commit": "71294345a468dac29da66ed59ec193c430d9d547",
+  "run_id": 34741800233,
+  "url": "https://github.com/kujolang/payments/actions/runs/34741800233",
+  "jobs": {
+    "host": {
+      "id": 103682626714,
+      "conclusion": "success",
+      "log_sha256": "ff40f2abdb676d6ce5d45dd2c209dfbe565c3dab27d4af5781ed87755ee86f9f"
+    },
+    "containment": {
+      "id": 103682627024,
+      "conclusion": "success",
+      "log_sha256": "49704d83a2aeccf84c2df044aa2fefb469bac61d63f56818c8ce604b4768bc6b"
+    }
+  },
+  "artifact": {
+    "id": 10313366171,
+    "archive_sha256": "b47b139ec9b1336597cd6bd472c7bc887c949ee59a0eeda7eda8c06ab1371407",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Canonical private reconciliation Ability: 14 policy/identity/provider/fault cases, key/execution binding, four-way observation claim and replay, fresh observation and three SIGKILL boundaries; full uninterrupted synthetic host suite and actual OCI/Workcell containment. No new financial submission, receipt repair, provider/live acceptance or arbitrary production isolation claim."
+}
