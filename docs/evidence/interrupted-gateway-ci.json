@@ -1,0 +1,29 @@
+{
+  "source_commit": "2c407a7fbd1d4dda83000e1b839c4413758d1328",
+  "run_id": 34739364947,
+  "url": "https://github.com/kujolang/payments/actions/runs/34739364947",
+  "jobs": {
+    "host": {
+      "id": 103676315026,
+      "conclusion": "success",
+      "log_sha256": "5a8433e7676d9cfdd94cc04c2115a2248c033b3712acc44892909791b82350ee"
+    },
+    "containment": {
+      "id": 103676315119,
+      "conclusion": "success",
+      "log_sha256": "8d3fe6887823afb470917ee63c8cc2f615468dd703933e3c0dfd63775d4013bb"
+    }
+  },
+  "artifact": {
+    "id": 10312187815,
+    "archive_sha256": "7802a6b4163eaee1e3273f02d71b119810c621ccace88db854e85b80cb6d3fdf",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Incomplete request/cancellation domain observations, five real gateway SIGKILL boundaries, four concurrent exact retries and HTTP restarts; full host suite and synthetic OCI/Workcell containment. No invocation re-entry/journal repair, coordinated backup recovery, live provider or all-sink production claim."
+}
