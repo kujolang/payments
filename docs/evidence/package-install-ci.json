@@ -1,0 +1,66 @@
+{
+  "source_commit": "ad41ec9306bfede0c3580ec142c48dbc6306b60d",
+  "run_id": 34748416346,
+  "url": "https://github.com/kujolang/payments/actions/runs/34748416346",
+  "jobs": {
+    "containment": {
+      "id": 103700542020,
+      "conclusion": "success",
+      "log_sha256": "d80b84986b46dabc35ee304797e1a0b45330ed06aaf83e178e51f774e75fcb86"
+    },
+    "host": {
+      "id": 103700542199,
+      "conclusion": "success",
+      "log_sha256": "3d3c35fecf32ab92398ab775add1ca3ab9ef2ced772ca94c51ba11d650e57da7"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 90,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 73,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 326,
+    "status_ms": 76,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 72.85328100000004,
+      "median_ms": 71.721363,
+      "min_ms": 69.78296100000011,
+      "p95_ms": 72.85328100000004,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 75.88933800000007,
+      "median_ms": 74.05705950000004,
+      "min_ms": 72.71716200000014,
+      "p95_ms": 75.88933800000007,
+      "samples": 8
+    }
+  },
+  "artifact": {
+    "id": 10315351136,
+    "archive_sha256": "ac820eb17da03d21c327c775ad93f14a72cdfa887adc121f1731327265715f98",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Native package installation/client import conformance; full host suite and synthetic 30-file OCI/Workcell containment. No authenticity, freshness, arbitrary extension semantics, complete financial-history, coordinated restore, production or live-provider acceptance claim."
+}

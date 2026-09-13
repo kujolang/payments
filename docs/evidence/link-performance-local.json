@@ -1,0 +1,227 @@
+{
+  "flows_per_process": 4,
+  "native_process_count": 8,
+  "process_ms": {
+    "max_ms": 3765.3285739943385,
+    "median_ms": 3285.228413005825,
+    "min_ms": 3232.783688028576,
+    "p95_ms": 3765.3285739943385,
+    "samples": 8
+  },
+  "scenarios": {
+    "changed_challenge": {
+      "calls_per_flow": {
+        "GET": 2,
+        "POST": 1,
+        "credential": 0,
+        "pay": 0,
+        "probe": 2
+      },
+      "phase_ms": {
+        "authorization_poll": {
+          "max_ms": 63.72209399999997,
+          "median_ms": 54.58898250000004,
+          "min_ms": 49.85507100000018,
+          "p95_ms": 63.72209399999997,
+          "samples": 8
+        },
+        "followup": {
+          "max_ms": 217.84656499999983,
+          "median_ms": 181.86645450000026,
+          "min_ms": 174.280528,
+          "p95_ms": 217.84656499999983,
+          "samples": 8
+        },
+        "operator_review_and_grant": {
+          "max_ms": 495.2410340000001,
+          "median_ms": 171.6855650000001,
+          "min_ms": 161.6298529999999,
+          "p95_ms": 495.2410340000001,
+          "samples": 8
+        },
+        "prepare_and_authorize": {
+          "max_ms": 112.80366800000002,
+          "median_ms": 96.64282599999979,
+          "min_ms": 93.11456099999987,
+          "p95_ms": 112.80366800000002,
+          "samples": 8
+        },
+        "submit": {
+          "max_ms": 276.7851770000002,
+          "median_ms": 235.25656850000007,
+          "min_ms": 225.54636199999982,
+          "p95_ms": 276.7851770000002,
+          "samples": 8
+        }
+      },
+      "summary_bytes": {
+        "first": 111,
+        "followup": 111,
+        "pending": 114
+      }
+    },
+    "lost_charge": {
+      "calls_per_flow": {
+        "GET": 3,
+        "POST": 1,
+        "credential": 1,
+        "pay": 1,
+        "probe": 2
+      },
+      "phase_ms": {
+        "authorization_poll": {
+          "max_ms": 108.41613299999995,
+          "median_ms": 55.17904999999996,
+          "min_ms": 53.05710900000008,
+          "p95_ms": 108.41613299999995,
+          "samples": 8
+        },
+        "followup": {
+          "max_ms": 220.04397900000004,
+          "median_ms": 183.10837700000002,
+          "min_ms": 176.119692,
+          "p95_ms": 220.04397900000004,
+          "samples": 8
+        },
+        "operator_review_and_grant": {
+          "max_ms": 194.26034300000003,
+          "median_ms": 170.5334145,
+          "min_ms": 165.15934800000002,
+          "p95_ms": 194.26034300000003,
+          "samples": 8
+        },
+        "prepare_and_authorize": {
+          "max_ms": 181.125004,
+          "median_ms": 95.33291450000007,
+          "min_ms": 93.77183400000001,
+          "p95_ms": 181.125004,
+          "samples": 8
+        },
+        "submit": {
+          "max_ms": 269.38766399999986,
+          "median_ms": 244.61130950000006,
+          "min_ms": 238.8796799999999,
+          "p95_ms": 269.38766399999986,
+          "samples": 8
+        }
+      },
+      "summary_bytes": {
+        "first": 111,
+        "followup": 109,
+        "pending": 114
+      }
+    },
+    "success": {
+      "calls_per_flow": {
+        "GET": 3,
+        "POST": 1,
+        "credential": 1,
+        "pay": 1,
+        "probe": 2
+      },
+      "phase_ms": {
+        "authorization_poll": {
+          "max_ms": 54.879543,
+          "median_ms": 51.465445,
+          "min_ms": 50.72979000000001,
+          "p95_ms": 54.879543,
+          "samples": 8
+        },
+        "followup": {
+          "max_ms": 13.857228999999961,
+          "median_ms": 12.19484749999998,
+          "min_ms": 10.387847999999963,
+          "p95_ms": 13.857228999999961,
+          "samples": 8
+        },
+        "operator_review_and_grant": {
+          "max_ms": 169.25946199999996,
+          "median_ms": 166.5813095,
+          "min_ms": 161.64878299999995,
+          "p95_ms": 169.25946199999996,
+          "samples": 8
+        },
+        "prepare_and_authorize": {
+          "max_ms": 104.92254899999999,
+          "median_ms": 100.0148415,
+          "min_ms": 96.492805,
+          "p95_ms": 104.92254899999999,
+          "samples": 8
+        },
+        "submit": {
+          "max_ms": 260.677448,
+          "median_ms": 251.83610149999993,
+          "min_ms": 249.80516499999987,
+          "p95_ms": 260.677448,
+          "samples": 8
+        }
+      },
+      "summary_bytes": {
+        "first": 109,
+        "followup": 109,
+        "pending": 114
+      }
+    },
+    "unverified_2xx": {
+      "calls_per_flow": {
+        "GET": 3,
+        "POST": 1,
+        "credential": 1,
+        "pay": 1,
+        "probe": 2
+      },
+      "phase_ms": {
+        "authorization_poll": {
+          "max_ms": 56.56818999999996,
+          "median_ms": 53.11146050000002,
+          "min_ms": 50.67210100000011,
+          "p95_ms": 56.56818999999996,
+          "samples": 8
+        },
+        "followup": {
+          "max_ms": 197.96417500000007,
+          "median_ms": 185.85984800000006,
+          "min_ms": 178.57914399999981,
+          "p95_ms": 197.96417500000007,
+          "samples": 8
+        },
+        "operator_review_and_grant": {
+          "max_ms": 171.59388999999965,
+          "median_ms": 168.37981549999995,
+          "min_ms": 165.34262900000022,
+          "p95_ms": 171.59388999999965,
+          "samples": 8
+        },
+        "prepare_and_authorize": {
+          "max_ms": 161.43546500000002,
+          "median_ms": 100.56515400000035,
+          "min_ms": 95.07935399999997,
+          "p95_ms": 161.43546500000002,
+          "samples": 8
+        },
+        "submit": {
+          "max_ms": 268.4380610000003,
+          "median_ms": 254.81331049999994,
+          "min_ms": 233.45212200000014,
+          "p95_ms": 268.4380610000003,
+          "samples": 8
+        }
+      },
+      "summary_bytes": {
+        "first": 111,
+        "followup": 111,
+        "pending": 114
+      }
+    }
+  },
+  "schema": "kujo.payment-fixture-performance/v1",
+  "scope": "synthetic_in_process_provider_callbacks",
+  "source_commit": "e750f12c0e36f488a44b1697d623ede68dfb3257",
+  "runtime_version": "1.4.0",
+  "runtime_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+  "log_sha256": "1b10aa34291df3159e69d7536aa235ef240004c4d4407939ede88e8c43ff0604",
+  "source_sha256": {
+    "tests/link_provider.kujo": "5e01f58e7de87628c589bd6736c51e1a2f6940fef5708c1e43c8f150f0f9998f",
+    "tests/network/link_performance_test.py": "94e3fce2abd71bad0d165c1df13a1438fac1ff51351e7e30039497d84f438536"
+  }
+}
