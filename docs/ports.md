@@ -6,6 +6,7 @@ The host constructs these per-service objects. Never deserialize callbacks, data
 
 `sqlite_port(db)` supplies the `kujo.payment-store/v1` interface to application and gateway modules. They import no concrete database implementation. Its functions are:
 
+- `execution_enabled()` — strict boolean advisory preflight for incident control; `claim` must enforce the same control atomically.
 - `inspect(scope, execution_id)` — tenant/principal scoped authoritative row or null.
 - `intake(scope, key_hash, request_digest, execution_id, intent)` — persist or resolve the same purchase/key; changed input conflicts.
 - `save_preparation(scope, execution_id, revision, snapshot, digest, prepared_ref, now_ms)` — atomic immutable snapshot and private provider reference.

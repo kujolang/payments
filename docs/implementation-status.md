@@ -76,3 +76,9 @@ The workflow at `.github/workflows/verify.yml` now runs the full synthetic host 
 Both jobs passed at commit `8d44c4d86b021fb7214c3026740570cf2e825801`: [run 34727010312](https://github.com/kujolang/payments/actions/runs/34727010312). Evidence and selected verification output are in `docs/evidence/linux-ci.json` and the adjacent CI logs. The OCI runner now includes Link authorization, MPP, submission and complete provider fixtures, with interpreter mode on privileged component checks. This closes the earlier current-image validation gap despite the local Docker Desktop failure. The old local OCI receipt remains historical.
 
 CI automation is implemented and verified. This does not close the broader Phase 7 gates: all-sink leak conformance, supported operations/migration/restore, incident stop control and final release audit remain. Native account/settlement confirmation, OAuth/operator delivery, optional integrations and real sandbox/live gates also remain unfinished.
+
+## Incident execution control milestone
+
+Added a private database-administrator pause/resume entrypoint, revision-checked durable mode changes and atomic immutable control evidence. New financial claims and native authorization reservations fail closed while paused; reconciliation and intake remain available. The application preflight avoids beginning an Ability invocation for an already-paused store. See docs/execution-control.md for deployment authority, in-flight limitations and the explicit distinction between resume and retry.
+
+A stop cannot revoke an earlier winning claim. A stop racing an already-started Ability invocation can retain its rejection receipt; automatic reopening is intentionally absent pending a reviewed recovery procedure. Supported backup/restore, schema migration and interrupted-invocation recovery remain unfinished release requirements. This milestone does not establish rollback-safe restoration.
