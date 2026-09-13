@@ -1,0 +1,18 @@
+{
+  "source_commit": "454870fad78d2e53fefc5baf09429dbd4766972a",
+  "run_id": 34731012642,
+  "url": "https://github.com/kujolang/payments/actions/runs/34731012642",
+  "jobs": {
+    "host": {
+      "id": 103653677181,
+      "conclusion": "success",
+      "log_sha256": "fa8d121dd5789f9f0ad83696e8238fac3f070d1d328e999aa76f15fd4ed54e66"
+    },
+    "containment": {
+      "id": 103653677265,
+      "conclusion": "success",
+      "log_sha256": "09082747ea737017ad495e66ce56f062145faa1fd1deeedfb5f1121768cabf71"
+    }
+  },
+  "scope": "Real MCP SDK STDIO client through canonical Kujo projection/native public client to actual Payments gateway; integer wire guards, replay/identity/approval denial, process cleanup, full synthetic host suite and current-image components/containment. Node 24.20.0; no live provider, remote MCP deployment or all-sink isolation claim."
+}

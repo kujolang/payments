@@ -1,0 +1,2 @@
+MCP measurements: {"first_request_ms": 270, "replay_ms": 227, "startup_and_discovery_ms": 786, "status_ms": 234, "summary_utf8_bytes": 182, "tool_schema_utf8_bytes": 3065}
+HTTP service, pinned Agents SDK and MCP projections: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
