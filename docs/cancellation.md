@@ -21,7 +21,7 @@ A single scoped SQLite compare-and-set transitions `awaiting_authorization` or `
 
 Cancellation reuses the existing keyed cancel Ability. Its new journal entries additionally bind the payer scope, execution ID and exact revision using field-framed SHA-256 values. This does not rewrite Ability's legacy receipt digests or existing operation histories. Successful or replayed results are checked against the scoped cancelled row before acknowledgement.
 
-Cancellation's state commit and Ability receipt completion are separate. A crash or failed audit/receipt write can leave a cancelled row and an unfinished invocation. Fresh inspection is authoritative; this implementation does not repair or reopen interrupted Ability invocations. No cancellation path clears a financial claim or starts a provider call.
+Cancellation's state commit and Ability receipt completion are separate. A crash or failed audit/receipt write can leave a cancelled row and an unfinished invocation. Fresh inspection is authoritative. Exact retries of an incomplete cancellation may also return a failed response with its current domain summary; see [interrupted invocations](interrupted-invocations.md). This does not repair or reopen an Ability invocation. No cancellation path clears a financial claim or starts a provider call.
 
 ## Synthetic verification
 

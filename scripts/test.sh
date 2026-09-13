@@ -22,6 +22,7 @@ PAYMENTS_TEST_DB="$store_dir/execution.db" "$KUJO_BIN" run tests/execution.kujo
 PAYMENTS_TEST_DB="$store_dir/gateway.db" "$KUJO_BIN" run tests/gateway.kujo
 python3 tests/network/http_test.py
 python3 tests/network/cancellation_test.py
+python3 tests/network/interrupted_gateway_test.py
 python3 tests/network/dispatch_test.py
 python3 tests/network/mcp_process_test.py
 python3 tests/network/workcell_process_test.py

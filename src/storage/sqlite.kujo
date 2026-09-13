@@ -138,6 +138,12 @@ export inspect := func(db, scope, execution_id) {
     if len(rows) == 0 { return null }
     return rows[0]
 }
+// Observation only: both the durable request key and purchase terms must match.
+export inspect_request := func(db, scope, key_hash, request_digest) {
+    rows := db_query(db,"SELECT e.* FROM request_keys k JOIN executions e ON e.execution_id=k.execution_id AND e.scope=k.scope WHERE k.scope=? AND k.key_hash=? AND k.request_digest=? AND e.request_digest=?",[scope,key_hash,request_digest,request_digest])
+    if len(rows) != 1 { return null }
+    return rows[0]
+}
 export intake := func(db, scope, key_hash, request_digest, execution_id, intent) {
     mut result := {"ok": false, "code": "storage_failure"}
     try {

@@ -116,6 +116,24 @@ export gateway_call := func(store, request, transport_context, config) {
                 if candidate["execution_id"] != input["execution_id"] || authoritative == null || authoritative["state"] != "closed" || authoritative["closed_reason"] != "cancelled" { return {"ok":false,"code":"cancellation_unconfirmed"} }
             }
         }
+        // A live or interrupted invocation may have committed its domain effect
+        // without an Ability receipt. Observe it; never reopen or complete it here.
+        // The exact Ability error is only returned after policy and audit checks.
+        if has_key(result,"code") && result["code"] == "ability_invocation_in_progress" {
+            mut observed := null
+            if operation == "request" && type(input["expires_in_ms"]) == "int" && type(input["amount"]["minor"]) == "int" {
+                if has_key(store,"inspect_request") && type(store["inspect_request"]) == "function" {
+                    observed = store["inspect_request"](scope,sha256(key),request_digest(input))
+                }
+            }
+            if operation == "cancel" { observed = store["inspect"](scope,input["execution_id"]) }
+            if observed != null {
+                value := summary(observed)
+                if validate_ability_value(value,definition["output_schema"],"output")["ok"] {
+                    return {"ok":false,"code":"operation_incomplete","result":value}
+                }
+            }
+        }
         // Only a compact domain summary crosses the model-facing boundary.
         if result["ok"] == true { return {"ok":true,"result":result["receipt"]["result"]} }
         if has_key(result,"receipt") {

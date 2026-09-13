@@ -1,0 +1,29 @@
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.gateway.operations import gateway_call
+
+func checkpoint(name) {
+    if env("PAYMENTS_TEST_STOP") == name {
+        write_file(env("PAYMENTS_TEST_MARKER"),"ready")
+        sleep(30000)
+        assert(false,"test_supervisor_did_not_kill")
+    }
+}
+db := open_store(env("PAYMENTS_TEST_DB"));store := sqlite_port(db)
+intake := store["intake"];cancel := store["cancel"];complete := store["complete_ability"]
+store["intake"] = func(scope,key,digest,id,intent) { checkpoint("before_intake");value := intake(scope,key,digest,id,intent);checkpoint("after_intake");return value }
+store["cancel"] = func(scope,id,revision) { checkpoint("before_cancel");value := cancel(scope,id,revision);checkpoint("after_cancel");return value }
+store["complete_ability"] = func(operation,key,digest,receipt) { checkpoint("before_complete");return complete(operation,key,digest,receipt) }
+if env("PAYMENTS_TEST_MODE") == "old_store" { store["inspect_request"] = null }
+payer := {"type":"user","id":"user_1","tenant_id":"tenant_1"}
+if env("PAYMENTS_TEST_MODE") == "foreign" { payer["tenant_id"] = "other" }
+authenticate := func(context) { if context != "trusted" { return null };return payer }
+policy := func(definition,invocation,exposure) {
+    mut outcome := "allow";if env("PAYMENTS_TEST_MODE") == "deny" { outcome = "deny" };if env("PAYMENTS_TEST_MODE") == "approval_required" { outcome = "approval_required" }
+    return {"schema":"kujo.ability.policy-decision/v1","decision_id":"test-policy","outcome":outcome,"reason":"Synthetic policy","requirements":[],"policy_id":"fixture","policy_version":"1.0.0"}
+}
+audit := func(phase,invocation,payload) { accepted := env("PAYMENTS_TEST_MODE") != "audit_fail" && (env("PAYMENTS_TEST_MODE") != "audit_completed_fail" || phase != "completed");return {"ok":accepted,"written":true,"phase":phase,"event_id":"fixture:"+phase} }
+config := {"authenticate":authenticate,"clock_ms":func() { return current_timestamp() },"policy":policy,"audit":audit,"namespace":"interrupted-fixture","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json")),"cancel":parse_json(read_file("contracts/abilities/cancel.json"))}}
+mut context := "trusted";if env("PAYMENTS_TEST_MODE") == "unauthenticated" { context = "untrusted" }
+result := gateway_call(store,parse_json(read_file(env("PAYMENTS_TEST_REQUEST"))),context,config)
+print(to_json(result));db_close(db)

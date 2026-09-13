@@ -28,6 +28,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Conditional programmatic cancellation, explicit inspect v2 revisions, bound replay and eight real cancellation-versus-claim races through the authenticated API; legacy status and default two-tool projections preserved. See [cancellation](cancellation.md) for scope.
 
+- [x] Exact incomplete request/cancellation retries recover verified domain observations without re-entry; five real process-kill boundaries and authenticated HTTP restarts exercised. Broader invocation repair remains open.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.
