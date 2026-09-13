@@ -8,7 +8,7 @@ The path runs only after Ability returns `ability_invocation_in_progress`, follo
 
 ## Caller behavior
 
-Keep the original purchase reference, input and request key. If a retry returns a summary with `operation_incomplete`, retain its execution ID and use fresh status inspection. The public HTTP client preserves the safe summary with its normalized `gateway_rejected` code. Do not treat `ok: false` as evidence that no purchase exists or that no payment can occur.
+Keep the original purchase reference, input and request key. If a retry returns a summary with `operation_incomplete`, retain its execution ID and use fresh status inspection. The public HTTP client preserves the safe summary from a validated HTTP 409 response with its normalized `gateway_rejected` code. Other failure status codes cannot provide a recovery observation. The optional SDK and MCP integrations retain the observation while marking the tool call failed; their examples and the Dispatch observer use fresh status before continuing. Do not treat `ok: false` as evidence that no purchase exists or that no payment can occur.
 
 When the crash happened before intake committed, there is no authoritative execution to return. The gateway retains the failure without inventing an ID or admitting a new intent. Successful completed request replays still return their original operation result; only fresh status or the explicitly incomplete observation reports current state.
 

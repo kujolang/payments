@@ -30,6 +30,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Exact incomplete request/cancellation retries recover verified domain observations without re-entry; five real process-kill boundaries and authenticated HTTP restarts exercised. Broader invocation repair remains open.
 
+- [x] Optional SDK/MCP/Dispatch preserve validated incomplete observations without successful-request claims; 21 frontend recovery cases and full local regressions passed.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

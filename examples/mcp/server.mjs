@@ -60,6 +60,9 @@ try {
     active++;
     try {
       const result=await native('call.kujo',{PAYMENTS_MCP_OPERATION:operation,PAYMENTS_MCP_INPUT:JSON.stringify(request.params.arguments??{})});
+      if(result.ok===false && result.code==='operation_incomplete' && result.result && Object.keys(result).every(k=>['ok','code','result'].includes(k))) {
+        return {content:[{type:'text',text:'Operation was not confirmed. Inspect this existing payment before retrying: '+JSON.stringify(result.result)}],structuredContent:result.result,isError:true};
+      }
       if(result.ok!==true || !result.result || Object.keys(result).some(k=>!['ok','result'].includes(k))) return failure();
       return {content:[{type:'text',text:JSON.stringify(result.result)}],structuredContent:result.result};
     } catch { return failure(); } finally { active--; }

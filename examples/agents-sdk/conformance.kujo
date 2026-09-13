@@ -32,4 +32,14 @@ throwing := func(input,key) { assert(false,"SENTINEL_PRIVATE_CALLBACK_SECRET") }
 broken := register_payment_tools(create_tool_registry({}),definitions,throwing,inspect,"sdk-example-v1")
 failed := execute_registered_tool(broken,"purchase_request",input,context,{})
 assert(failed["ok"] == false && contains(to_json(failed),"SENTINEL") == 0,"callback_error_redacted")
+// An error may carry a validated domain observation, never a successful tool output.
+observed := func(input,key) { return {"ok":false,"code":"gateway_rejected","result":status["output"]} }
+recovery := register_payment_tools(create_tool_registry({}),definitions,observed,inspect,"sdk-example-v1")
+incomplete := execute_registered_tool(recovery,"purchase_request",input,context,{})
+assert(incomplete["ok"] == false,"incomplete_not_success")
+assert(incomplete["error"]["details"]["handler_error"]["details"]["payment"] == status["output"],"recoverable_observation")
+unsafe := func(input,key) { value := parse_json(to_json(status["output"]));value["secret"] = "SENTINEL_PRIVATE_CALLBACK_SECRET";return {"ok":false,"code":"gateway_rejected","result":value} }
+unsafe_registry := register_payment_tools(create_tool_registry({}),definitions,unsafe,inspect,"sdk-example-v1")
+unsafe_result := execute_registered_tool(unsafe_registry,"purchase_request",input,context,{})
+assert(unsafe_result["ok"] == false && contains(to_json(unsafe_result),"SENTINEL") == 0,"unsafe_observation_suppressed")
 print(to_json({"ok":true,"status":status["output"],"tools":["purchase_request","purchase_status"]}))

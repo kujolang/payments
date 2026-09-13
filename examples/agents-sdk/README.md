@@ -17,3 +17,9 @@ The trusted harness needs `KUJO_BIN`, `PAYMENTS_CLIENT_ENDPOINT`, a request/stat
 The SDK tool handler runs in the trusted harness. Do not give an untrusted Workcell the harness environment, callback objects, client token or filesystem. An LLM tool interface alone does not enforce that physical boundary. Use the separately tested agent/harness/executor deployment separation and validate it for the actual harness. No provider credential belongs anywhere in this example.
 
 SDK approval policies can govern invocation of the request tool; they never replace Payments' final approval. Callback errors are normalized before the SDK's exception wrapper, and unexpected transport fields are rejected. These checks are not a completed all-sink secret-leak conformance suite.
+
+## Recovering an incomplete request
+
+A validated 409 error observation remains a failed SDK tool call. The normalized handler error has kind `payments_operation_incomplete` and contains only the compact summary in `details.payment`; the SDK preserves it under `error.details.handler_error`. The example entrypoint extracts that execution ID and performs a fresh status read. It does not claim request success or retry intake. A status response must match the requested execution ID even when it carries an error observation.
+
+`tests/network/recovery_projections_test.py` runs the actual SDK client against synthetic incomplete, malformed, authentication-failure and server-error responses. Schema/envelope violations and unrelated errors cannot supply an observation; no private error text is forwarded. The independent core crash fixtures prove how an authentic gateway produces such observations.

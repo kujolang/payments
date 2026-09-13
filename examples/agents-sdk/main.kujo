@@ -14,7 +14,14 @@ registry := register_payment_tools(create_tool_registry({}),definitions,request,
 context := create_tool_execution_context({"run_id":"sdk-example","agent_id":"requesting-agent"})
 input := parse_json(env("PAYMENTS_PURCHASE_JSON"))
 result := execute_registered_tool(registry,"purchase_request",input,context,{})
-assert(result["ok"],"payment_request_failed")
-status := execute_registered_tool(registry,"purchase_status",{"execution_id":result["output"]["execution_id"]},context,{})
+mut execution_id := ""
+if result["ok"] { execution_id = result["output"]["execution_id"] }
+else {
+    error := result["error"]["details"]["handler_error"]
+    assert(error["kind"] == "payments_operation_incomplete","payment_request_failed")
+    execution_id = error["details"]["payment"]["execution_id"]
+}
+// This is a fresh status observation, never a fabricated successful request.
+status := execute_registered_tool(registry,"purchase_status",{"execution_id":execution_id},context,{})
 assert(status["ok"],"payment_status_failed")
 print(to_json(status["output"]))

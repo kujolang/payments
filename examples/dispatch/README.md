@@ -26,3 +26,9 @@ Run this in the trusted harness, outside the requesting agent runtime. Protect i
 Dispatch source is pinned at `9eb16c72316744d8a691d9ef5ec5be4f12018408`. The sole upstream change from the reviewed source was changing AI SDK's unchanged SHA from `ref` to `commit` in its Kennel manifest. The former declaration failed clean installation because Kennel resolves a named ref differently from a commit. No Dispatch runtime changes were required; core Payments has no Dispatch dependency. The example's transitive AI SDK is pinned but is not invoked for model execution.
 
 `tests/network/dispatch_test.py` runs the actual pinned Dispatch VM and public native HTTP client in separate processes against a synthetic service. It verifies durable pause/resume, pending and failed wakeups, terminal completion, absence of intake replay, and suppression of token, unrelated provider sentinel and purchase details across generated artifacts. This complements the actual Payments HTTP tests; it is not a live provider test or a complete cross-integration leak suite.
+
+## Incomplete intake observation
+
+When the original intake returns a validated 409 error observation with an execution ID, the example can create an observer workflow for that existing payment. It still fetches fresh status before deciding whether to pause or resume. Even a stale terminal status in the error response cannot release the checkpoint. This is successful observer setup, not a successful payment-request receipt. No additional intake call, financial approval or provider operation occurs. Generic, unauthorized, malformed and server-error responses remain failures.
+
+The recovery projection test runs the actual pinned Dispatch process and verifies compact persisted state, fresh pending status and one intake request. Broader interrupted invocation repair stays with the Payments/application journal; Dispatch does not repair it.

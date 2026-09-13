@@ -12,11 +12,15 @@ func call() {
     transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),definition["output_schema"],env("PAYMENTS_LOCAL_FIXTURE") == "true")
     if operation == "request" { return purchase_request(transport,value,sha256(to_json(["mcp-example-v1",value["purchase_ref"]]))) }
     result := purchase_status(transport,value["execution_id"])
-    if result["ok"] { assert(result["result"]["execution_id"] == value["execution_id"],"status_identity") }
+    if has_key(result,"result") { assert(result["result"]["execution_id"] == value["execution_id"],"status_identity") }
     return result
 }
 mut result := {"ok":false,"code":"payment_unavailable"}
 try { result = call() } except error { }
 // Even native client failure codes are normalized; never echo caught exceptions.
-if result["ok"] == false { result = {"ok":false,"code":"payment_unavailable"} }
+if result["ok"] == false {
+    if has_key(result,"code") && result["code"] == "gateway_rejected" && has_key(result,"result") {
+        result = {"ok":false,"code":"operation_incomplete","result":result["result"]}
+    } else { result = {"ok":false,"code":"payment_unavailable"} }
+}
 print(to_json(result))

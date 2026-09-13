@@ -19,7 +19,8 @@ export http_transport := func(endpoint, token, summary_schema, local_fixture) {
                     if has_key(body,"result") {
                         if json_schema_validate(body["result"],summary_schema)["valid"] == false { return {"ok":false,"code":"invalid_gateway_response"} }
                         if response["_status"] == 200 && body["ok"] { return {"ok":true,"result":body["result"]} }
-                        return {"ok":false,"code":"gateway_rejected","result":body["result"]}
+                        if response["_status"] == 409 && body["ok"] == false { return {"ok":false,"code":"gateway_rejected","result":body["result"]} }
+                        return {"ok":false,"code":"invalid_gateway_response"}
                     }
                     return {"ok":false,"code":"gateway_rejected"}
                 }

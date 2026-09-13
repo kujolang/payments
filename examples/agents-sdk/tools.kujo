@@ -10,6 +10,9 @@ func compact_result(value, schema) {
     if has_key(value,"ok") && value["ok"] == true && has_key(value,"result") && json_schema_validate(value["result"],schema)["valid"] {
         return {"ok":true,"output":value["result"]}
     }
+    if has_key(value,"ok") && type(value["ok"]) == "bool" && value["ok"] == false && has_key(value,"code") && value["code"] == "gateway_rejected" && has_key(value,"result") && json_schema_validate(value["result"],schema)["valid"] {
+        return {"ok":false,"error":{"kind":"payments_operation_incomplete","message":"Operation was not confirmed. Inspect the existing payment before retrying.","details":{"payment":value["result"]}}}
+    }
     return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment request failed; inspect the existing purchase before retrying","details":{}}}
 }
 export register_payment_tools := func(registry, definitions, request_purchase, inspect_purchase, namespace) {
@@ -25,7 +28,7 @@ export register_payment_tools := func(registry, definitions, request_purchase, i
         } except error { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
     }
     inspect := func(input,context) {
-        try { return compact_result(inspect_purchase(input["execution_id"]),definitions["inspect"]["output_schema"]) }
+        try { value := inspect_purchase(input["execution_id"]);if has_key(value,"result") { assert(value["result"]["execution_id"] == input["execution_id"],"status_identity") };return compact_result(value,definitions["inspect"]["output_schema"]) }
         except error { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
     }
     first := register_ability_tool(registry,definitions["request"],{"handler":request,"timeout_ms":7000},{"name":"purchase_request","permissions":["payments.request"]})

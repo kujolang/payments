@@ -19,7 +19,10 @@ func run() {
         assert(json_schema_validate(input,definition["input_schema"])["valid"],"invalid_purchase")
         key := sha256(to_json(["dispatch-example-v1",input["purchase_ref"]]))
         requested := purchase_request(transport,input,key)
-        assert(requested["ok"],"payment_request_failed")
+        if requested["ok"] == false {
+            assert(has_key(requested,"code") && requested["code"] == "gateway_rejected" && has_key(requested,"result"),"payment_request_failed")
+            assert(json_schema_validate(requested["result"],definition["output_schema"])["valid"],"invalid_payment_observation")
+        }
         // No payment input, token, approval or credential is persisted in workflow state.
         state = create_run_state(applied["workflow"],{"execution_id":requested["result"]["execution_id"]},output_root,{"interactive":false,"auto_approve":false})
     } else {
