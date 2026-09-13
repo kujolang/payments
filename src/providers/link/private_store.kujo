@@ -1,0 +1,25 @@
+// Trusted, static schema descriptors only; never caller-provided SQL.
+export open_private_link_store := func(db,definitions,expected_version) {
+    assert(type(expected_version) == "int" && expected_version > 0 && expected_version <= 1000 && type(definitions) == "array" && len(definitions) > 0 && len(definitions) <= 32,"private_link_schema_descriptor")
+    db_query(db,"PRAGMA busy_timeout=5000",[])
+    db_query(db,"PRAGMA synchronous=FULL",[])
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        objects := db_query(db,"SELECT name FROM sqlite_master WHERE name NOT LIKE 'sqlite_%'",[])
+        version := db_query(db,"PRAGMA user_version",[])[0]["user_version"]
+        if len(objects) == 0 && version == 0 {
+            for definition in definitions { db_execute(db,definition["sql"],[]) }
+            db_execute(db,"PRAGMA user_version="+to_string(expected_version),[])
+        } else {
+            assert(version == expected_version && len(objects) == len(definitions),"private_link_schema")
+            for definition in definitions {
+                rows := db_query(db,"SELECT sql FROM sqlite_master WHERE name=?",[definition["name"]])
+                assert(len(rows) == 1 && rows[0]["sql"] == definition["sql"],"private_link_schema")
+            }
+        }
+        db_execute(db,"COMMIT",[])
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        assert(false,"private_link_store_unavailable")
+    }
+}

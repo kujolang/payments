@@ -54,3 +54,9 @@ for mode in ['vault_into_core','core_into_vault','drift']:
         result=subprocess.run([KUJO,'run','tests/credential_separation.kujo','--interpreter'],cwd=ROOT,env={**os.environ,'PAYMENTS_CREDENTIAL_DB':str(Path(directory)/'state.db'),'PAYMENTS_SEPARATION_MODE':mode},capture_output=True,text=True,timeout=20)
         assert result.returncode==0,(result.stdout,result.stderr)
 print('Credential vault rejects core-journal co-location and schema drift; core rejects vault as a payment journal')
+
+with tempfile.TemporaryDirectory(prefix='payments-empty-oauth-scope-') as directory:
+    vault=Path(directory)/'vault.db'
+    assert run({**os.environ,'PAYMENTS_CREDENTIAL_DB':str(vault)},'empty_scope')['ok'] is False
+    with sqlite3.connect(vault) as db:assert db.execute('SELECT count(*) FROM link_credentials_v1').fetchone()[0]==0
+print('Whitespace-only OAuth scope rejected before credential installation')
