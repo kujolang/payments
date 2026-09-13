@@ -38,6 +38,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Explicit same-business-reference intake recovery using the existing request contract; six killed/live-original cases, four concurrent fresh-key requests, unchanged terms/expiry and no approval or financial claim. See [intake recovery](intake-recovery.md).
 
+- [x] Private Link revocation component: local disable before a bounded provider request, separate acknowledgment/unknown status, 12 synthetic failure/race/crash/rotation cases and full local host regressions. Live provider acceptance remains open.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

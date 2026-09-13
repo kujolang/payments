@@ -18,7 +18,8 @@
     "packages/cli/src/auth/auth-resource.ts": "84d779e86e56fa216ded9a81a918dc1add324955d64f55e40a6f8e207dd66270",
     "packages/cli/src/auth/types.ts": "378565540e6d3124bff07d9a345a22862f2dd6522d0ce55812172607adf3ee6c",
     "packages/cli/src/auth/session.ts": "1f84b059d439604aa0ae94c0c3a5802cea82f8aac5973d8c6e655ae971410636",
-    "packages/cli/src/auth/config.ts": "388fd93050a4ae49172fcc1820e1726a8f6ecb7642199bc6a463a19f38fb39b4"
+    "packages/cli/src/auth/config.ts": "388fd93050a4ae49172fcc1820e1726a8f6ecb7642199bc6a463a19f38fb39b4",
+    "packages/cli/src/commands/auth/logout.tsx": "324647bf092b94bc1a164fabbfb1976f7dfeb462d1ff83723a27a7881ecabdea"
   },
   "additional_auth_reviewed_at": "2026-09-13"
 }

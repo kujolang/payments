@@ -1,0 +1,61 @@
+from src.providers.link.credentials import open_link_credentials, install_link_credentials, inspect_link_credentials, revoke_link_credentials, refresh_link_credentials, link_credential_api
+from src.providers.link.oauth import link_revoke_form, link_oauth_revoke
+
+db := db_connect("sqlite",env("PAYMENTS_CREDENTIAL_DB"));open_link_credentials(db)
+binding := {"tenant_id":"tenant","payer_ref":"payer","account_ref":"account","client_id":"registered_fixture","scope":"spend offline"}
+tokens := {"access_token":"SENTINEL_REVOKE_ACCESS","refresh_token":"SENTINEL_REVOKE_REFRESH","token_type":"Bearer","scope":"offline spend","expires_in":60}
+mode := env("PAYMENTS_REVOKE_MODE")
+clock := func() { return 1000 }
+if mode == "install" { print(to_json(install_link_credentials(db,"session",binding,tokens,1000))) }
+else {
+    ledger := db_connect("sqlite",env("PAYMENTS_CREDENTIAL_DB")+".provider")
+    db_execute(ledger,"CREATE TABLE IF NOT EXISTS calls(kind TEXT)",[])
+    revoke := func(client_id,token,deadline) {
+        assert(client_id == "registered_fixture" && token == "SENTINEL_REVOKE_REFRESH","private_token_binding")
+        current := inspect_link_credentials(db,"session",binding)
+        assert(current["state"] == "disabled" && current["generation"] == 1,"disabled_before_provider")
+        assert(db_query(db,"SELECT access_token,refresh_token FROM link_credentials_v1",[])[0]["refresh_token"] == null,"logical_token_removal")
+        db_execute(ledger,"INSERT INTO calls VALUES('revoke')",[])
+        if mode == "crash" { write_file(env("PAYMENTS_REVOKE_MARKER"),"ready");sleep(30000);assert(false,"supervisor_must_kill") }
+        if mode == "throw" { assert(false,"SENTINEL_PROVIDER_FAILURE") }
+        if mode == "malformed" { return {"ok":"true","secret":"SENTINEL_NATIVE_RESPONSE"} }
+        return {"ok":mode != "failure","secret":"SENTINEL_NATIVE_RESPONSE"}
+    }
+    if mode == "wrong_scope" { binding["tenant_id"] = "other" }
+    mut generation := 0;if mode == "wrong_generation" { generation = 1 }
+    selected_clock := func() {
+        if len(db_query(ledger,"SELECT * FROM calls",[])) > 0 {
+            if mode == "late" { return 10000 }
+            if mode == "rollback" { return 0 }
+        }
+        return 1000
+    }
+    if mode == "rotate_inflight" {
+        refresh := func(client,token,deadline) {
+            disabled := revoke_link_credentials(db,"session",binding,1,revoke,clock,10000)
+            assert(disabled["ok"] && disabled["generation"] == 2 && disabled["provider_revocation"] == "unknown","inflight_disabled_without_retained_token")
+            return {"ok":true,"native":tokens}
+        }
+        rotated := refresh_link_credentials(db,"session",binding,0,refresh,clock,10000)
+        assert(rotated["ok"] == false,"late_refresh_cannot_restore")
+        print(to_json(inspect_link_credentials(db,"session",binding)))
+    } else if mode == "form" {
+        assert(link_revoke_form("registered_fixture","abc+/==") == "client_id=registered_fixture&token=abc%2B%2F%3D%3D","form_encoding")
+        native := link_oauth_revoke(clock)
+        assert(native("registered_fixture","abc",6000)["ok"] == false,"deadline_before_network")
+        assert(native("bad&client","abc",10000)["ok"] == false,"client_before_network")
+        assert(native("registered_fixture","bad&token",10000)["ok"] == false,"token_before_network")
+        print(to_json({"ok":true}))
+    } else {
+        result := revoke_link_credentials(db,"session",binding,generation,revoke,selected_clock,10000)
+        if result["ok"] {
+            api := link_credential_api(db,"session",binding,clock)
+            assert(api("GET","/userinfo",{},10000)["ok"] == false,"disabled_api")
+            refresh := func(client,token,deadline) { db_execute(ledger,"INSERT INTO calls VALUES('FORBIDDEN_REFRESH')",[]);return {"ok":true,"native":tokens} }
+            assert(refresh_link_credentials(db,"session",binding,1,refresh,clock,10000)["ok"] == false,"disabled_refresh")
+        }
+        print(to_json(result))
+    }
+    db_close(ledger)
+}
+db_close(db)

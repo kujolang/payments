@@ -1,4 +1,4 @@
-// Private native refresh only. Device enrollment and live client/account
+// Private native refresh/revocation. Device enrollment and live client/account
 // verification are separate unfinished gates; no CLI client ID is copied.
 func form_token(value) {
     assert(type(value) == "string" && len(value) > 0 && len(value) <= 8192 && regex_match(value,"^[A-Za-z0-9._~+/-]+={0,2}$"),"oauth_token_invalid")
@@ -21,6 +21,24 @@ export link_oauth_refresh := func(clock_ms) {
                     if type(native) != "dict" { return {"ok":false} }
                     return {"ok":true,"native":native}
                 }
+                case Err(error): { return {"ok":false} }
+            }
+        } except error { return {"ok":false} }
+    }
+}
+
+export link_revoke_form := func(client_id,token) {
+    assert(type(client_id) == "string" && regex_match(client_id,"^[A-Za-z0-9_-]{1,128}$"),"oauth_client_invalid")
+    return "client_id="+client_id+"&token="+form_token(token)
+}
+export link_oauth_revoke := func(clock_ms) {
+    return func(client_id,token,deadline_ms) {
+        try {
+            if type(deadline_ms) != "int" || clock_ms()+5000 >= deadline_ms { return {"ok":false} }
+            body := link_revoke_form(client_id,token)
+            response := http_request("https://login.link.com/device/revoke",{"method":"POST","headers":{"Content-Type":"application/x-www-form-urlencoded"},"body":body,"timeout":5,"max_response_bytes":32768,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"})
+            match response {
+                case Ok(value): { accepted := value["_status"] >= 200 && value["_status"] < 300;return {"ok":accepted} }
                 case Err(error): { return {"ok":false} }
             }
         } except error { return {"ok":false} }
