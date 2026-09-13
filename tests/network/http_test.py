@@ -78,6 +78,7 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         assert mcp.returncode==0,(mcp.stdout,mcp.stderr)
         mcp_result=json.loads(mcp.stdout);assert mcp_result['ok'] and mcp_result['tools']==['purchase_request','purchase_status']
         assert token not in mcp.stdout+mcp.stderr
+        print('MCP measurements: '+json.dumps(mcp_result['metrics'],sort_keys=True))
         # Guard raw wire numbers before the JS MCP SDK can round them. These
         # connections fail closed and must not reach financial intake.
         wire_purchase={**purchase['input'],'purchase_ref':'mcp-invalid-wire'}
