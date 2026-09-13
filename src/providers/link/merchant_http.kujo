@@ -1,0 +1,76 @@
+// Installed, immutable merchant request; no model-selected URL or arbitrary headers.
+from src.domain.binding import frame
+
+export mpp_body_digest := func(body) {
+    if body == null { return null }
+    hex := sha256(body)
+    digits := {"0":0,"1":1,"2":2,"3":3,"4":4,"5":5,"6":6,"7":7,"8":8,"9":9,"a":10,"b":11,"c":12,"d":13,"e":14,"f":15}
+    alphabet := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+    mut encoded := ""
+    mut index := 0
+    while index < 63 {
+        n := digits[substring(hex,index,index+1)]*256+digits[substring(hex,index+1,index+2)]*16+digits[substring(hex,index+2,index+3)]
+        high := to_int(n/64)
+        low := n%64
+        encoded = encoded+substring(alphabet,high,high+1)+substring(alphabet,low,low+1)
+        index = index+3
+    }
+    last := digits[substring(hex,63,64)]*4
+    return "sha-256="+encoded+substring(alphabet,last,last+1)+"="
+}
+export merchant_http := func(route, observe, clock_ms, local_fixture) {
+    for key in keys(route) { assert(contains(["url","method","body","route_id","route_version","resource_ref"],key),"merchant_route_field") }
+    for key in ["url","method","route_id","route_version","resource_ref"] { assert(type(route[key]) == "string" && len(route[key]) > 0,"merchant_route_config") }
+    assert(type(local_fixture) == "bool" && type(observe) == "function","merchant_installation")
+    assert(len(route["url"]) <= 2048 && (route["method"] == "GET" || route["method"] == "POST"),"merchant_method")
+    assert(has_key(route,"body") == 1 && (route["body"] == null || type(route["body"]) == "string"),"merchant_body")
+    if route["body"] != null { assert(byte_length(route["body"]) <= 8192,"merchant_body_limit") }
+    if route["method"] == "GET" { assert(route["body"] == null,"merchant_get_body") }
+    mut private_fixture := false
+    if local_fixture && regex_match(route["url"],"^http://127\\.0\\.0\\.1:[0-9]{1,5}/[^# ]*$") { private_fixture = true }
+    assert(private_fixture || regex_match(route["url"],"^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?/[^# ]*$"),"merchant_https_required")
+    assert(regex_match(route["url"],"^[!-~]+$"),"merchant_url_ascii")
+    parts := split(route["url"],"/")
+    origin := parts[0]+"//"+parts[2]
+    digest := mpp_body_digest(route["body"])
+    binding := sha256(frame(["kujo.link.merchant-route/v1",route["url"],route["method"],to_json(route["body"]),route["route_id"],route["route_version"],route["resource_ref"],to_string(private_fixture)]))
+    request := func(credential,context) {
+        assert(type(context["deadline_ms"]) == "int" && clock_ms()+5000 < context["deadline_ms"],"merchant_deadline")
+        mut policy := "deny_private"
+        if private_fixture { policy = "inherit" }
+        mut headers := {"Accept":"application/json"}
+        if route["body"] != null { headers["Content-Type"] = "application/json" }
+        if credential != null {
+            assert(type(credential) == "string" && len(credential) <= 32768 && regex_match(credential,"^Payment [A-Za-z0-9_-]+$"),"merchant_credential")
+            headers["Authorization"] = credential
+        }
+        mut options := {"method":route["method"],"headers":headers,"timeout":5,"max_response_bytes":32768,"redirects":"none","pin_dns":true,"destination_policy":policy}
+        if route["body"] != null { options["body"] = route["body"] }
+        result := http_request(route["url"],options)
+        match result {
+            case Ok(response): {
+                assert(response["_status"] < 300 || response["_status"] >= 400,"merchant_redirect_denied")
+                return response
+            }
+            case Err(error): { assert(false,"merchant_transport_unknown") }
+        }
+    }
+    probe := func(context) {
+        try {
+            response := request(null,context)
+            if response["_status"] != 402 { return {"status":response["_status"],"challenge":""} }
+            values := response["header_values"]
+            assert(has_key(values,"www-authenticate") == 1 && len(values["www-authenticate"]) == 1,"merchant_challenge_ambiguous")
+            challenge := values["www-authenticate"][0]
+            assert(type(challenge) == "string" && len(challenge) <= 20000,"merchant_challenge_limit")
+            return {"status":402,"challenge":challenge}
+        } except error { return {"status":0,"challenge":""} }
+    }
+    pay := func(credential,context) {
+        // A network/redirect exception must propagate as a fixed error so the
+        // submission journal retains uncertainty. Raw bodies never leave this port.
+        try { request(credential,context); return {"dispatched":true} }
+        except error { assert(false,"merchant_submission_unknown") }
+    }
+    return {"binding_digest":binding,"origin":origin,"body_digest":digest,"route_id":route["route_id"],"route_version":route["route_version"],"resource_ref":route["resource_ref"],"probe":probe,"pay":pay,"observe":observe}
+}

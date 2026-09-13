@@ -24,3 +24,5 @@ python3 tests/network/link_issuance_test.py
 python3 scripts/mpp_vectors.py --check
 "$KUJO_BIN" run tests/mpp.kujo --interpreter
 PAYMENTS_TEST_DB="$store_dir/link-submit.db" "$KUJO_BIN" run tests/link_submission.kujo --interpreter
+PAYMENTS_TEST_DB="$store_dir/link-provider.db" "$KUJO_BIN" run tests/link_provider.kujo --interpreter
+python3 tests/network/merchant_http_test.py

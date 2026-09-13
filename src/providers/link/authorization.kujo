@@ -4,6 +4,7 @@ from src.domain.binding import frame, snapshot_digest
 
 export open_link_authorizations := func(db) {
     db_query(db,"PRAGMA busy_timeout=5000",[])
+    db_query(db,"PRAGMA foreign_keys=ON",[])
     db_query(db,"PRAGMA journal_mode=WAL",[])
     db_query(db,"PRAGMA synchronous=FULL",[])
     db_execute(db,"CREATE TABLE IF NOT EXISTS link_authorizations(ref TEXT PRIMARY KEY,digest TEXT NOT NULL,account_ref TEXT NOT NULL,network_id TEXT NOT NULL,request_key TEXT NOT NULL UNIQUE,native_id TEXT)",[])

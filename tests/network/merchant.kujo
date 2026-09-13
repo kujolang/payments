@@ -1,0 +1,23 @@
+from src.providers.link.merchant_http import merchant_http
+clock := func() { return current_timestamp() }
+observe := func(ref,snapshot,context) { return null }
+mut body := null
+if env("PAYMENTS_MERCHANT_BODY") != "" { body = env("PAYMENTS_MERCHANT_BODY") }
+method := "GET"
+if body != null { method = "POST" }
+route := {"url":env("PAYMENTS_MERCHANT_URL"),"method":method,"body":body,"route_id":"route_1","route_version":"v1","resource_ref":"order_1"}
+mut result := {"ok":false,"code":"fixture_failed"}
+try {
+    merchant := merchant_http(route,observe,clock,env("PAYMENTS_MERCHANT_FIXTURE") == "1")
+    mut deadline := current_timestamp()+15000
+    if env("PAYMENTS_MERCHANT_EXPIRED") == "1" { deadline = current_timestamp() }
+    context := {"deadline_ms":deadline}
+    probe := merchant["probe"](context)
+    mut pay_failed := false
+    if probe["status"] == 402 {
+        try { merchant["pay"](parse_json(read_file("tests/fixtures/mpp.json"))["cases"][0]["credential"],context) }
+        except error { pay_failed = true }
+    }
+    result = {"ok":true,"probe_status":probe["status"],"pay_failed":pay_failed,"binding_digest":merchant["binding_digest"],"body_digest":merchant["body_digest"],"origin":merchant["origin"]}
+} except error { result = {"ok":false,"code":"merchant_configuration_rejected"} }
+print(to_json(result))

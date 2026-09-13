@@ -1,0 +1,98 @@
+from src.storage.sqlite import open_store, intake, inspect
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest
+from src.providers.link.provider import link_provider
+from src.providers.contract import valid_provider, call_provider
+from src.application.worker import worker_step
+from src.executor.approval import review_payment, approve_reviewed_payment
+v := parse_json(read_file("tests/fixtures/domain.json"))
+mpp := parse_json(read_file("tests/fixtures/mpp.json"))
+principal := v["intent"]["principal"]
+clock := func() { return 1500 }
+mut template := v["snapshot"]
+template["provider"] = {"id":"link","adapter_version":"0.1.0","account_ref":"account_1"}
+mut capabilities := v["capabilities"]
+capabilities["provider_id"] = "link"
+capabilities["adapter_version"] = "0.1.0"
+config := {"snapshot":template,"capabilities":capabilities,"expected":mpp["expected"],"payment_method":"pm_fixture","test_mode":true}
+mut schemas := {}
+for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+policy := func(snapshot,invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-link-policy","outcome":"approval_required","reason":"Separate fixture operator approval","requirements":["human"],"policy_id":"fixture-link","policy_version":"1.0.0"} }
+audit := func(phase,invocation,payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
+for scenario in ["success","lost_charge","changed_challenge","unverified_2xx"] {
+    base := env("PAYMENTS_TEST_DB")+"-"+scenario
+    db := open_store(base)
+    private := db_connect("sqlite",base+"-link")
+    processor := db_connect("sqlite",base+"-processor")
+    db_execute(processor,"CREATE TABLE charges(id TEXT,digest TEXT)",[])
+    db_execute(processor,"CREATE TABLE calls(kind TEXT)",[])
+    api := func(method,path,body,deadline) {
+        db_execute(processor,"INSERT INTO calls VALUES(?)",[method])
+        mut native := {"id":"spend_fixture","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"approved"}
+        if contains(path,"include=shared_payment_token") > 0 { native["shared_payment_token"] = {"id":"SENTINEL_SPT"}; db_execute(processor,"INSERT INTO calls VALUES('credential')",[]) }
+        return {"ok":true,"native":native}
+    }
+    probe := func(context) {
+        db_execute(processor,"INSERT INTO calls VALUES('probe')",[])
+        count := db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='probe'",[])[0]["n"]
+        mut header := mpp["cases"][0]["header"]
+        if scenario == "changed_challenge" && count > 1 { header = replace(header,"challenge_1","challenge_2") }
+        return {"status":402,"challenge":header}
+    }
+    pay := func(header,context) {
+        assert(header == mpp["cases"][0]["credential"],"private_credential_wire")
+        db_execute(processor,"INSERT INTO calls VALUES('pay')",[])
+        if scenario != "unverified_2xx" { db_execute(processor,"INSERT INTO charges VALUES(?,?)",[context["execution_id"],context["snapshot_digest"]]) }
+        if scenario == "lost_charge" { assert(false,"SENTINEL_NETWORK_FAILURE") }
+        return {"status":200,"body":"SENTINEL_RAW_RESPONSE"}
+    }
+    observe := func(ref,snapshot,context) {
+        rows := db_query(processor,"SELECT * FROM charges WHERE id=? AND digest=?",[snapshot["execution_id"],snapshot_digest(snapshot)])
+        mut outcome := "unknown"
+        mut amount := null
+        if len(rows) == 1 { outcome = "succeeded"; amount = snapshot["charge"] }
+        return {"execution_id":snapshot["execution_id"],"snapshot_digest":snapshot_digest(snapshot),"phase":"execution","outcome":outcome,"observed_at_ms":1500,"actual_amount":amount,"evidence_ref":"fixture_processor_1","extra":"SENTINEL_EXTRA"}
+    }
+    merchant := {"origin":"https://example.com","body_digest":null,"route_id":"mpp_1","route_version":"v1","resource_ref":"order_1","binding_digest":sha256("registered-fixture-route"),"probe":probe,"pay":pay,"observe":observe}
+    provider := link_provider(private,config,api,merchant,clock)
+    assert(valid_provider(provider),"five_method_spi")
+    verify := func(snapshot,observation) { return len(db_query(processor,"SELECT * FROM charges WHERE id=? AND digest=?",[snapshot["execution_id"],snapshot_digest(snapshot)])) == 1 }
+    installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":definition,"confirmation":{"id":"fixture-link-ledger","assurance":"provider_confirmed","verify":verify}}
+    host := {"clock_ms":clock,"policy":policy,"audit":audit}
+    store := sqlite_port(db)
+    assert(intake(db,principal_digest(principal),"key","request","exec_1",v["intent"])["ok"],"intake")
+    pending := worker_step(store,principal,"exec_1",installed,host)
+    assert(pending["ok"] && pending["result"]["status"] == "awaiting_authorization","pending")
+    assert(worker_step(store,principal,"exec_1",installed,host)["ok"],"approval_poll")
+    assert(db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='POST'",[])[0]["n"] == 1,"one_native_issuance")
+    assert(db_query(processor,"SELECT count(*) AS n FROM charges",[])[0]["n"] == 0,"no_charge_before_operator")
+    row := inspect(db,principal_digest(principal),"exec_1")
+    ref := store["preparation_ref"](principal_digest(principal),"exec_1")
+    context := {"principal":principal,"tenant_id":principal["tenant_id"],"execution_id":"exec_1","snapshot_digest":row["snapshot_digest"],"phase":"authorization","now_ms":1500,"deadline_ms":10000}
+    wrong_context := parse_json(to_json(context))
+    wrong_context["tenant_id"] = "other_tenant"
+    assert(call_provider(provider,"observe",{"prepared_ref":ref},wrong_context)["ok"] == false,"tenant_context_mismatch")
+    changed_merchant := parse_json("{}")
+    for key in keys(merchant) { changed_merchant[key] = merchant[key] }
+    changed_merchant["binding_digest"] = sha256("changed-route")
+    changed_provider := link_provider(private,config,api,changed_merchant,clock)
+    assert(call_provider(changed_provider,"observe",{"prepared_ref":ref},context)["ok"] == false,"installed_route_changed")
+    review := review_payment(store,principal,"exec_1",definition,1500)
+    authority := {"payer":principal,"operator":{"type":"human","id":"operator","tenant_id":principal["tenant_id"]},"issuer_ref":"fixture-operator","ttl_ms":300}
+    assert(approve_reviewed_payment(store,principal,"exec_1",definition,authority,review["binding_digest"],1500)["ok"],"operator")
+    first := worker_step(store,principal,"exec_1",installed,host)
+    if scenario == "success" { assert(first["result"]["status"] == "succeeded","settled") }
+    else { assert(first["result"]["status"] == "reconciliation_required","unknown_not_paid") }
+    second := worker_step(store,principal,"exec_1",installed,host)
+    if scenario == "lost_charge" { assert(second["result"]["status"] == "succeeded","reconciled") }
+    pays := db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='pay'",[])[0]["n"]
+    if scenario == "changed_challenge" {
+        assert(pays == 0 && db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='credential'",[])[0]["n"] == 0,"mutation_before_secret")
+    } else { assert(pays == 1,"one_submission") }
+    for value in [pending,review,first,second,db_query(db,"SELECT * FROM issued_approvals",[]),db_query(db,"SELECT * FROM observations",[])] { assert(contains(to_json(value),"SENTINEL") == 0,"no_secret_in_generic_boundary") }
+    db_close(processor)
+    db_close(private)
+    db_close(db)
+}
+print("Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed")

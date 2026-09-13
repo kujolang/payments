@@ -60,3 +60,9 @@ Implemented a bounded fixed-origin private Link transport and crash-conservative
 ## MPP codec and one-shot submission components
 
 Added a source-pinned Stripe charge codec, immutable private MPP preparations/dispatches, execution-only SPT retrieval, exact challenge revalidation and sanitized merchant observation. Provider deadlines now end no later than the approval or snapshot; expired intents cannot initiate native authorization. Tests use independent vectors and synthetic merchant/API callbacks. Complete Link registration, native merchant transport and authoritative account/merchant observation are still unfinished. A wrapped-callback VM/interpreter disagreement is preserved under tests/runtime and documented; supported privileged entrypoints continue to require interpreter mode.
+
+## Link registration and native merchant HTTP milestone
+
+Implemented the internal five-method Link provider factory, immutable installation/preparation binding and a bounded native registered-merchant HTTP port. The factory verifies route identity, origin, body digest and tenant context; the MPP codec now requires an explicitly installed externalId expectation (58 vectors). Provider fixtures exercise the actual worker and approval path against a separate synthetic merchant ledger. Native HTTP fixtures cover header ambiguity, credential placement, redirects, exact UTF-8 body digests and output/deadline limits.
+
+This supersedes earlier statements that the factory and native merchant HTTP were unimplemented. Production configuration, stable payer-account verification, private approval URL delivery, OAuth lifecycle and authoritative settlement observation remain open. Current OCI coverage, all-sink security conformance, integrations, CI and migration/restore operations also remain release gates. No real money moved.
