@@ -42,6 +42,7 @@ python3 tests/network/link_credentials_test.py
 python3 tests/network/link_revocation_test.py
 python3 tests/network/link_enrollment_test.py
 python3 tests/network/private_seed_test.py
+python3 tests/network/containment_process_test.py
 python3 tests/network/link_approval_delivery_test.py
 python3 tests/network/link_approval_retention_test.py
 python3 scripts/mpp_vectors.py --check

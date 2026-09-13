@@ -1,6 +1,7 @@
 """OCI acceptance probe: untrusted agent has no network or private mounts."""
 import hashlib,hmac,json,os,shutil,socket,subprocess,tempfile,time,urllib.request,uuid
 from pathlib import Path
+from containment_process import captured_process
 ROOT=Path(__file__).resolve().parents[2]
 DOCKER=os.environ.get('DOCKER_BIN','docker')
 name='payments-boundary-'+uuid.uuid4().hex[:10]
@@ -8,7 +9,7 @@ canary='PAYMENTS_VAULT_CANARY_'+uuid.uuid4().hex
 token='T'+uuid.uuid4().hex+uuid.uuid4().hex
 
 def docker(*args,timeout=30,check=True):
-    result=subprocess.run([DOCKER,*args],cwd=ROOT,capture_output=True,text=True,timeout=timeout)
+    result=captured_process([DOCKER,*args],cwd=ROOT,timeout=timeout)
     if check and result.returncode != 0:
         raise AssertionError(f'Docker {args[0]} failed with status {result.returncode}; raw arguments and output withheld')
     return result
@@ -32,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         while 'Server listening on' not in docker('logs',name).stdout:
             assert time.monotonic()<deadline,'service startup timeout'
             state=docker('inspect',name,'--format','{{.State.Status}}').stdout.strip()
-            assert state=='running',docker('logs',name).stdout+docker('logs',name).stderr
+            assert state=='running','service stopped before readiness; output withheld'
             time.sleep(.1)
         docker('exec',name,'/bin/sh','-c','test -r /private/provider-secret && test -r /private/link-vault.db && test -r /private/link-approval-outbox.db && test -r /private/operator-approval.json && test -r /private/link-enrollment.db && test -r /private/operator-enrollment.json && test -n "$PAYMENTS_PROVIDER_SECRET"')
         # Separate trusted harness reaches the service on the private Docker network.
@@ -41,7 +42,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         summary=json.loads(harness.stdout.strip())
         assert summary['result']['status']=='awaiting_authorization'
         probe=docker('run','--rm','--network','none','--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--pids-limit','64','--memory','256m','--tmpfs','/tmp:rw,nosuid,nodev,noexec,size=16m','--env','KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS=true','kujo-payments-agent-probe:local',timeout=20)
-        assert json.loads(probe.stdout.strip())['ok'] is True,(probe.stdout,probe.stderr)
+        assert json.loads(probe.stdout.strip())['ok'] is True,'hostile probe failed; output withheld'
         for output in [probe.stdout,probe.stderr,harness.stdout,harness.stderr,docker('logs',name).stdout,docker('logs',name).stderr,json.dumps(summary)]:
             assert canary not in output and token not in output and hashlib.sha256(canary.encode()).hexdigest() not in output
         workcell_evidence=None
@@ -49,8 +50,8 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
             image_digest=docker('image','inspect','kujo-payments-workcell-agent:local','--format','{{.Id}}').stdout.strip()
             workcell_output=Path(tmp)/'workcell'
             command=['python3','examples/workcell/run.py','--workcell-root',os.environ['PAYMENTS_WORKCELL_ROOT'],'--runtime',os.environ['PAYMENTS_WORKCELL_KUJO'],'--image-digest',image_digest,'--output',str(workcell_output)]
-            workcell=subprocess.run(command,cwd=ROOT,capture_output=True,text=True,timeout=150)
-            assert workcell.returncode==0,(workcell.stdout,workcell.stderr)
+            workcell=captured_process(command,cwd=ROOT,timeout=150)
+            assert workcell.returncode==0,'Workcell composition failed; output withheld'
             emitted=json.loads(workcell.stdout);assert emitted['ok'] and emitted['verified']
             # Receipt verification establishes artifact integrity, not payment
             # authorization. The server independently validates this untrusted intent.
@@ -59,7 +60,9 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
             assert observed['result']['execution_id']!=summary['result']['execution_id']
             for file in workcell_output.rglob('*'):
                 if file.is_file():
-                    for secret in [canary,token,hashlib.sha256(canary.encode()).hexdigest()]: assert secret.encode() not in file.read_bytes(),file.name
+                    for secret in [canary,token,hashlib.sha256(canary.encode()).hexdigest()]:
+                        assert secret.encode() not in file.read_bytes(),"artifact content leakage"
+                        assert secret not in str(file.relative_to(workcell_output)),"artifact path leakage"
             for text in [workcell.stdout,workcell.stderr,host.stdout,host.stderr]:
                 assert canary not in text and token not in text and hashlib.sha256(canary.encode()).hexdigest() not in text
             workcell_receipt=Path(emitted['receipt_path'])
