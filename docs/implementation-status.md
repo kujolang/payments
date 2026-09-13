@@ -100,3 +100,11 @@ New core journals initialize transactionally as private schema version 2. Existi
 Concurrent initialization/upgrades, consumed approval/claim/receipt preservation, schema drift rejection, audit failure and SIGKILL rollback are covered by native Kujo process tests. See docs/schema-migrations.md. Earlier experimental schema variants, coordinated backup/history merge and interrupted Ability recovery remain outside the implemented migration path.
 
 Verification: both Linux jobs passed at `b2b5bfe`, [run 34728510725](https://github.com/kujolang/payments/actions/runs/34728510725). Actual logs confirm the migration, recovery and existing synthetic suites passed. Evidence: docs/evidence/migration-ci.json.
+
+## Agents SDK projection and replay hardening milestone
+
+The optional `examples/agents-sdk` project pins SDK source and its separate transitive Ability version. It uses existing `register_ability_tool` with trusted client callbacks to expose only purchase request/status. No SDK source changes or core SDK dependency were required. The HTTP endpoint retains compact domain output; the example does not fabricate the full receipts required by `register_ability_gateway_tool`. Host-owned tokens/callbacks still require deployment isolation.
+
+Actual HTTP/SDK tests cover cross-run replay, all changed request fields, hidden operation/identity injection denial, and callback exception suppression. A pinned Ability v1 nested digest collision was reproduced locally; a payment-specific persisted binding now prevents changed-term replay acknowledgement. The upstream helper/runtime cause and broader impact remain unresolved; see `docs/runtime-observations.md`.
+
+Migration validation now occurs under the write transaction, including a deterministic stale-preflight regression. WAL configuration retries only SQLite lock contention within a bounded setup deadline; no financial retry was introduced. The full local synthetic suite completed through native merchant HTTP. Linux verification for this milestone is recorded separately after CI completes. Remaining provider, deployment, operations, integration and release gates above remain open.

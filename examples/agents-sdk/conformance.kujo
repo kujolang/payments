@@ -1,0 +1,35 @@
+// Run in the trusted harness, never inside the requesting agent's sandbox.
+// The test runner stages the two public Payments client modules under these names.
+from payments_http import http_transport
+from payments_client import purchase_request, purchase_status
+from tools import register_payment_tools
+from src.agents.tools.registry import create_tool_registry, create_tool_execution_context, execute_registered_tool, list_registered_tools
+
+mut definitions := {}
+for operation in ["request","inspect"] { definitions[operation] = parse_json(read_file("contracts/abilities/"+operation+".json")) }
+transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),definitions["request"]["output_schema"],env("PAYMENTS_LOCAL_FIXTURE") == "true")
+request := func(input,key) { return purchase_request(transport,input,key) }
+inspect := func(id) { return purchase_status(transport,id) }
+registry := register_payment_tools(create_tool_registry({}),definitions,request,inspect,"sdk-example-v1")
+assert(len(list_registered_tools(registry)) == 2,"two_tools_only")
+context := create_tool_execution_context({"run_id":"sdk-example","agent_id":"requesting-agent"})
+input := parse_json(env("PAYMENTS_PURCHASE_JSON"))
+result := execute_registered_tool(registry,"purchase_request",input,context,{})
+assert(result["ok"],"purchase_request")
+replayed := execute_registered_tool(registry,"purchase_request",input,create_tool_execution_context({"run_id":"different-run"}),{})
+assert(replayed["ok"] && replayed["output"] == result["output"],"stable_cross_run_replay")
+status := execute_registered_tool(registry,"purchase_status",{"execution_id":result["output"]["execution_id"]},context,{})
+assert(status["ok"],"purchase_status")
+mut changed := parse_json(to_json(input))
+changed["purpose"] = "Changed purchase with the same business reference"
+conflict := execute_registered_tool(registry,"purchase_request",changed,context,{})
+assert(conflict["ok"] == false,"changed_request_conflict")
+mut forged := parse_json(to_json(input))
+forged["principal"] = {"id":"other"}
+assert(execute_registered_tool(registry,"purchase_request",forged,context,{})["ok"] == false,"caller_principal_denied")
+assert(execute_registered_tool(registry,"execute",{},context,{})["ok"] == false,"hidden_execution")
+throwing := func(input,key) { assert(false,"SENTINEL_PRIVATE_CALLBACK_SECRET") }
+broken := register_payment_tools(create_tool_registry({}),definitions,throwing,inspect,"sdk-example-v1")
+failed := execute_registered_tool(broken,"purchase_request",input,context,{})
+assert(failed["ok"] == false && contains(to_json(failed),"SENTINEL") == 0,"callback_error_redacted")
+print(to_json({"ok":true,"status":status["output"],"tools":["purchase_request","purchase_status"]}))

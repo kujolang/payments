@@ -1,0 +1,7 @@
+[package]
+name = "payments-agents-sdk-example"
+version = "0.1.0"
+
+[dependencies.agents_sdk]
+source = "github:kujolang/agents-sdk"
+commit = "bb2202d8b54f44717b1b1f0157a6774f2027cea1"

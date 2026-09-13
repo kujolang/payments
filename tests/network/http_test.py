@@ -51,10 +51,31 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         with sqlite3.connect(root/'payments.db') as db:
             assert db.execute('SELECT count(*) FROM executions').fetchone()[0]==1
             assert db.execute('SELECT count(*) FROM audit').fetchone()[0]>0
+        # Domain binding must reject changed terms even if a lower-layer replay
+        # receipt is otherwise valid. Cover every scalar and amount component.
+        changes=[('purchase_ref','other-order'),('payee_ref','other-merchant'),
+                 ('purpose','Changed direct request'),('payment_profile','other'),
+                 ('expires_in_ms',120000),('shipping_profile','home'),('provider_preference','link'),
+                 ('amount',{'mode':'maximum','minor':5501,'currency':'USD'}),
+                 ('amount',{'mode':'exact','minor':5500,'currency':'USD'}),
+                 ('amount',{'mode':'maximum','minor':5500,'currency':'JPY'})]
+        for field,value in changes:
+            altered={**purchase,'input':{**purchase['input'],field:value}}
+            assert exchange(port,token,altered)[0]==409,field
         client_env={**env,'KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS':'true','PAYMENTS_CLIENT_ENDPOINT':f'http://127.0.0.1:{port}/v1/payments','PAYMENTS_CLIENT_TOKEN':token}
         client=subprocess.run([os.environ['KUJO_BIN'],'run','tests/network/client.kujo','--interpreter'],cwd=ROOT,env=client_env,capture_output=True,text=True,timeout=10,check=True)
         assert json.loads(client.stdout)['ok'] is True
         assert token not in client.stdout+client.stderr
+        sdk_env={**client_env,'PAYMENTS_LOCAL_FIXTURE':'true','PAYMENTS_PURCHASE_JSON':json.dumps({**purchase['input'],'purchase_ref':'sdk-purchase'})}
+        sdk=subprocess.run(['python3','examples/agents-sdk/run.py','--conformance'],cwd=ROOT,env=sdk_env,capture_output=True,text=True,timeout=40)
+        assert sdk.returncode==0,(sdk.stdout,sdk.stderr)
+        sdk_result=json.loads(sdk.stdout)
+        assert sdk_result['ok'] and sdk_result['tools']==['purchase_request','purchase_status']
+        assert sdk_result['status']['status']=='awaiting_authorization'
+        assert token not in sdk.stdout+sdk.stderr and 'SENTINEL_PRIVATE_CALLBACK_SECRET' not in sdk.stdout+sdk.stderr
+        with sqlite3.connect(root/'payments.db') as db:
+            assert db.execute('SELECT count(*) FROM executions').fetchone()[0]==3
+            assert db.execute('SELECT sum(claimed) FROM executions').fetchone()[0]==0
         # No request tokens may be persisted in any service artifact.
         for file in root.iterdir():
             if file.is_file():
@@ -63,4 +84,4 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         process.terminate()
         out,err=process.communicate(timeout=5)
         for secret in [token,other,expired]: assert secret not in out+err
-print('HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed')
+print('HTTP service and pinned Agents SDK projection: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed')

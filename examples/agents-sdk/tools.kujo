@@ -1,0 +1,36 @@
+// Optional trusted-harness composition. Callbacks are installed by the host;
+// neither payment credentials nor endpoint selection are model arguments.
+from src.agents.abilities.contract import register_ability_tool
+
+func compact_result(value, schema) {
+    if type(value) != "dict" { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
+    for key in keys(value) {
+        if contains(["ok","code","result"],key) == false { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
+    }
+    if has_key(value,"ok") && value["ok"] == true && has_key(value,"result") && json_schema_validate(value["result"],schema)["valid"] {
+        return {"ok":true,"output":value["result"]}
+    }
+    return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment request failed; inspect the existing purchase before retrying","details":{}}}
+}
+export register_payment_tools := func(registry, definitions, request_purchase, inspect_purchase, namespace) {
+    assert(type(request_purchase) == "function" && type(inspect_purchase) == "function","payment_client_callbacks")
+    assert(type(namespace) == "string" && len(namespace) > 0 && len(namespace) <= 128,"payment_client_namespace")
+    assert(definitions["request"]["id"] == "kujo.payments.intent.request" && definitions["inspect"]["id"] == "kujo.payments.execution.inspect","payment_definition_identity")
+    request := func(input,context) {
+        try {
+            // Stable across agent runs. Changed terms with the same purchase_ref
+            // conflict at the server; a retry never invents a new purchase key.
+            key := sha256(to_json([namespace,input["purchase_ref"]]))
+            return compact_result(request_purchase(input,key),definitions["request"]["output_schema"])
+        } except error { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
+    }
+    inspect := func(input,context) {
+        try { return compact_result(inspect_purchase(input["execution_id"]),definitions["inspect"]["output_schema"]) }
+        except error { return {"ok":false,"error":{"kind":"payments_unavailable","message":"Payment service unavailable","details":{}}} }
+    }
+    first := register_ability_tool(registry,definitions["request"],{"handler":request,"timeout_ms":7000},{"name":"purchase_request","permissions":["payments.request"]})
+    assert(first["ok"],"payment_request_projection")
+    second := register_ability_tool(first["registry"],definitions["inspect"],{"handler":inspect,"timeout_ms":7000},{"name":"purchase_status","permissions":["payments.inspect"]})
+    assert(second["ok"],"payment_status_projection")
+    return second["registry"]
+}

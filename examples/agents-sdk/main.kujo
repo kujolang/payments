@@ -1,0 +1,20 @@
+// Run in the trusted harness, never inside the requesting agent's sandbox.
+// The test runner stages the two public Payments client modules under these names.
+from payments_http import http_transport
+from payments_client import purchase_request, purchase_status
+from tools import register_payment_tools
+from src.agents.tools.registry import create_tool_registry, create_tool_execution_context, execute_registered_tool
+
+mut definitions := {}
+for operation in ["request","inspect"] { definitions[operation] = parse_json(read_file("contracts/abilities/"+operation+".json")) }
+transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),definitions["request"]["output_schema"],env("PAYMENTS_LOCAL_FIXTURE") == "true")
+request := func(input,key) { return purchase_request(transport,input,key) }
+inspect := func(id) { return purchase_status(transport,id) }
+registry := register_payment_tools(create_tool_registry({}),definitions,request,inspect,"sdk-example-v1")
+context := create_tool_execution_context({"run_id":"sdk-example","agent_id":"requesting-agent"})
+input := parse_json(env("PAYMENTS_PURCHASE_JSON"))
+result := execute_registered_tool(registry,"purchase_request",input,context,{})
+assert(result["ok"],"payment_request_failed")
+status := execute_registered_tool(registry,"purchase_status",{"execution_id":result["output"]["execution_id"]},context,{})
+assert(status["ok"],"payment_status_failed")
+print(to_json(status["output"]))
