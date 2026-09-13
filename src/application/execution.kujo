@@ -205,3 +205,45 @@ export execute_payment := func(store, principal, execution_id, approval, definit
     permit["close"]()
     return {"ok":result["ok"],"result":summary(store["inspect"](scope,execution_id)),"ability_result":result}
 }
+
+// One keyed evidence observation through the canonical private Ability.
+// A new observation needs a new host key; an exact retry never re-enters a handler.
+export reconcile_payment := func(store, principal, execution_id, key, definition, provider, schema, confirmation, host) {
+    if canonical_ability_matches("reconcile",definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
+    if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
+    if type(key) != "string" || len(key) < 1 || len(key) > 128 { return {"ok":false,"code":"invalid_idempotency_key"} }
+    try {
+        scope := principal_scope(principal)
+        row := store["inspect"](scope,execution_id)
+        if row == null || row["snapshot_json"] == null { return {"ok":false,"code":"not_found"} }
+        if row["claimed"] != 1 { return {"ok":false,"code":"not_submitted"} }
+        snapshot := parse_json(row["snapshot_json"])
+        if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
+        id := "reconcile:"+sha256(frame(["kujo.payment-reconciliation-invocation/v1",scope,key]))
+        invocation := {"schema":"kujo.ability.invocation/v1","invocation_id":id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":ability_definition_digest(definition)["digest"],"input":{"execution_id":execution_id},"principal":principal,"request_id":id,"trace_id":id,"surface":"sdk","idempotency_key":key,"approval":{},"metadata":{}}
+        clock := host["clock_ms"]
+        host_policy := host["policy"]
+        policy := func(def, inv, exposure) { return host_policy(snapshot,inv) }
+        handler := func(input, context) { return reconcile_execution(store,principal,input["execution_id"],provider,schema,confirmation,clock()) }
+        stored_identity := func(key_digest,digest) {
+            return {"key":sha256(frame(["kujo.payment-reconciliation-key/v1",scope,key_digest])),"request":sha256(frame(["kujo.payment-reconciliation-store-binding/v1",scope,digest,execution_id,row["snapshot_digest"]]))}
+        }
+        begin := func(key_digest,digest,inv) { value := stored_identity(key_digest,digest);return store["begin_ability"](inv["ability_id"],value["key"],value["request"],inv["invocation_id"]) }
+        complete := func(key_digest,digest,receipt) { value := stored_identity(key_digest,digest);return store["complete_ability"](receipt["ability_id"],value["key"],value["request"],receipt) }
+        mut registry := create_ability_registry()
+        registered := register_ability_definition(registry,definition)
+        assert(registered["ok"],"definition")
+        registry = registered["registry"]
+        bound := register_ability_binding(registry,{"schema":"kujo.ability.binding/v1","ability_id":definition["id"],"ability_version":definition["version"],"handler_id":"kujo.payments.reconciler","handler_version":"1.0.0","handler":handler,"result_mode":"kujo.result/v1","timeout_ms":10000,"metadata":{}})
+        assert(bound["ok"],"binding")
+        registry = bound["registry"]
+        exposed := register_ability_exposure(registry,{"schema":"kujo.ability.exposure/v1","ability_id":definition["id"],"ability_version":definition["version"],"surface":"sdk","name":"reconcile","enabled":true,"public":false,"metadata":{}})
+        assert(exposed["ok"],"exposure")
+        registry = exposed["registry"]
+        result := execute_ability(registry,invocation,{"policy":policy,"clock_ms":clock,"audit":host["audit"],"begin_idempotency":begin,"complete_idempotency":complete})
+        // Receipt failure cannot reverse authoritative financial evidence. The
+        // fresh summary is distinct from the retained/replayed operation receipt.
+        return {"ok":result["ok"],"result":summary(store["inspect"](scope,execution_id)),"ability_result":result}
+    } except e { return {"ok":false,"code":"reconciliation_failed"} }
+}

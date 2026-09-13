@@ -45,10 +45,10 @@ Do not wire these commands together to auto-approve the latest digest. The issue
 
 1. Unprepared or awaiting authorization: prepare immutable terms, initiate provider authorization once, then return pending. Subsequent steps observe the existing provider authorization.
 2. Ready: load the exact unconsumed approval from trusted persistence and invoke existing Ability execution. Claim and approval consumption remain atomic.
-3. Claimed, executing or uncertain: observe/reconcile only. No dispatch permit is reconstructed.
+3. Claimed, executing or uncertain: dispatch the canonical reconciliation Ability with `installed.reconciliation_definition` and the host’s explicit `reconciliation_key`. Missing configuration fails closed. No dispatch permit is reconstructed.
 4. Terminal: return authoritative compact status without calling the provider.
 
-The host or Dispatch decides when to call another step. There is no polling loop, scheduler, second workflow journal or automatic financial retry. The host installs provider routes and confirmation logic; an agent does not select a credential-bearing adapter or supply approval evidence. The store port now includes `load_approval(scope, execution_id)`, returning one unconsumed approval only for an unclaimed `ready` row, or null.
+See [reconciliation](reconciliation.md) for exact retry versus fresh-observation keys and observation-specific policy. The host or Dispatch decides when to call another step. There is no polling loop, scheduler, second workflow journal or automatic financial retry. The host installs provider routes and confirmation logic; an agent does not select a credential-bearing adapter or supply approval evidence. The store port now includes `load_approval(scope, execution_id)`, returning one unconsumed approval only for an unclaimed `ready` row, or null.
 
 Tests cover real separate operator/worker processes, no charge before operator approval, one provider-authorization request, a four-process execution race, an adapter exception after the independent charge commit, fresh-process reconciliation, terminal replay and normalized error output. These tests use the synthetic provider. Live Link route installation, provider egress controls, operator deployment containment and live acceptance remain open; the current intake-only OCI profile does not certify this new operator path.
 

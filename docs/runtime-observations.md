@@ -42,7 +42,7 @@ Do not replace a recorded definition identity under the same Ability ID/version.
 | Execution request/replay | Same scoped execution key plus immutable snapshot, exact issued approval and permanent financial claim; claimed executions only return authoritative status | Interrupted Ability invocation recovery remains a separate unresolved journal gate |
 | Receipt principal comparison | Closed flat principal shape and independently scoped financial journal | No v2 receipt emission or broad dual-read receipt migration implemented |
 | Cancellation | Canonical cancel Ability now dispatches through the scoped gateway, with application-bound keys and revision checks | No provider-side reversal or interrupted invocation re-entry |
-| Reconciliation declaration | Canonical identity is pinned; the worker currently uses private observation functions | Reconciliation Ability dispatch remains open |
+| Reconciliation dispatch | Pinned canonical keyed Ability; closed principal and additional scope/execution/snapshot storage binding | Private dispatch, keyed retries and fault fixtures; general v1 migration remains separate |
 | SDK/MCP projections | Read canonical request/status schemas; server enforces the new admission guard | Projections and client-side metadata are not a privileged execution boundary |
 
 The release checklist's broader versioned Ability compatibility gate remains open. The guard addresses current canonical definition substitution without silently changing any existing v1 identity. A future migration must distinguish algorithms/schemas explicitly, retain historical receipts for observation, reject cross-version approval reuse, preserve permanent financial claims, and prove mixed-history behavior before release.

@@ -34,6 +34,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Closed compatible principal profile, early service/approval rejection and 36 independent flat identity vectors through actual VM/interpreter request/cancel/replay paths; no stored-hash rewrite.
 
+- [x] Canonical private reconciliation Ability dispatch, explicit host observation keys and durable receipts; policy/replay/concurrency/crash fixture coverage. Hosted verification is tracked in implementation-status.md.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

@@ -1,7 +1,7 @@
 // One bounded lifecycle step. Scheduling, identity, route selection and retries
 // belong to the trusted host/Dispatch, not to another Payments workflow engine.
 from src.application.contracts import valid_store
-from src.application.execution import prepare_execution, request_provider_authorization, execute_payment, reconcile_execution
+from src.application.execution import prepare_execution, request_provider_authorization, execute_payment, reconcile_payment
 from src.domain.binding import principal_digest
 from src.domain.lifecycle import summary
 
@@ -16,7 +16,10 @@ export worker_step := func(store, principal, id, installed, host) {
         clock := host["clock_ms"]
         if row["claimed"] == 1 {
             // Claimed rows never enter preparation or submit again, even after crash.
-            return reconcile_execution(store,principal,id,provider,schemas["observation"],installed["confirmation"],clock())
+            if has_key(host,"reconciliation_key") == 0 || has_key(installed,"reconciliation_definition") == 0 { return {"ok":false,"code":"reconciliation_configuration_required"} }
+            observed := reconcile_payment(store,principal,id,host["reconciliation_key"],installed["reconciliation_definition"],provider,schemas["observation"],installed["confirmation"],host)
+            if has_key(observed,"result") { return {"ok":observed["ok"],"result":observed["result"]} }
+            return {"ok":false,"code":"reconciliation_deferred"}
         }
         if row["state"] == "awaiting_authorization" {
             prepared := prepare_execution(store,principal,id,provider,schemas,installed["currency_table"],clock(),installed["region"])

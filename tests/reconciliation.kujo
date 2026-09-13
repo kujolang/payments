@@ -1,0 +1,82 @@
+// Synthetic separate-process reconciliation fixture, never a live provider.
+from ability import approval_binding_digest
+from src.storage.sqlite import open_store, intake, inspect, set_execution_control
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest
+from src.providers.fixture.provider import fixture_provider
+from src.application.execution import prepare_execution, request_provider_authorization, execution_invocation, authorize_execution, execute_payment, reconcile_payment
+func checkpoint(name) {
+    if env("PAYMENTS_TEST_STOP") == name { write_file(env("PAYMENTS_TEST_MARKER"),"ready");sleep(30000);assert(false,"supervisor_must_kill") }
+}
+v := parse_json(read_file("tests/fixtures/domain.json"))
+db := open_store(env("PAYMENTS_TEST_DB"));store := sqlite_port(db)
+processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+".processor")
+db_execute(processor,"CREATE TABLE IF NOT EXISTS observations(id TEXT)",[])
+principal := v["intent"]["principal"];scope := principal_digest(principal)
+provider := fixture_provider(processor,v["snapshot"],v["capabilities"],"throw_after")
+mut schemas := {}
+for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+clock := func() { return 1500 }
+mode := env("PAYMENTS_TEST_MODE")
+mut execution_id := env("PAYMENTS_TEST_EXECUTION");if execution_id == "" { execution_id = "exec_1" }
+policy := func(snapshot,invocation) {
+    mut outcome := "allow"
+    if mode == "deny" { outcome = "deny" }
+    if mode == "approval" { outcome = "approval_required" }
+    return {"schema":"kujo.ability.policy-decision/v1","decision_id":"test","outcome":outcome,"reason":"Fixture","requirements":[],"policy_id":"fixture","policy_version":"1.0.0"}
+}
+audit := func(phase,invocation,payload) {
+    db_execute(db,"INSERT INTO audit VALUES(?,NULL,?)",[uuid_v4(),to_json({"phase":phase,"invocation":invocation,"payload":payload})])
+    accepted := mode != "preflight_fail" && (mode != "completed_fail" || phase != "completed")
+    return {"ok":accepted,"written":accepted,"phase":phase,"event_id":"fixture:"+phase}
+}
+verify := func(snapshot,observation) { return len(db_query(processor,"SELECT ref FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])) == 1 }
+confirmation := {"id":"fixture-ledger","assurance":"provider_confirmed","verify":verify}
+host := {"clock_ms":clock,"policy":policy,"audit":audit}
+if mode == "seed" {
+    intent := v["intent"];intent["purchase_ref"] = "purchase:"+execution_id;intent["intent_id"] = "intent:"+execution_id;v["intent"] = intent
+    assert(intake(db,scope,"key:"+execution_id,"request:"+execution_id,execution_id,v["intent"])["ok"],"intake")
+    assert(prepare_execution(store,principal,execution_id,provider,schemas,{"version":"fixture-v1","exponents":{"USD":2}},1500,"US")["ok"],"prepare")
+    assert(request_provider_authorization(store,principal,execution_id,provider,schemas["observation"],1500)["ok"],"native_authorization")
+    invocation := execution_invocation(inspect(db,scope,execution_id),principal,definition)
+    approval := {"schema":"kujo.ability.approval/v1","approval_id":"approval:"+execution_id,"binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"fixture:"+execution_id,"evidence":{}}
+    assert(authorize_execution(store,principal,execution_id,approval,definition,"fixture",func(issuer,value,inv) { return true },1500)["ok"],"grant")
+    result := execute_payment(store,principal,execution_id,approval,definition,provider,schemas,{"version":"fixture-v1","exponents":{"USD":2}},"US",host,confirmation)
+    assert(result["result"]["status"] == "reconciliation_required","unknown_after_charge")
+    print(to_json({"ok":true}));db_close(processor);db_close(db)
+} else {
+    native_observe := provider["observe"]
+    provider["observe"] = func(ref,ctx) {
+        checkpoint("before_observe")
+        if mode == "slow" { sleep(150) }
+        db_execute(processor,"INSERT INTO observations VALUES(?)",[ctx["execution_id"]])
+        if mode == "provider_throw" { assert(false,"SENTINEL_PRIVATE_RECONCILIATION") }
+        value := native_observe(ref,ctx)
+        if mode == "unknown" { value["outcome"] = "unknown";value["actual_amount"] = null;value["evidence_ref"] = null }
+        return value
+    }
+    // Consequential or credential-issuing methods are unavailable in this fixture.
+    forbidden := func(ref,ctx) { db_execute(processor,"INSERT INTO observations VALUES('FORBIDDEN')",[]);assert(false,"SENTINEL_FORBIDDEN") }
+    provider["submit"] = forbidden;provider["request_authorization"] = forbidden;provider["prepare"] = forbidden
+    observe_store := store["record_observation"]
+    store["record_observation"] = func(s,id,r,e,d,o,event,receipt) {
+        if mode == "observation_fail" { return {"ok":false,"code":"fixture_storage_failed"} }
+        value := observe_store(s,id,r,e,d,o,event,receipt);checkpoint("after_observation");return value
+    }
+    complete := store["complete_ability"]
+    store["complete_ability"] = func(op,key,digest,receipt) {
+        checkpoint("before_complete")
+        if mode == "receipt_fail" { return {"ok":false} }
+        return complete(op,key,digest,receipt)
+    }
+    if mode == "paused" { assert(set_execution_control(db,"paused",0,"fixture-admin",1500),"pause") }
+    if mode == "foreign" { principal["tenant_id"] = "other" }
+    if mode == "nested" { principal["claims"] = {} }
+    if mode == "provider_mismatch" { provider["id"] = "other" }
+    if mode == "version_mismatch" { provider["version"] = "2.0.0" }
+    reconcile := parse_json(read_file("contracts/abilities/reconcile.json"))
+    if mode == "definition" { reconcile["effects"] = [] }
+    result := reconcile_payment(store,principal,execution_id,env("PAYMENTS_TEST_KEY"),reconcile,provider,schemas["observation"],confirmation,host)
+    print(to_json(result));db_close(processor);db_close(db)
+}

@@ -39,3 +39,7 @@ A registered confirmation rule provides `id`, `assurance` and `verify(snapshot, 
 ## Current limits
 
 The public client imports no provider or storage modules. This embedding API alone does not isolate a malicious runtime. Network transport, production identity/approval adapters, enforced egress, validated deployment profiles and Link acceptance remain unfinished. The fixture's fixed clock, channels, issuer and audit callback must never be used for real funds.
+
+## Private reconciliation host
+
+The worker requires the canonical `installed.reconciliation_definition` and explicit `host.reconciliation_key` for claimed nonterminal work. It reuses `policy(snapshot, invocation)`, `audit` and `clock_ms` through actual Ability dispatch. Hosts must permit the observation Ability separately from financial execution; no consumed payment grant is reused. Exact-key retries and deliberately fresh observations differ. See [reconciliation](reconciliation.md). The storage v1 interface and public gateway operations are unchanged.

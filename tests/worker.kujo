@@ -17,15 +17,15 @@ verify := func(snapshot, observation) {
     rows := db_query(processor,"SELECT snapshot_json FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])
     return len(rows) == 1 && snapshot_digest(parse_json(rows[0]["snapshot_json"])) == snapshot_digest(snapshot)
 }
-installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":parse_json(read_file("contracts/abilities/execute.json")),"confirmation":{"id":"fixture-ledger-v1","assurance":"provider_confirmed","verify":verify}}
+installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":parse_json(read_file("contracts/abilities/execute.json")),"reconciliation_definition":parse_json(read_file("contracts/abilities/reconcile.json")),"confirmation":{"id":"fixture-ledger-v1","assurance":"provider_confirmed","verify":verify}}
 clock := func() { return current_timestamp() }
-policy := func(snapshot, invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-worker-policy","outcome":"approval_required","reason":"Separate operator approval required.","requirements":["human"],"policy_id":"fixture-worker","policy_version":"1.0.0"} }
+policy := func(snapshot, invocation) { if invocation["ability_id"] == "kujo.payments.execution.reconcile" { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-observation","outcome":"allow","reason":"Observe only","requirements":[],"policy_id":"fixture-observation","policy_version":"1.0.0"} } return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-worker-policy","outcome":"approval_required","reason":"Separate operator approval required.","requirements":["human"],"policy_id":"fixture-worker","policy_version":"1.0.0"} }
 audit := func(phase,invocation,payload) {
     id := invocation["invocation_id"]+":"+phase
     db_execute(db,"INSERT OR IGNORE INTO audit VALUES(?,NULL,?)",[id,phase])
     return {"ok":true,"written":true,"phase":phase,"event_id":id}
 }
-result := worker_step(sqlite_port(db),principal,"exec_1",installed,{"clock_ms":clock,"policy":policy,"audit":audit})
+result := worker_step(sqlite_port(db),principal,"exec_1",installed,{"clock_ms":clock,"policy":policy,"audit":audit,"reconciliation_key":uuid_v4()})
 print(to_json(result))
 db_close(processor)
 db_close(db)

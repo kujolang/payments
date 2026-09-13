@@ -18,7 +18,7 @@ config := {"snapshot":template,"capabilities":capabilities,"expected":mpp["expec
 mut schemas := {}
 for name in ["intent","snapshot","capabilities","observation"] { schemas[name] := parse_json(read_file("contracts/"+name+".schema.json")) }
 definition := parse_json(read_file("contracts/abilities/execute.json"))
-policy := func(snapshot,invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-link-policy","outcome":"approval_required","reason":"Separate fixture operator approval","requirements":["human"],"policy_id":"fixture-link","policy_version":"1.0.0"} }
+policy := func(snapshot,invocation) { if invocation["ability_id"] == "kujo.payments.execution.reconcile" { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-observation","outcome":"allow","reason":"Observe only","requirements":[],"policy_id":"fixture-observation","policy_version":"1.0.0"} } return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture-link-policy","outcome":"approval_required","reason":"Separate fixture operator approval","requirements":["human"],"policy_id":"fixture-link","policy_version":"1.0.0"} }
 audit := func(phase,invocation,payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
 for scenario in ["success","lost_charge","changed_challenge","unverified_2xx"] {
     base := env("PAYMENTS_TEST_DB")+"-"+scenario
@@ -58,8 +58,8 @@ for scenario in ["success","lost_charge","changed_challenge","unverified_2xx"] {
     provider := link_provider(private,config,api,merchant,clock)
     assert(valid_provider(provider),"five_method_spi")
     verify := func(snapshot,observation) { return len(db_query(processor,"SELECT * FROM charges WHERE id=? AND digest=?",[snapshot["execution_id"],snapshot_digest(snapshot)])) == 1 }
-    installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":definition,"confirmation":{"id":"fixture-link-ledger","assurance":"provider_confirmed","verify":verify}}
-    host := {"clock_ms":clock,"policy":policy,"audit":audit}
+    installed := {"provider":provider,"schemas":schemas,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","definition":definition,"reconciliation_definition":parse_json(read_file("contracts/abilities/reconcile.json")),"confirmation":{"id":"fixture-link-ledger","assurance":"provider_confirmed","verify":verify}}
+    host := {"clock_ms":clock,"policy":policy,"audit":audit,"reconciliation_key":uuid_v4()}
     store := sqlite_port(db)
     assert(intake(db,principal_digest(principal),"key","request","exec_1",v["intent"])["ok"],"intake")
     pending := worker_step(store,principal,"exec_1",installed,host)
