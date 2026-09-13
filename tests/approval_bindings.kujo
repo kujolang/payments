@@ -1,0 +1,32 @@
+// The execution invocation deliberately contains only flat input fields. Verify
+// the pinned Ability approval binding preserves every domain binding boundary.
+from ability import approval_binding_digest, validate_ability_approval
+from src.application.execution import execution_invocation
+from src.domain.binding import snapshot_digest
+
+fixture := parse_json(read_file("tests/fixtures/domain.json"))
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+row := {"execution_id":"exec_1","snapshot_digest":snapshot_digest(fixture["snapshot"])}
+invocation := execution_invocation(row,fixture["intent"]["principal"],definition)
+approval := {"schema":"kujo.ability.approval/v1","approval_id":"binding-test","binding_digest":approval_binding_digest(invocation),"approved_by":fixture["intent"]["principal"],"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"binding-test-nonce","evidence":{}}
+assert(validate_ability_approval(approval,invocation,1500)["ok"],"exact_binding")
+for field in ["execution_id","snapshot_digest","principal_id","principal_type","tenant_id","invocation_id","ability_id","ability_version","definition_digest"] {
+    mut changed := parse_json(to_json(invocation))
+    if field == "execution_id" { changed["input"] = {"execution_id":"exec_other","snapshot_digest":row["snapshot_digest"]} }
+    if field == "snapshot_digest" { changed["input"] = {"execution_id":"exec_1","snapshot_digest":sha256("other-snapshot")} }
+    if field == "principal_id" || field == "principal_type" || field == "tenant_id" {
+        mut principal := parse_json(to_json(invocation["principal"]))
+        if field == "principal_id" { principal["id"] = "other" }
+        if field == "principal_type" { principal["type"] = "service" }
+        if field == "tenant_id" { principal["tenant_id"] = "other-tenant" }
+        changed["principal"] = principal
+    }
+    if field == "invocation_id" { changed["invocation_id"] = "execute:other" }
+    if field == "ability_id" { changed["ability_id"] = "kujo.payments.other" }
+    if field == "ability_version" { changed["ability_version"] = "2.0.0" }
+    if field == "definition_digest" { changed["definition_digest"] = sha256("other-definition") }
+    assert(approval_binding_digest(changed) != approval["binding_digest"],"changed_binding:"+field)
+    assert(validate_ability_approval(approval,changed,1500)["ok"] == false,"changed_approval_denied:"+field)
+}
+assert(validate_ability_approval(approval,invocation,2000)["ok"] == false,"expired_approval")
+print("Ability execution approval: nine changed bindings and expiry rejected; exact binding accepted")

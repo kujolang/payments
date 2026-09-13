@@ -12,6 +12,7 @@ python3 scripts/concurrency_test.py
 python3 tests/network/migration_test.py
 "$KUJO_BIN" run tests/lifecycle.kujo
 "$KUJO_BIN" run tests/contracts.kujo
+"$KUJO_BIN" run tests/approval_bindings.kujo --interpreter
 PAYMENTS_TEST_DB="$store_dir/observations.db" "$KUJO_BIN" run tests/observations.kujo
 PAYMENTS_TEST_DB="$store_dir/execution.db" "$KUJO_BIN" run tests/execution.kujo
 PAYMENTS_TEST_DB="$store_dir/gateway.db" "$KUJO_BIN" run tests/gateway.kujo
