@@ -1,0 +1,29 @@
+{
+  "source_commit": "6b3464737d9268c4280ffdbcba52d4e507ae4ca3",
+  "prerequisite_commit": "dd52761",
+  "run_id": 34735770887,
+  "url": "https://github.com/kujolang/payments/actions/runs/34735770887",
+  "jobs": {
+    "host": {
+      "id": 103666806217,
+      "conclusion": "success",
+      "log_sha256": "269d87dfce304384a3782d56b72f7fda0b83c953e19e48071f8d6269af6ab77a"
+    },
+    "containment": {
+      "id": 103666806298,
+      "conclusion": "success",
+      "log_sha256": "c4e7c84a9dd776daaf344ed78224609262afd4d3101cba2fc6684ca8e3c715c3"
+    }
+  },
+  "artifact": {
+    "id": 10311380332,
+    "archive_sha256": "eda5672f0a1cbeed18921d9e4bb761ba31bf3e55c9057c44123cba84167b8dd4",
+    "verified_manifest_files": 6,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 18,
+    "workcell_file_probes": 18,
+    "cleanup_status": "complete"
+  },
+  "scope": "Private approval URL component with 24 binding/URL/callback cases, concurrent staging and replacement-URL rejection; credential regressions/empty scope, full host suite and actual synthetic OCI/Workcell outbox-canary containment. No authenticated production notifier, redirect attestation, URL retention cleanup, live OAuth/payment, stable account identity or all-sink deployment certification."
+}

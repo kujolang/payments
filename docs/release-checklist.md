@@ -20,7 +20,7 @@ Status: implementation in progress; not approved for real-money release. A check
 - [x] Canonical Ability v2 definition admission, frozen v1 compatibility case and independent definition mutation vectors.
 - [x] Private Link credential rotation journal and synthetic concurrency/crash fixtures; enrollment and live OAuth conformance remain open.
 
-- [x] Executor-only approval URL staging/delivery component and 24 synthetic binding/URL/callback cases; authenticated operator installation and containment verification remain separate.
+- [x] Executor-only approval URL staging/delivery component and 24 synthetic binding/URL/callback cases; synthetic OCI/Workcell private-outbox containment verified; authenticated operator installation remains open.
 
 ## Required before real-money release
 

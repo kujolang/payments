@@ -1,0 +1,16 @@
+{
+  "reviewed_at": "2026-09-13",
+  "repository": "https://github.com/stripe/link-cli",
+  "source_commit": "4aa62ba34eaeb884d00041681f5c7801521c0bf8",
+  "files": {
+    "README.md": "cd5063ac15c9d5bcc1291cdde92e42fb7c0f2e66e41719f815a7e12700061629",
+    "packages/sdk/src/resources/user-info.ts": "9f05f06deae86df3c8a2a9bbf1fdd5fb80c3f0dc3f199ed3b0dd45a33d551740",
+    "packages/sdk/src/types/index.ts": "ac440a7cb14d3b6668ed13620774dc453e684028ba55d65aea9a83bf455f6323"
+  },
+  "findings": [
+    "README directs native consumer integrations to agent-spend at stripe.com; this is a contact route, not registration approval.",
+    "UserInfoResource GET /userinfo normalizes contact details, spend limits and verification requirements; the declared UserInfo and returned normalization do not contain a stable payer subject.",
+    "Unknown raw fields are not evidence of a documented stable identity contract. Do not substitute contact email/name for stable account attestation."
+  ],
+  "scope": "Read-only official source inspection. No account, OAuth, notification or payment request; no dependency upgrade."
+}
