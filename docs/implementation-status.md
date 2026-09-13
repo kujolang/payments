@@ -160,3 +160,10 @@ Native fixtures cover four-process races, failures, crashes before/after commit,
 Documentation-only pushes under `docs/` no longer rebuild the pinned runtimes; runtime suites do not read these files. Code/configuration pushes, pull requests and manual verification retain their existing checks. This avoids repeating a runtime build solely to record already-verified evidence.
 
 Verification: both Linux jobs passed at `1ef1f5f` (implementation `9177dec`), [run 34734241325](https://github.com/kujolang/payments/actions/runs/34734241325). Actual logs include credential failure/recovery fixtures and OCI/Workcell containment. Downloaded artifact 10310531846 matched its archive digest and all six manifest entries; both isolated probes reported 14 denied file paths, with a positive private credential-vault control and complete cleanup. Evidence: `docs/evidence/credentials-ci.json`; raw synthetic artifacts/logs remain outside Git in `.local/evidence/34734241325/`.
+
+
+## Private approval delivery component
+
+Added an immutable executor-only URL outbox and trusted delivery callback, with exact native SpendRequest binding, installation-owned HTTPS origin allowlist, principal/snapshot selection and expiry checks. Safe results contain only an opaque reference; neither provider SPI nor agent tools changed. The credential vault and outbox share an exact-schema initializer while retaining separate database identities. Whitespace-only OAuth scope is now rejected before installation.
+
+The local native tests pass 24 URL/binding/callback cases, four-process staging, credential rotation regressions and empty-scope denial. The initial sink failure was a fixture error: overwriting a pre-created private file requires explicit `write_file(..., true)`. No new runtime defect was established. The complete local host suite passed, including architecture enforcement and all existing Link/Ability/integration regressions. Updated Linux/OCI/Workcell CI evidence is pending. Production operator authentication, current-state enforcement, URL retention/cleanup, enrollment/revocation, stable account identity and settlement evidence remain open; see the release checklist.

@@ -1,0 +1,56 @@
+from src.providers.link.authorization import open_link_authorizations, request_link_authorization
+from src.providers.link.approval_delivery import open_link_approval_outbox, stage_link_approval, deliver_link_approval
+fixture := parse_json(read_file("tests/fixtures/domain.json"))
+snapshot := fixture["snapshot"]
+auth := db_connect("sqlite",env("PAYMENTS_DELIVERY_AUTH"));open_link_authorizations(auth)
+outbox := db_connect("sqlite",env("PAYMENTS_DELIVERY_OUTBOX"));open_link_approval_outbox(outbox)
+mode := env("PAYMENTS_DELIVERY_MODE")
+action := env("PAYMENTS_DELIVERY_ACTION")
+clock := func() {
+    try { return to_int(read_file(env("PAYMENTS_DELIVERY_CLOCK"))) } except error { }
+    if env("PAYMENTS_DELIVERY_MODE") == "expired" { return 2000 } return 1000
+}
+url := "https://approve.example/consent/SENTINEL_APPROVAL_URL"
+api := func(method,path,body,deadline) {
+    native := {"id":"spend_delivery","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"pending_approval","approval_url":url,"shared_payment_token":"SENTINEL_SPT","link_pay_token":"SENTINEL_LPT","card":{"number":"SENTINEL_PAN","cvc":"SENTINEL_CVC"},"access_token":"SENTINEL_OAUTH","refresh_token":"SENTINEL_REFRESH","api_secret":"SENTINEL_API_SECRET"}
+    if action != "init" {
+        if mode == "changed_url" { native["approval_url"] = "https://approve.example/consent/SENTINEL_CHANGED_URL" }
+        if mode == "merchant_origin" { native["approval_url"] = "https://approve.example.evil/consent/SENTINEL_APPROVAL_URL" }
+        if mode == "userinfo" { native["approval_url"] = "https://approve.example@evil/consent/SENTINEL_APPROVAL_URL" }
+        if mode == "http" { native["approval_url"] = "http://approve.example/consent/SENTINEL_APPROVAL_URL" }
+        if mode == "fragment" { native["approval_url"] = url+"#SENTINEL_FRAGMENT" }
+        if mode == "html" { native["approval_url"] = url+"<script>" }
+        if mode == "backslash" { native["approval_url"] = "https://approve.example\\@evil/consent/SENTINEL_APPROVAL_URL" }
+        if mode == "changed_amount" { native["amount"] = 5501 }
+        if mode == "changed_currency" { native["currency"] = "eur" }
+        if mode == "changed_id" { native["id"] = "spend_other" }
+        if mode == "changed_network" { native["network_id"] = "network_other" }
+        if mode == "approved" { native["status"] = "approved" }
+    }
+    return {"ok":true,"native":native}
+}
+if action == "init" {
+    request_link_authorization(auth,"delivery",snapshot,"network_1","pm_fixture",true,api,10000)
+    print(to_json({"ok":true}));db_close(auth);db_close(outbox);exit(0)
+}
+if mode == "tenant" { principal := snapshot["principal"];principal["tenant_id"] = "other";snapshot["principal"] = principal }
+staged := stage_link_approval(auth,outbox,"delivery",snapshot,api,["https://approve.example"],clock,10000)
+if action == "stage" || staged["ok"] == false { print(to_json(staged));db_close(auth);db_close(outbox);exit(0) }
+if mode == "delivery_tenant" { principal := snapshot["principal"];principal["tenant_id"] = "other";snapshot["principal"] = principal }
+if mode == "delivery_principal" { principal := snapshot["principal"];principal["id"] = "other";snapshot["principal"] = principal }
+if mode == "delivery_execution" { snapshot["execution_id"] = "other" }
+if mode == "delivery_amount" { charge := snapshot["charge"];charge["minor"] = 5501;snapshot["charge"] = charge }
+if mode == "delivery_expired" { write_file(env("PAYMENTS_DELIVERY_CLOCK"),"2000") }
+sink := func(payload,delivery_deadline) {
+    assert(payload["approval_url"] == "https://approve.example/consent/SENTINEL_APPROVAL_URL","private_url_binding")
+    if mode == "callback_throw" { assert(false,url+"SENTINEL_EXCEPTION") }
+    if mode == "callback_object" { return {"url":url} }
+    write_file(env("PAYMENTS_DELIVERY_SINK"),to_json(payload),true)
+    if mode == "callback_late" { write_file(env("PAYMENTS_DELIVERY_CLOCK"),"2000") }
+    if mode == "callback_rollback" { write_file(env("PAYMENTS_DELIVERY_CLOCK"),"0") }
+    if mode == "callback_after_write" { assert(false,url+"SENTINEL_AFTER_WRITE") }
+    return true
+}
+delivered := deliver_link_approval(outbox,staged["delivery_ref"],snapshot,["https://approve.example"],sink,clock,10000)
+print(to_json(delivered))
+db_close(auth);db_close(outbox)

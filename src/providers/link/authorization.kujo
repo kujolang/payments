@@ -13,7 +13,7 @@ export open_link_authorizations := func(db) {
     db_execute(db,"CREATE TRIGGER IF NOT EXISTS link_issuance_immutable BEFORE UPDATE ON link_authorizations WHEN NEW.ref != OLD.ref OR NEW.digest != OLD.digest OR NEW.account_ref != OLD.account_ref OR NEW.network_id != OLD.network_id OR NEW.request_key != OLD.request_key OR (OLD.native_id IS NOT NULL AND NEW.native_id IS NOT OLD.native_id) BEGIN SELECT RAISE(ABORT,'link_issuance_immutable'); END",[])
 }
 func unknown() { return {"ok":false,"code":"link_authorization_unknown"} }
-func matching(native, snapshot, network_id) {
+export matching_link_authorization := func(native, snapshot, network_id) {
     if type(native) != "dict" { return false }
     for field in ["id","amount","currency","credential_type","network_id","status"] { if has_key(native,field) == 0 { return false } }
     return type(native["id"]) == "string" && regex_match(native["id"],"^[A-Za-z0-9_]{1,128}$") && type(native["amount"]) == "int" && native["amount"] == snapshot["charge"]["minor"] && native["currency"] == to_lower(snapshot["charge"]["currency"]) && native["credential_type"] == "shared_payment_token" && native["network_id"] == network_id
@@ -26,7 +26,7 @@ export observe_link_authorization := func(db, ref, snapshot, api, deadline_ms) {
         result := api("GET","/spend_requests/"+row["native_id"],null,deadline_ms)
         if result["ok"] != true { return unknown() }
         native := result["native"]
-        if matching(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] { return unknown() }
+        if matching_link_authorization(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] { return unknown() }
         if native["status"] == "approved" { return {"ok":true,"status":"authorized"} }
         // Native succeeded/failed/canceled are not merchant settlement evidence.
         return {"ok":true,"status":"pending_or_unknown"}
@@ -51,7 +51,7 @@ export request_link_authorization := func(db, ref, snapshot, network_id, payment
         native := result["native"]
         if type(native) != "dict" || has_key(native,"id") == 0 || type(native["id"]) != "string" || regex_match(native["id"],"^[A-Za-z0-9_]{1,128}$") == false { return unknown() }
         db_execute(db,"UPDATE link_authorizations SET native_id=? WHERE ref=? AND native_id IS NULL",[native["id"],ref])
-        if matching(native,snapshot,network_id) == false { return unknown() }
+        if matching_link_authorization(native,snapshot,network_id) == false { return unknown() }
         if native["status"] == "approved" { return {"ok":true,"status":"authorized"} }
         return {"ok":true,"status":"pending_or_unknown"}
     } except error { return unknown() }
@@ -67,7 +67,7 @@ export execution_credential := func(db, ref, snapshot, api, deadline_ms) {
         result := api("GET","/spend_requests/"+row["native_id"]+"?include=shared_payment_token",null,deadline_ms)
         if result["ok"] != true { return unknown() }
         native := result["native"]
-        if matching(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] || native["status"] != "approved" || has_key(native,"shared_payment_token") == 0 { return unknown() }
+        if matching_link_authorization(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] || native["status"] != "approved" || has_key(native,"shared_payment_token") == 0 { return unknown() }
         mut token := native["shared_payment_token"]
         if type(token) == "dict" {
             if has_key(token,"id") == 0 { return unknown() }

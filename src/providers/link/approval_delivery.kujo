@@ -1,0 +1,58 @@
+// Secret approval URLs belong only to this private outbox and installed operator
+// callback. This is neither a notifier service nor financial authorization.
+from src.domain.binding import frame, snapshot_digest, principal_digest
+from src.providers.link.authorization import matching_link_authorization
+from src.providers.link.private_store import open_private_link_store
+
+func unavailable() { return {"ok":false,"code":"link_approval_delivery_unavailable"} }
+func allowed_url(url,origins) {
+    if type(url) != "string" || len(url) < 1 || len(url) > 4096 || regex_match(url,"^[A-Za-z0-9:/?&=._~!$()*+,;@%-]+$") == false || contains(url,"#") || contains(url,"\\") { return false }
+    if type(origins) != "array" || len(origins) < 1 || len(origins) > 16 { return false }
+    parts := split(url,"/")
+    if len(parts) < 4 || parts[0] != "https:" || parts[1] != "" { return false }
+    origin := "https://"+parts[2]
+    if regex_match(origin,"^https://[a-z0-9]+([.-][a-z0-9]+)*$") == false { return false }
+    return contains(origins,origin)
+}
+export open_link_approval_outbox := func(db) {
+    definitions := [{"name":"link_approval_outbox_v1","sql":"CREATE TABLE link_approval_outbox_v1(id TEXT PRIMARY KEY,execution_id TEXT NOT NULL,scope TEXT NOT NULL,snapshot_digest TEXT NOT NULL,approval_url TEXT NOT NULL,expires_at_ms INTEGER NOT NULL)"},{"name":"link_approval_outbox_immutable","sql":"CREATE TRIGGER link_approval_outbox_immutable BEFORE UPDATE ON link_approval_outbox_v1 BEGIN SELECT RAISE(ABORT,'approval_delivery_immutable'); END"},{"name":"link_approval_outbox_permanent","sql":"CREATE TRIGGER link_approval_outbox_permanent BEFORE DELETE ON link_approval_outbox_v1 BEGIN SELECT RAISE(ABORT,'approval_delivery_permanent'); END"}]
+    open_private_link_store(db,definitions,1)
+}
+export stage_link_approval := func(authorizations,outbox,ref,snapshot,api,origins,clock_ms,deadline_ms) {
+    try {
+        now := clock_ms()
+        if type(now) != "int" || now < 0 || type(deadline_ms) != "int" || now+5000 >= deadline_ms || now >= snapshot["expires_at_ms"] { return unavailable() }
+        digest := snapshot_digest(snapshot)
+        scope := principal_digest(snapshot["principal"])
+        rows := db_query(authorizations,"SELECT * FROM link_authorizations WHERE ref=?",[ref])
+        if len(rows) != 1 || rows[0]["digest"] != digest || rows[0]["account_ref"] != snapshot["provider"]["account_ref"] || rows[0]["native_id"] == null { return unavailable() }
+        row := rows[0]
+        result := api("GET","/spend_requests/"+row["native_id"],null,deadline_ms)
+        if result["ok"] != true { return unavailable() }
+        native := result["native"]
+        if matching_link_authorization(native,snapshot,row["network_id"]) == false || native["id"] != row["native_id"] || native["status"] != "pending_approval" || allowed_url(native["approval_url"],origins) == false { return unavailable() }
+        observed := clock_ms()
+        if type(observed) != "int" || observed < now || observed >= deadline_ms || observed >= snapshot["expires_at_ms"] { return unavailable() }
+        id := "approval:"+sha256(frame(["kujo.link.approval-delivery/v1",ref,digest]))
+        db_execute(outbox,"INSERT OR IGNORE INTO link_approval_outbox_v1 VALUES(?,?,?,?,?,?)",[id,snapshot["execution_id"],scope,digest,native["approval_url"],snapshot["expires_at_ms"]])
+        saved := db_query(outbox,"SELECT * FROM link_approval_outbox_v1 WHERE id=?",[id])
+        if len(saved) != 1 || saved[0]["approval_url"] != native["approval_url"] || saved[0]["snapshot_digest"] != digest || saved[0]["scope"] != scope || saved[0]["execution_id"] != snapshot["execution_id"] || saved[0]["expires_at_ms"] != snapshot["expires_at_ms"] { return unavailable() }
+        return {"ok":true,"delivery_ref":id}
+    } except error { return unavailable() }
+}
+export deliver_link_approval := func(outbox,id,snapshot,origins,deliver,clock_ms,deadline_ms) {
+    try {
+        now := clock_ms()
+        if type(now) != "int" || now < 0 || type(deadline_ms) != "int" || now >= deadline_ms { return unavailable() }
+        rows := db_query(outbox,"SELECT * FROM link_approval_outbox_v1 WHERE id=? AND scope=? AND snapshot_digest=?",[id,principal_digest(snapshot["principal"]),snapshot_digest(snapshot)])
+        if len(rows) != 1 { return unavailable() }
+        row := rows[0]
+        if row["execution_id"] != snapshot["execution_id"] || now >= row["expires_at_ms"] || allowed_url(row["approval_url"],origins) == false { return unavailable() }
+        // The installed sink is privileged and must enforce its own bounded
+        // execution and operator authentication. Its raw return/error never escapes.
+        accepted := deliver({"approval_url":row["approval_url"],"execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"],"expires_at_ms":row["expires_at_ms"]},deadline_ms)
+        completed := clock_ms()
+        if accepted != true || type(completed) != "int" || completed < now || completed >= deadline_ms || completed >= row["expires_at_ms"] { return unavailable() }
+        return {"ok":true,"delivery_ref":id}
+    } except error { return unavailable() }
+}
