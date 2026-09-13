@@ -1,0 +1,35 @@
+from src.storage.sqlite import open_store, inspect, save_preparation, claim, inspect_execution_control, set_execution_control
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest, intent_digest
+from src.executor.approval import review_payment, approve_reviewed_payment
+from src.application.execution import execution_invocation
+from ability import approval_binding_digest
+v := parse_json(read_file("tests/fixtures/domain.json"));payer := v["intent"]["principal"];scope := principal_digest(payer)
+db := open_store(env("PAYMENTS_TEST_DB"));store := sqlite_port(db);id := env("PAYMENTS_CANCEL_ID");mode := env("PAYMENTS_CANCEL_MODE")
+definition := parse_json(read_file("contracts/abilities/execute.json"));now := current_timestamp()
+mut result := {"ok":true}
+if mode == "ready" {
+ row := inspect(db,scope,id);intent := parse_json(row["intent_json"]);snapshot := v["snapshot"]
+ snapshot["execution_id"] = id;snapshot["intent_digest"] = intent_digest(intent);snapshot["expires_at_ms"] = row["expires_at_ms"]
+ assert(save_preparation(db,scope,id,row["revision"],snapshot,snapshot_digest(snapshot),id,now),"prepare")
+ review := review_payment(store,payer,id,definition,now)
+ authority := {"payer":payer,"operator":{"type":"human","id":"operator","tenant_id":payer["tenant_id"]},"issuer_ref":"fixture","ttl_ms":60000}
+ result = approve_reviewed_payment(store,payer,id,definition,authority,review["binding_digest"],now)
+} else if mode == "claim" {
+ row := inspect(db,scope,id);approval := store["load_approval"](scope,id)
+ mut won := false
+ if approval != null {
+  invocation := execution_invocation(row,payer,definition)
+  won = claim(db,scope,id,row["revision"],approval["approval_id"],approval_binding_digest(invocation),row["snapshot_digest"],invocation["invocation_id"],now)
+ }
+ if won {
+  ledger := db_connect("sqlite",env("PAYMENTS_TEST_DB")+".processor")
+  db_execute(ledger,"CREATE TABLE IF NOT EXISTS calls(execution_id TEXT)",[])
+  db_execute(ledger,"INSERT INTO calls VALUES(?)",[id]);db_close(ledger)
+ }
+ result = {"ok":true,"won":won}
+} else if mode == "pause" || mode == "resume" {
+ control := inspect_execution_control(db);mut target := "paused";if mode == "resume" { target = "active" }
+ result = {"ok":set_execution_control(db,target,control["revision"],"admin",now)}
+}
+print(to_json(result));db_close(db)

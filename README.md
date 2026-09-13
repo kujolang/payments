@@ -14,7 +14,7 @@ Set `KUJO_BIN` to an absolute Kujo 1.4.0 executable. Run `python3 scripts/ci/boo
 
 ## Runnable fixture
 
-See [local fixture](examples/local-fixture/README.md) for a synthetic purchase through the gateway, provider authorization, host Ability approval, one-use submission and authoritative observation. Agent-facing operations are request and status; the executor and provider callbacks remain private to trusted host code.
+See [local fixture](examples/local-fixture/README.md) for a synthetic purchase through the gateway, provider authorization, host Ability approval, one-use submission and authoritative observation. Optional [programmatic cancellation](docs/cancellation.md) uses explicit revision inspection. Agent-facing operations are request and status; the executor and provider callbacks remain private to trusted host code.
 
 The injected gateway authentication callback is an embedding boundary. The [deployment guide](docs/deployment.md) documents the scoped-token HTTP service and tested OCI profile. Operator financial authorization, Link execution and remaining live-provider gates are still required before real payment credentials are used.
 

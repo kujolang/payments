@@ -1,4 +1,4 @@
-from src.storage.sqlite import inspect, intake, save_preparation, preparation_ref, grant, claim, record_observation, begin_ability, complete_ability, issued_approval_matches, begin_provider_authorization, load_approval, inspect_execution_control
+from src.storage.sqlite import inspect, cancel, intake, save_preparation, preparation_ref, grant, claim, record_observation, begin_ability, complete_ability, issued_approval_matches, begin_provider_authorization, load_approval, inspect_execution_control
 
 func new_permit() {
     // Native handles share identity across callbacks; ordinary captured maps do not.
@@ -15,6 +15,7 @@ export sqlite_port := func(db) {
         "schema":"kujo.payment-store/v1",
         "execution_enabled":func() { return inspect_execution_control(db)["mode"] == "active" },
         "inspect":func(scope,id) { return inspect(db,scope,id) },
+        "cancel":func(scope,id,revision) { return cancel(db,scope,id,revision) },
         "intake":func(scope,key,digest,id,intent) { return intake(db,scope,key,digest,id,intent) },
         "save_preparation":func(scope,id,revision,snapshot,digest,ref,now) { return save_preparation(db,scope,id,revision,snapshot,digest,ref,now) },
         "preparation_ref":func(scope,id) { return preparation_ref(db,scope,id) },

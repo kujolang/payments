@@ -32,7 +32,7 @@ export gateway_call := func(store, request, transport_context, config) {
         }
         if has_key(request,"operation") == 0 || has_key(request,"input") == 0 { return {"ok":false,"code":"invalid_request"} }
         operation := request["operation"]
-        if operation != "request" && operation != "inspect" { return {"ok":false,"code":"operation_denied"} }
+        if contains(["request","inspect","inspect_revision","cancel"],operation) == false { return {"ok":false,"code":"operation_denied"} }
         authenticate := config["authenticate"]
         principal := authenticate(transport_context)
         if json_schema_validate(principal,config["intent_schema"]["properties"]["principal"])["valid"] == false { return {"ok":false,"code":"unauthenticated"} }
@@ -41,20 +41,30 @@ export gateway_call := func(store, request, transport_context, config) {
         if canonical_ability_matches(operation,definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
         input := request["input"]
         if validate_ability_value(input,definition["input_schema"],"input")["ok"] == false { return {"ok":false,"code":"invalid_request"} }
+        if operation == "cancel" {
+            if type(input["expected_revision"]) != "int" { return {"ok":false,"code":"invalid_request"} }
+            if has_key(store,"cancel") == 0 || type(store["cancel"]) != "function" { return {"ok":false,"code":"store_operation_unavailable"} }
+        }
         mut key := ""
         if has_key(request,"idempotency_key") { key = request["idempotency_key"] }
-        if type(key) != "string" || len(key) > 128 || (operation == "request" && len(key) < 1) { return {"ok":false,"code":"invalid_idempotency_key"} }
-        if operation == "inspect" && key != "" { return {"ok":false,"code":"status_is_intrinsic"} }
+        if type(key) != "string" || len(key) > 128 || ((operation == "request" || operation == "cancel") && len(key) < 1) { return {"ok":false,"code":"invalid_idempotency_key"} }
+        if (operation == "inspect" || operation == "inspect_revision") && key != "" { return {"ok":false,"code":"status_is_intrinsic"} }
         clock := config["clock_ms"]
         now := clock()
         mut identity_key := key
-        if operation == "inspect" { identity_key = to_string(now) + ":" + input["execution_id"] }
+        if operation == "inspect" || operation == "inspect_revision" { identity_key = to_string(now) + ":" + input["execution_id"] }
         invocation_id := "gateway:" + sha256(frame([config["namespace"],scope,operation,identity_key]))
         handler := func(payload, context) {
-            if operation == "inspect" {
+            if operation == "inspect" || operation == "inspect_revision" {
                 row := store["inspect"](scope,payload["execution_id"])
                 if row == null { return {"ok":false,"code":"not_found","message":"Payment not found","details":{}} }
-                return {"ok":true,"result":summary(row)}
+                value := summary(row)
+                if operation == "inspect_revision" { value["revision"] = row["revision"] }
+                return {"ok":true,"result":value}
+            }
+            if operation == "cancel" {
+                if store["cancel"](scope,payload["execution_id"],payload["expected_revision"]) != true { return {"ok":false,"code":"cancel_conflict","message":"Payment cancellation was not committed; inspect current status","details":{}} }
+                return {"ok":true,"result":summary(store["inspect"](scope,payload["execution_id"]))}
             }
             if type(payload["expires_in_ms"]) != "int" { return {"ok":false,"code":"invalid_request","message":"Invalid purchase","details":{}} }
             expiry := now + payload["expires_in_ms"]
@@ -66,6 +76,8 @@ export gateway_call := func(store, request, transport_context, config) {
             if admitted["ok"] == false { return {"ok":false,"code":admitted["code"],"message":"Purchase request conflicts or is unavailable","details":{}} }
             return {"ok":true,"result":summary(store["inspect"](scope,admitted["execution_id"]))}
         }
+        mut surface := "agent"
+        if operation == "cancel" || operation == "inspect_revision" { surface = "sdk" }
         mut registry := create_ability_registry()
         registered := register_ability_definition(registry,definition)
         assert(registered["ok"],"definition")
@@ -73,12 +85,18 @@ export gateway_call := func(store, request, transport_context, config) {
         bound := register_ability_binding(registry,{"schema":"kujo.ability.binding/v1","ability_id":definition["id"],"ability_version":definition["version"],"handler_id":"kujo.payments.gateway."+operation,"handler_version":"1.0.0","handler":handler,"result_mode":"kujo.result/v1","timeout_ms":2000,"metadata":{}})
         assert(bound["ok"],"binding")
         registry = bound["registry"]
-        exposed := register_ability_exposure(registry,{"schema":"kujo.ability.exposure/v1","ability_id":definition["id"],"ability_version":definition["version"],"surface":"agent","name":operation,"enabled":true,"public":false,"metadata":{}})
+        exposed := register_ability_exposure(registry,{"schema":"kujo.ability.exposure/v1","ability_id":definition["id"],"ability_version":definition["version"],"surface":surface,"name":operation,"enabled":true,"public":false,"metadata":{}})
         assert(exposed["ok"],"exposure")
         registry = exposed["registry"]
-        invocation := {"schema":"kujo.ability.invocation/v1","invocation_id":invocation_id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":"","input":input,"principal":principal,"request_id":invocation_id,"trace_id":invocation_id,"surface":"agent","idempotency_key":key,"approval":{},"metadata":{}}
-        begin := func(key_digest, digest, inv) { return store["begin_ability"](inv["ability_id"],key_digest,digest,inv["invocation_id"]) }
-        complete := func(key_digest, digest, receipt) { return store["complete_ability"](receipt["ability_id"],key_digest,digest,receipt) }
+        invocation := {"schema":"kujo.ability.invocation/v1","invocation_id":invocation_id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":"","input":input,"principal":principal,"request_id":invocation_id,"trace_id":invocation_id,"surface":surface,"idempotency_key":key,"approval":{},"metadata":{}}
+        // New cancellation journals add an application binding to Ability's
+        // supplied identity. Existing operations and receipt hashes stay intact.
+        stored_identity := func(key_digest,digest) {
+            if operation != "cancel" { return {"key":key_digest,"request":digest} }
+            return {"key":sha256(frame(["kujo.payment-cancel-key/v1",scope,key_digest])),"request":sha256(frame(["kujo.payment-cancel-store-binding/v1",scope,digest,input["execution_id"],to_string(input["expected_revision"])]))}
+        }
+        begin := func(key_digest, digest, inv) { bound_identity := stored_identity(key_digest,digest);return store["begin_ability"](inv["ability_id"],bound_identity["key"],bound_identity["request"],inv["invocation_id"]) }
+        complete := func(key_digest, digest, receipt) { bound_identity := stored_identity(key_digest,digest);return store["complete_ability"](receipt["ability_id"],bound_identity["key"],bound_identity["request"],receipt) }
         result := execute_ability(registry,invocation,{"clock_ms":clock,"policy":config["policy"],"audit":config["audit"],"begin_idempotency":begin,"complete_idempotency":complete})
         // A replayed Ability receipt is not proof that its purchase terms match.
         // Verify the persisted payment-specific field binding before acknowledging
@@ -89,6 +107,13 @@ export gateway_call := func(store, request, transport_context, config) {
             if validate_ability_value(candidate,definition["output_schema"],"output")["ok"] {
                 authoritative := store["inspect"](scope,candidate["execution_id"])
                 if authoritative == null || authoritative["request_digest"] != request_digest(input) { return {"ok":false,"code":"idempotency_conflict"} }
+            }
+        }
+        if operation == "cancel" && has_key(result,"receipt") {
+            candidate := result["receipt"]["result"]
+            if validate_ability_value(candidate,definition["output_schema"],"output")["ok"] {
+                authoritative := store["inspect"](scope,input["execution_id"])
+                if candidate["execution_id"] != input["execution_id"] || authoritative == null || authoritative["state"] != "closed" || authoritative["closed_reason"] != "cancelled" { return {"ok":false,"code":"cancellation_unconfirmed"} }
             }
         }
         // Only a compact domain summary crosses the model-facing boundary.

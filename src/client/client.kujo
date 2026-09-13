@@ -5,3 +5,10 @@ export purchase_request := func(transport, intent_request, idempotency_key) {
 export purchase_status := func(transport, execution_id) {
     return transport({"operation":"inspect","input":{"execution_id":execution_id}})
 }
+// Optional programmatic controls. Default agent projections remain request/status.
+export purchase_inspect_revision := func(transport,execution_id) {
+    return transport({"operation":"inspect_revision","input":{"execution_id":execution_id}})
+}
+export purchase_cancel := func(transport,execution_id,expected_revision,idempotency_key) {
+    return transport({"operation":"cancel","input":{"execution_id":execution_id,"expected_revision":expected_revision},"idempotency_key":idempotency_key})
+}

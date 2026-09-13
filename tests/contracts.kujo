@@ -1,5 +1,5 @@
 from ability import validate_ability_definition, validate_ability_value
-for name in ["request","inspect","cancel","execute","reconcile"] {
+for name in ["request","inspect","inspect_revision","cancel","execute","reconcile"] {
     definition := parse_json(read_file("contracts/abilities/" + name + ".json"))
     assert(validate_ability_definition(definition)["ok"],"ability_definition")
 }

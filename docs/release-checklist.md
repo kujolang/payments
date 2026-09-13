@@ -26,9 +26,9 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Reviewed private operator sink reusing current payer/Ability binding and pause checks, with either consent order and 19 synthetic integration cases; production renderer authentication remains deployment-owned.
 
-## Required before real-money release
+- [x] Conditional programmatic cancellation, explicit inspect v2 revisions, bound replay and eight real cancellation-versus-claim races through the authenticated API; legacy status and default two-tool projections preserved. See [cancellation](cancellation.md) for scope.
 
-- [ ] Complete the canonical programmatic cancellation surface and its revision contract. Storage cancellation and an Ability declaration exist; the gateway still exposes only request/inspect. Prove cancellation-versus-claim behavior through the supported interface.
+## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.
 - [ ] Verify stable payer/provider-account identity against current supported provider behavior.

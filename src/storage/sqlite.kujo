@@ -200,7 +200,7 @@ export claim := func(db, scope, execution_id, revision, approval_id, binding_dig
     return won
 }
 export cancel := func(db, scope, execution_id, revision) {
-    rows := db_execute(db,"UPDATE executions SET state='closed',closed_reason='cancelled',revision=revision+1 WHERE scope=? AND execution_id=? AND revision=? AND state IN ('awaiting_authorization','ready') AND claimed=0",[scope,execution_id,revision])
+    rows := db_execute(db,"UPDATE executions SET state='closed',closed_reason='cancelled',revision=revision+1 WHERE scope=? AND execution_id=? AND revision=? AND state IN ('awaiting_authorization','ready') AND claimed=0 AND NOT EXISTS(SELECT 1 FROM restore_quarantine)",[scope,execution_id,revision])
     return rows == 1
 }
 export recover := func(db) {
