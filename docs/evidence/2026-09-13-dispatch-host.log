@@ -1,0 +1,24 @@
+2026-09-13T01:20:23.4640717Z Pinned Kennel installed exact Ability, Fence, Agents SDK and Dispatch locks without contract changes
+2026-09-13T01:20:23.5256430Z domain validation passed
+2026-09-13T01:20:23.6222508Z Cross-language binding vectors passed: 67
+2026-09-13T01:20:23.6618161Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T01:20:24.2553133Z Kujo SQLite: 8-process race and SIGKILL before/after dispatch passed; no resumed dispatch
+2026-09-13T01:20:24.9099834Z Schema migration: eight-process initialization, four-process v1 upgrade, exact financial preservation, quarantine retention, schema drift denial, transaction fault and SIGKILL rollback passed
+2026-09-13T01:20:24.9523808Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T01:20:24.9961685Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T01:20:25.1167355Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T01:20:26.3728964Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T01:20:26.7533034Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T01:20:27.7290252Z HTTP service and pinned Agents SDK projection: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
+2026-09-13T01:20:30.7071326Z Dispatch: persisted pause, separate-process pending/failed/success wakeups, fresh status, no intake replay and artifact suppression passed
+2026-09-13T01:20:30.7975093Z Provisioning: private permissions, token suppression and overwrite refusal passed
+2026-09-13T01:20:33.4384298Z Architecture: 25 files; Fence passed; 11 forbidden edges and 3 coverage/external mutations rejected
+2026-09-13T01:20:33.9568615Z Operator: scope, review binding, changed definition, expiry, durable separate-process grant, replay denial and normalized errors passed
+2026-09-13T01:20:34.2675280Z Execution control: persistent pause, stale resume denial, transactional audit rollback, concurrent claim denial, at-most-one resumed claim and paused recovery passed
+2026-09-13T01:20:34.7972752Z Recovery snapshot: committed WAL, stale pre-claim denial, permanent quarantine, resume/bypass denial, post-claim reconciliation, bounds, permissions and future-schema refusal passed
+2026-09-13T01:20:36.8458793Z Bounded worker: asynchronous operator grant, native authorization dedupe, four-process dispatch race, post-charge reconciliation and terminal replay passed
+2026-09-13T01:20:36.9270673Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T01:20:37.2126407Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T01:20:37.3789620Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T01:20:38.0817376Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T01:20:38.8665403Z Native merchant HTTP: immutable request/body binding, private credential, duplicate-header/redirect/size/deadline denial and sanitized output passed

@@ -1,0 +1,20 @@
+{
+  "source_commit": "81ae7b4ce97946b146b7a4708cb56904a4984310",
+  "run_id": 34730274166,
+  "url": "https://github.com/kujolang/payments/actions/runs/34730274166",
+  "upstream_dispatch_commit": "9eb16c72316744d8a691d9ef5ec5be4f12018408",
+  "upstream_dispatch_run_id": 34730114265,
+  "jobs": {
+    "host": {
+      "id": 103651656397,
+      "conclusion": "success",
+      "log_sha256": "e08b84039a4f17d92f16dd0298d9b1468e070a777ac9d9b0f41509248eb675fd"
+    },
+    "containment": {
+      "id": 103651656607,
+      "conclusion": "success",
+      "log_sha256": "ba04a7ab83d4fb86823de122beb915123d6936bbf342bfe803a23a1f2990263a"
+    }
+  },
+  "scope": "Actual pinned Dispatch VM/native client persistence and separate-process wakeups against a synthetic payment status service, full synthetic host suite, current-image components and containment. No Dispatch runtime change, financial approval coupling, live provider or all-sink isolation claim."
+}

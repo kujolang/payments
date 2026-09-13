@@ -1,0 +1,14 @@
+2026-09-13T01:20:28.4471353Z Pinned Kennel installed exact Ability, Fence, Agents SDK and Dispatch locks without contract changes
+2026-09-13T01:20:35.4780663Z domain validation passed
+2026-09-13T01:20:35.7416346Z Cross-language binding vectors passed: 67
+2026-09-13T01:20:36.0792543Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T01:20:36.6604312Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T01:20:36.8062072Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T01:20:37.1055149Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T01:20:37.9330970Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T01:20:38.4206285Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T01:20:38.8484006Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T01:20:39.0626103Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T01:20:39.4985396Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T01:20:40.1322176Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T01:20:41.3935421Z OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works
