@@ -1,0 +1,7 @@
+[package]
+name = "payments-dispatch-example"
+version = "0.1.0"
+
+[dependencies.dispatch]
+source = "github:kujolang/dispatch"
+commit = "9eb16c72316744d8a691d9ef5ec5be4f12018408"

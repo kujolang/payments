@@ -1,0 +1,43 @@
+// Trusted host entrypoint: a wakeup only triggers a fresh status read. It cannot
+// approve a payment. Provider execution happens in the separate Payments worker.
+from payments_http import http_transport
+from payments_client import purchase_request, purchase_status
+from workflow import payment_workflow
+from src.core.state import create_run_state, load_run_state
+from src.core.runner import run_workflow
+
+func run() {
+    definition := parse_json(read_file("contracts/abilities/request.json"))
+    transport := http_transport(env("PAYMENTS_CLIENT_ENDPOINT"),env("PAYMENTS_CLIENT_TOKEN"),definition["output_schema"],env("PAYMENTS_LOCAL_FIXTURE") == "true")
+    inspect := func(id) { return purchase_status(transport,id) }
+    applied := payment_workflow(inspect,definition["output_schema"])
+    output_root := env("PAYMENTS_DISPATCH_OUTPUT")
+    mut state := {}
+    run_id := env("PAYMENTS_DISPATCH_RUN_ID")
+    if run_id == "" {
+        input := parse_json(env("PAYMENTS_PURCHASE_JSON"))
+        assert(json_schema_validate(input,definition["input_schema"])["valid"],"invalid_purchase")
+        key := sha256(to_json(["dispatch-example-v1",input["purchase_ref"]]))
+        requested := purchase_request(transport,input,key)
+        assert(requested["ok"],"payment_request_failed")
+        // No payment input, token, approval or credential is persisted in workflow state.
+        state = create_run_state(applied["workflow"],{"execution_id":requested["result"]["execution_id"]},output_root,{"interactive":false,"auto_approve":false})
+    } else {
+        loaded := load_run_state(output_root,run_id)
+        assert(loaded["ok"],"workflow_load_failed")
+        state = loaded["run_state"]
+        assert(state["workflow_id"] == "payments-observer-v1","workflow_identity")
+    }
+    current := inspect(state["input"]["execution_id"])
+    assert(current["ok"] && current["result"]["execution_id"] == state["input"]["execution_id"],"payment_status_unavailable")
+    terminal := current["result"]["status"] == "succeeded" || current["result"]["status"] == "closed"
+    // This flag releases only the Dispatch continuation checkpoint after a fresh
+    // terminal observation. It never constructs or forwards financial approval.
+    result := run_workflow(applied["workflow"],state,applied["tool_registry"],{"interactive":false,"auto_approve":terminal,"command_name":"payments-observer"})
+    assert(result["ok"],"workflow_failed")
+    return {"ok":true,"run_id":result["run_state"]["run_id"],"workflow_status":result["run_state"]["status"],"payment":current["result"]}
+}
+mut result := {"ok":false,"code":"payment_workflow_unavailable"}
+try { result = run() } except error { }
+print(to_json(result))
+if result["ok"] == false { exit(1) }

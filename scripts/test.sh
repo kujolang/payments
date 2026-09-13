@@ -17,6 +17,7 @@ PAYMENTS_TEST_DB="$store_dir/observations.db" "$KUJO_BIN" run tests/observations
 PAYMENTS_TEST_DB="$store_dir/execution.db" "$KUJO_BIN" run tests/execution.kujo
 PAYMENTS_TEST_DB="$store_dir/gateway.db" "$KUJO_BIN" run tests/gateway.kujo
 python3 tests/network/http_test.py
+python3 tests/network/dispatch_test.py
 python3 tests/network/provision_test.py
 python3 scripts/architecture_test.py
 python3 tests/network/operator_test.py

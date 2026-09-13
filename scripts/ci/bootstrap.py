@@ -25,7 +25,7 @@ with tempfile.TemporaryDirectory(prefix='payments-ci-kennel-') as directory:
          'https://github.com/kujolang/kennel.git', str(source)])
     run(['git', 'checkout', '--detach', PIN], cwd=source)
     assert run(['git', 'rev-parse', 'HEAD'], cwd=source, capture=True).stdout.strip() == PIN
-    for project in [ROOT, ROOT / 'tools', ROOT / 'examples/agents-sdk']:
+    for project in [ROOT, ROOT / 'tools', ROOT / 'examples/agents-sdk', ROOT / 'examples/dispatch']:
         files = [project / 'kennel.toml', project / 'kennel.lock']
         before = [p.read_bytes() for p in files]
         locked = read_toml(files[1])
@@ -52,4 +52,4 @@ with tempfile.TemporaryDirectory(prefix='payments-ci-kennel-') as directory:
                         result[rel.as_posix()] = path.read_bytes()
                 return result
             assert tree(installed) == tree(expected), 'Installed dependency differs from exact source'
-print('Pinned Kennel installed exact Ability, Fence and Agents SDK locks without contract changes')
+print('Pinned Kennel installed exact Ability, Fence, Agents SDK and Dispatch locks without contract changes')

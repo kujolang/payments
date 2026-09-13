@@ -110,3 +110,11 @@ Actual HTTP/SDK tests cover cross-run replay, all changed request fields, hidden
 Migration validation now occurs under the write transaction, including a deterministic stale-preflight regression. WAL configuration retries only SQLite lock contention within a bounded setup deadline; no financial retry was introduced. The full local synthetic suite completed through native merchant HTTP. Linux verification for this milestone is recorded separately after CI completes. Remaining provider, deployment, operations, integration and release gates above remain open.
 
 Verification: both Linux jobs passed at `ea7f8ca`, [run 34729823675](https://github.com/kujolang/payments/actions/runs/34729823675). Inspected logs include the new flat approval checks, SDK HTTP conformance and migration regressions. Evidence: `docs/evidence/sdk-ci.json`. The current release checklist is `docs/release-checklist.md`.
+
+## Dispatch wait/resume composition milestone
+
+`examples/dispatch` requests intake through the public client and persists only an execution ID in actual Dispatch workflow state. Separate-process wakeups re-read authoritative status: nonterminal states remain paused, unavailable/mismatched status cannot release the checkpoint, and succeeded/closed outcomes allow observation to finish. A closed payment is never labeled succeeded. Dispatch continuation approval is not financial authorization; no execute/approve payment API is exposed. The host owns wakeup scheduling.
+
+The example pins Dispatch `9eb16c72316744d8a691d9ef5ec5be4f12018408`; its sole upstream change corrects the unchanged AI SDK SHA from a named `ref` to a `commit` declaration. The original manifest failed clean Kennel resolution. Corrected installation and independent source comparisons pass for all four development projects. Dispatch's own CI passed at the corrected commit (run 34730114265). Its runtime was not changed.
+
+The conformance test uses the real Dispatch VM/native client and a synthetic HTTP status service. It exercises durable pause/restart, early/error/wrong-execution wakeups, terminal outcomes, no repeated intake and artifact suppression. It complements, rather than replaces, the actual Payments gateway tests. All-sink deployment security, MCP/Workcell composition and the other release gates remain open. Linux Payments verification is recorded after CI completes.

@@ -1,0 +1,31 @@
+// Scheduling and waiting belong to Dispatch. This module has no payment executor.
+from src.core.step import create_step
+from src.workflows.workflow import create_workflow
+from src.tools.tool import create_tool
+from src.core.plugins import create_plugin, apply_plugin_to_runtime
+
+export payment_workflow := func(inspect_payment, summary_schema) {
+    workflow := create_workflow({
+        "id":"payments-observer-v1","name":"Observe authorized payment","description":"Wait for authoritative payment completion; never authorize or execute money movement.",
+        "input_schema":{"type":"dict"},"agents":{},"tools":[],
+        "steps":[
+            create_step("await_payment","Await external payment outcome","approval",{"input_from":["input"],"output_key":"continuation","approval_gate":{"reason":"Workflow continuation only; financial authorization remains in Payments.","summary":"Wait for authoritative payment status."}}),
+            create_step("inspect_payment","Read authoritative payment outcome","tool",{"tool_name":"payment_status","input_from":["input"],"output_key":"final_output"})
+        ],
+        "memory_config":{},"default_retry_policy":{"max_attempts":1,"base_delay_ms":0,"max_delay_ms":0,"strategy":"none","retry_on_codes":[]},
+        "approval_config":{"auto_approve":false},"output_schema":{"type":"dict"}
+    })
+    handler := func(payload,context) {
+        try {
+            result := inspect_payment(payload["input"]["execution_id"])
+            if result["ok"] == true && json_schema_validate(result["result"],summary_schema)["valid"] {
+                value := result["result"]
+                if value["execution_id"] == payload["input"]["execution_id"] && (value["status"] == "succeeded" || value["status"] == "closed") { return {"ok":true,"data":value} }
+            }
+        } except error { }
+        return {"ok":false,"error":{"code":"payment_status_unavailable","message":"Inspect the existing payment before continuing.","retryable":false}}
+    }
+    tool := create_tool("payment_status","Read compact authoritative payment status",{"type":"dict"},{"type":"dict"},handler,func(value) { return value })
+    plugin := create_plugin("payments-observer-v1",{},{},[tool])
+    return apply_plugin_to_runtime(workflow,{},plugin)
+}
