@@ -58,7 +58,7 @@ The network service accepts and tracks intent and provides explicitly scoped con
 | Request service | `scripts/provision.sh`, `src/executor/gateway.kujo` | Authenticated caller/tenant provisioning, private storage and protected transport. |
 | Human financial approval | `scripts/operator.sh` | Authenticate the operator through the OS/service boundary and privately review the exact snapshot. |
 | Privileged lifecycle step | `src/application/worker.kujo` (`worker_step`) | Install trusted provider/confirmation callbacks, bound each process and schedule explicit steps outside the agent runtime. There is no generic live-worker launcher. |
-| Link credential lifecycle | `src/providers/link/enrollment.kujo`, `credentials.kujo`, `revocation.kujo` | Supported client provisioning, verified funding-authority linkage, private delivery and guarded credential publication. |
+| Link credential lifecycle | `src/providers/link/enrollment.kujo`, `credentials.kujo`, `oauth.kujo` | Supported client provisioning, verified funding-authority linkage, private delivery and guarded credential publication. |
 | Financial confirmation | Installed `confirmation.verify(snapshot, observation)` | Correlate authenticated merchant/provider evidence with the exact account, payee, route and charge; token issuance or HTTP success is insufficient. |
 | Incident handling | `scripts/control.sh`, conditional cancellation and reconciliation | Pause new claims; explicitly close unclaimed work or observe claimed work. Retain all private journals; recovery copies cannot resume spending. |
 
