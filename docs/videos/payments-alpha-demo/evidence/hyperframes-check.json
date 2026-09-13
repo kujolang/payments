@@ -1,0 +1,119 @@
+{
+  "ok": true,
+  "strict": false,
+  "lint": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 1,
+    "infoCount": 0,
+    "findings": [
+      {
+        "code": "timeline_track_too_dense",
+        "severity": "warning",
+        "message": "Track 1 has 5 timed elements in this HTML file. Smaller sub-compositions keep timelines easier to read, iterate on, and diff.",
+        "selector": "[data-composition-id]",
+        "dataAttributes": {},
+        "sourceFile": "./index.html",
+        "bbox": {
+          "x": 0,
+          "y": 0,
+          "width": 0,
+          "height": 0
+        },
+        "time": 0,
+        "fixHint": "Move coherent scene groups into separate .html files under compositions/ and mount them from the parent with data-composition-src so the timeline stays easier to inspect, revise, and validate."
+      }
+    ],
+    "filesScanned": 1
+  },
+  "runtime": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": []
+  },
+  "layout": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "duration": 20,
+    "samples": [
+      0,
+      1.5,
+      2.967,
+      3,
+      3.033,
+      5,
+      6.967,
+      7,
+      7.033,
+      9.5,
+      11.967,
+      12,
+      12.033,
+      14.5,
+      16.967,
+      17,
+      17.033,
+      18.5,
+      19.967
+    ],
+    "transitionSamples": [],
+    "transitionSamplesDropped": 0,
+    "tolerance": 2,
+    "totalIssueCount": 0,
+    "truncated": false
+  },
+  "motion": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": false,
+    "samples": 0
+  },
+  "contrast": {
+    "ok": true,
+    "errorCount": 0,
+    "warningCount": 0,
+    "infoCount": 0,
+    "findings": [],
+    "enabled": true,
+    "samples": [
+      0,
+      3.033,
+      9.5,
+      14.5,
+      19.967
+    ],
+    "checked": 51,
+    "passed": 51
+  },
+  "snapshots": {
+    "enabled": true,
+    "files": [
+      "snapshots/frame-00-at-0.0s.png",
+      "snapshots/frame-01-at-3.0s.png",
+      "snapshots/frame-02-at-9.5s.png",
+      "snapshots/frame-03-at-14.5s.png",
+      "snapshots/frame-04-at-20.0s.png"
+    ],
+    "times": [
+      0,
+      3.033,
+      9.5,
+      14.5,
+      19.967
+    ],
+    "findingFiles": []
+  },
+  "_meta": {
+    "version": "0.8.36",
+    "latestVersion": "0.8.36",
+    "updateAvailable": false
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "artifact": "kujo-payments-alpha-demo.mp4",
+  "sha256": "ce4cfabc21e572beef3ea777b050b48764ce27b3da37206632c8f1030171c025",
+  "bytes": 1077492,
+  "duration_seconds": 20,
+  "width": 1080,
+  "height": 1080,
+  "fps": 30,
+  "codec": "h264",
+  "pixel_format": "yuv420p",
+  "audio": "intentionally silent",
+  "hyperframes_version": "0.8.36",
+  "command": "npx --yes hyperframes@0.8.36 render --quality high --fps 30 --output kujo-payments-alpha-demo.mp4",
+  "source_commit": "e84f7b02e87ee5d24bbd1af30a55eb931b3908d9",
+  "qa": "passed with one reviewed structural advisory",
+  "published": false
+}
