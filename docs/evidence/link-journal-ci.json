@@ -1,0 +1,66 @@
+{
+  "source_commit": "b63b66d54a427d38809b98cbe05346540b81fd86",
+  "run_id": 34746396831,
+  "url": "https://github.com/kujolang/payments/actions/runs/34746396831",
+  "jobs": {
+    "containment": {
+      "id": 103695003320,
+      "conclusion": "success",
+      "log_sha256": "abd9f93745328cad7c00f1dbb37430742cfcb3723f916e6da09aab4d58e448c2"
+    },
+    "host": {
+      "id": 103695003397,
+      "conclusion": "success",
+      "log_sha256": "660afd30eb68a2d2448b68be0ac10eeabc9d1edcbbc7bef90d34100c33b893a2"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 72,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 58,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 239,
+    "status_ms": 60,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 58.835046000000034,
+      "median_ms": 57.706464499999925,
+      "min_ms": 56.69601899999998,
+      "p95_ms": 58.835046000000034,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 74.67443600000001,
+      "median_ms": 60.827860499999986,
+      "min_ms": 60.49135699999988,
+      "p95_ms": 74.67443600000001,
+      "samples": 8
+    }
+  },
+  "artifact": {
+    "id": 10314710807,
+    "archive_sha256": "ea0e332168c446020dfa898fd9c3af87dc9ea6091df107ad9561b598f88c28fe",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Frozen Link payment-journal admission and atomic complete factory initialization, 26 drift cases, legacy rows and concurrency; full host suite and 30-file OCI/Workcell containment. No complete financial-history, coordinated restore, production or live-provider acceptance claim."
+}
