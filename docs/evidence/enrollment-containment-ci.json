@@ -1,0 +1,34 @@
+{
+  "source_commit": "6cb75129b5c9fe7f512956e49da625d6e11d9f6e",
+  "run_id": 34744602713,
+  "url": "https://github.com/kujolang/payments/actions/runs/34744602713",
+  "jobs": {
+    "host": {
+      "id": 103690068782,
+      "conclusion": "success",
+      "log_sha256": "948755543280c372dc0aabd2074f39be0507824c55e377b7ba78b1252e5ae4e3"
+    },
+    "containment": {
+      "id": 103690068899,
+      "conclusion": "success",
+      "log_sha256": "0abe459659511fb49b1ea47556d5f38fcaab56aab13681fc41c4bcb61809c04b"
+    }
+  },
+  "artifact": {
+    "id": 10314045490,
+    "archive_sha256": "63273d65ce79cb459ec913fa106adaf61058dd0d4d8750d00d25546d821d5787",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Actual private pending device code, staged tokens and filtered enrollment operator payload; full synthetic host suite plus declared Docker OCI/Workcell isolation. Does not prove production deployment, provider account identity, live OAuth or the later controller diagnostic follow-up."
+}
