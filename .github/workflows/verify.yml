@@ -2,6 +2,8 @@ name: Synthetic verification
 on:
   push:
     branches: [main]
+    # Runtime suites do not read docs; evidence-only follow-ups need no rebuild.
+    paths-ignore: ['docs/**']
   pull_request:
   workflow_dispatch:
 permissions:
