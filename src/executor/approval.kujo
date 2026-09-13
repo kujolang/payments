@@ -4,25 +4,39 @@ from ability import approval_binding_digest
 from src.application.execution import execution_invocation, authorize_execution
 from src.domain.binding import principal_digest, snapshot_digest
 
-func current_review(store, payer, id, definition, now_ms) {
+func current_review(store, payer, id, definition, now_ms, allow_ready) {
     row := store["inspect"](principal_digest(payer),id)
-    if row == null || row["state"] != "awaiting_authorization" || row["snapshot_json"] == null || row["claimed"] != 0 { return {"ok":false,"code":"not_reviewable"} }
+    if row == null || (row["state"] != "awaiting_authorization" && (allow_ready == false || row["state"] != "ready")) || row["snapshot_json"] == null || row["claimed"] != 0 { return {"ok":false,"code":"not_reviewable"} }
     snapshot := parse_json(row["snapshot_json"])
     if snapshot["execution_id"] != id || snapshot["principal"] != payer || snapshot_digest(snapshot) != row["snapshot_digest"] || type(now_ms) != "int" || now_ms >= row["expires_at_ms"] { return {"ok":false,"code":"invalid_review"} }
     invocation := execution_invocation(row,payer,definition)
     return {"ok":true,"execution_id":id,"snapshot":snapshot,"binding_digest":approval_binding_digest(invocation),"expires_at_ms":row["expires_at_ms"]}
 }
 export review_payment := func(store, payer, id, definition, now_ms) {
-    try { return current_review(store,payer,id,definition,now_ms) }
+    try { return current_review(store,payer,id,definition,now_ms,false) }
     except e { return {"ok":false,"code":"review_failed"} }
+}
+// A provider consent step may follow a Kujo grant. Reading a ready, unclaimed
+// payment for private delivery does not mint or replenish that grant.
+export review_payment_delivery := func(store, payer, id, definition, now_ms) {
+    try { return current_review(store,payer,id,definition,now_ms,true) }
+    except e { return {"ok":false,"code":"review_failed"} }
+}
+export operator_authority_matches := func(authority,payer) {
+    try {
+        schema := parse_json(read_file("contracts/operator.schema.json"))["properties"]["authority"]
+        if json_schema_validate(authority,schema)["valid"] == false { return false }
+        return authority["payer"] == payer && authority["operator"]["tenant_id"] == payer["tenant_id"]
+    }
+    except e { return false }
 }
 export approve_reviewed_payment := func(store, payer, id, definition, authority, reviewed_digest, now_ms) {
     try {
         // This implementation grants a configured operator authority over one payer,
         // within the same tenant. Broader delegation belongs in host authorization.
-        if authority["payer"] != payer || authority["operator"]["tenant_id"] != payer["tenant_id"] || authority["issuer_ref"] == "" { return {"ok":false,"code":"operator_scope_denied"} }
+        if operator_authority_matches(authority,payer) == false { return {"ok":false,"code":"operator_scope_denied"} }
         if type(authority["ttl_ms"]) != "int" || authority["ttl_ms"] < 1 || authority["ttl_ms"] > 300000 { return {"ok":false,"code":"invalid_approval_window"} }
-        review := current_review(store,payer,id,definition,now_ms)
+        review := current_review(store,payer,id,definition,now_ms,false)
         if review["ok"] == false { return review }
         if type(reviewed_digest) != "string" || reviewed_digest != review["binding_digest"] { return {"ok":false,"code":"review_changed"} }
         mut expires := now_ms + authority["ttl_ms"]

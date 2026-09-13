@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
             state=docker('inspect',name,'--format','{{.State.Status}}').stdout.strip()
             assert state=='running',docker('logs',name).stdout+docker('logs',name).stderr
             time.sleep(.1)
-        docker('exec',name,'/bin/sh','-c','test -r /private/provider-secret && test -r /private/link-vault.db && test -r /private/link-approval-outbox.db && test -n "$PAYMENTS_PROVIDER_SECRET"')
+        docker('exec',name,'/bin/sh','-c','test -r /private/provider-secret && test -r /private/link-vault.db && test -r /private/link-approval-outbox.db && test -r /private/operator-approval.json && test -n "$PAYMENTS_PROVIDER_SECRET"')
         # Separate trusted harness reaches the service on the private Docker network.
         # Its scoped request token never enters the hostile workload.
         harness=docker('run','--rm','--network',name,'--read-only','--cap-drop=ALL','--security-opt=no-new-privileges','--user','65532:65532','--memory','256m','--pids-limit','64','--env','KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS=true','--env','PAYMENTS_SERVICE_URL=http://'+name+':8000','--env','PAYMENTS_HARNESS_TOKEN='+token,'kujo-payments-harness-probe:local',timeout=15)
@@ -74,7 +74,7 @@ with tempfile.TemporaryDirectory(prefix='payments-boundary-') as tmp:
         assert info['HostConfig']['ReadonlyRootfs'] is True
         assert info['Config']['User']=='65532:65532'
         assert all(m['Destination']!='/var/run/docker.sock' for m in info['Mounts'])
-        receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'private_credential_vault_positive_control':True,'private_approval_outbox_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
+        receipt={'ok':True,'runtime':json.loads((ROOT/'deployment/runtime.lock.json').read_text()),'gateway_image':docker('image','inspect','kujo-payments-gateway:local','--format','{{.Id}}').stdout.strip(),'agent_image':docker('image','inspect','kujo-payments-agent-probe:local','--format','{{.Id}}').stdout.strip(),'docker_server':docker('version','--format','{{.Server.Version}}').stdout.strip(),'profile':'linux-amd64 OCI; agent network none; no shared credentials/mounts/PID/engine sockets','private_canary_positive_control':True,'private_credential_vault_positive_control':True,'private_approval_outbox_positive_control':True,'private_reviewed_operator_sink_positive_control':True,'probes':json.loads(probe.stdout.strip()),'scope':'Synthetic credential canary and HTTP intake. No live provider or kernel-escape proof.'}
         if workcell_evidence:
             receipt['workcell']=workcell_evidence
             preserved=os.environ.get('PAYMENTS_WORKCELL_EVIDENCE')

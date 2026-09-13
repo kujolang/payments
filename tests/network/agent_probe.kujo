@@ -1,6 +1,6 @@
 // Hostile workload probes, deliberately using real syscalls in an isolated OCI runtime.
 mut failures := []
-for path in ["/private/link-approval-outbox.db","/private/link-approval-outbox.db-journal","/private/link-approval-outbox.db-wal","/private/link-approval-outbox.db-shm","/private/link-vault.db","/private/link-vault.db-journal","/private/link-vault.db-wal","/private/link-vault.db-shm","/private/provider-secret","/private/config.json","/private/state.db","/var/run/docker.sock","/run/docker.sock","/proc/1/root/private/provider-secret","/tmp/link-token","/home/executor/.config/link/config.json","/private/browser/Default/Cookies","/app/src/providers/link/provider.kujo"] {
+for path in ["/private/operator-approval.json","/private/operator-payments.db","/private/operator-payments.db-journal","/private/operator-payments.db-wal","/private/operator-payments.db-shm","/app/src/executor/operator_delivery.kujo","/private/link-approval-outbox.db","/private/link-approval-outbox.db-journal","/private/link-approval-outbox.db-wal","/private/link-approval-outbox.db-shm","/private/link-vault.db","/private/link-vault.db-journal","/private/link-vault.db-wal","/private/link-vault.db-shm","/private/provider-secret","/private/config.json","/private/state.db","/var/run/docker.sock","/run/docker.sock","/proc/1/root/private/provider-secret","/tmp/link-token","/home/executor/.config/link/config.json","/private/browser/Default/Cookies","/app/src/providers/link/provider.kujo"] {
     mut reachable := false
     try { read_file(path); reachable = true } except e { }
     if reachable { failures = push(failures,"unexpected_file_access") }
@@ -26,6 +26,6 @@ mut escaped := false
 try { read_file("/tmp/credential-link"); escaped = true } except e { }
 if escaped { failures = push(failures,"symlink_escape") }
 assert(len(failures) == 0,"containment_probe_failed")
-print(to_json({"ok":true,"file_probes":18,"process_environment_probes":2,"network_probes":4,"privileged_command_probe":true,"symlink_probe":true}))
+print(to_json({"ok":true,"file_probes":24,"process_environment_probes":2,"network_probes":4,"privileged_command_probe":true,"symlink_probe":true}))
 
 export probe_complete := true

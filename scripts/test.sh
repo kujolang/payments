@@ -27,6 +27,7 @@ python3 tests/network/workcell_process_test.py
 python3 tests/network/provision_test.py
 python3 scripts/architecture_test.py
 python3 tests/network/operator_test.py
+python3 tests/network/operator_delivery_test.py
 python3 tests/network/control_test.py
 python3 tests/network/recovery_test.py
 python3 tests/network/worker_test.py

@@ -1,0 +1,55 @@
+from src.storage.sqlite import open_store, intake, prepare, cancel, inspect, set_execution_control
+from src.storage.port import sqlite_port
+from src.domain.binding import principal_digest, snapshot_digest
+from src.executor.approval import review_payment, approve_reviewed_payment
+from src.executor.operator_delivery import reviewed_operator_sink
+from src.providers.link.authorization import open_link_authorizations, request_link_authorization
+from src.providers.link.approval_delivery import open_link_approval_outbox, stage_link_approval, deliver_link_approval
+
+v := parse_json(read_file("tests/fixtures/domain.json"));snapshot := v["snapshot"];payer := snapshot["principal"];scope := principal_digest(payer)
+root := env("PAYMENTS_OPERATOR_DELIVERY_ROOT");mode := env("PAYMENTS_OPERATOR_DELIVERY_MODE")
+db := open_store(root+"/payments.db");store := sqlite_port(db)
+assert(intake(db,scope,"key","digest","exec_1",v["intent"])["ok"],"intake")
+core_snapshot := parse_json(to_json(snapshot))
+if mode == "core_snapshot" { charge := core_snapshot["charge"];charge["minor"] = 5501;core_snapshot["charge"] = charge }
+assert(prepare(db,scope,"exec_1",0,core_snapshot,snapshot_digest(core_snapshot),1000),"prepare")
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+review := review_payment(store,payer,"exec_1",definition,1000)
+authority := {"payer":payer,"operator":{"type":"human","id":"operator","tenant_id":payer["tenant_id"]},"issuer_ref":"operator","ttl_ms":1000}
+if mode == "ready" || mode == "claimed" { grant := approve_reviewed_payment(store,payer,"exec_1",definition,authority,review["binding_digest"],1000);assert(grant["ok"],"grant") }
+if mode == "claimed" {
+    row := inspect(db,scope,"exec_1");approval := store["load_approval"](scope,"exec_1")
+    assert(store["claim"](scope,"exec_1",row["revision"],approval["approval_id"],review["binding_digest"],snapshot_digest(snapshot),"execute:exec_1",1000),"prior_claim")
+}
+if mode == "tenant" { operator := authority["operator"];operator["tenant_id"] = "other";authority["operator"] = operator }
+if mode == "malformed_operator" { operator := authority["operator"];operator["id"] = "";authority["operator"] = operator }
+if mode == "payer" { other := parse_json(to_json(payer));other["id"] = "other";authority["payer"] = other }
+if mode == "digest" { review["binding_digest"] = "wrong" }
+if mode == "definition" { definition["version"] = "2.0.0" }
+if mode == "definition_collision" { input_schema := definition["input_schema"];input_schema["additionalProperties"] = true;definition["input_schema"] = input_schema }
+if mode == "paused" { assert(set_execution_control(db,"paused",0,"admin",1000),"pause") }
+auth := db_connect("sqlite",root+"/auth.db");open_link_authorizations(auth)
+outbox := db_connect("sqlite",root+"/outbox.db");open_link_approval_outbox(outbox)
+api := func(method,path,body,deadline) {
+    if method == "GET" && mode == "cancel_during_fetch" { row := inspect(db,scope,"exec_1");assert(cancel(db,scope,"exec_1",row["revision"]),"cancel") }
+    if method == "GET" && mode == "pause_during_fetch" { assert(set_execution_control(db,"paused",0,"admin",1000),"pause") }
+    return {"ok":true,"native":{"id":"spend_operator","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"pending_approval","approval_url":"https://approve.example/SENTINEL_PRIVATE_URL","access_token":"SENTINEL_OAUTH"}}
+}
+request_link_authorization(auth,"operator",snapshot,"network_1","pm_fixture",true,api,10000)
+clock := func() { if mode == "expired" { return 2000 } return 1000 }
+render := func(payload,deadline) {
+    assert(deadline == 2000,"bounded_delivery")
+    write_file(root+"/private-operator.json",to_json(payload))
+    if mode == "cancel_during_render" { row := inspect(db,scope,"exec_1");assert(cancel(db,scope,"exec_1",row["revision"]),"cancel") }
+    if mode == "pause_during_render" { assert(set_execution_control(db,"paused",0,"admin",1000),"pause") }
+    if mode == "render_throw" { assert(false,"SENTINEL_RENDER_ERROR") }
+    if mode == "render_object" { return {"secret":"SENTINEL_RENDER_RETURN"} }
+    return true
+}
+mut delivery_id := "exec_1"
+if mode == "wrong_execution" { delivery_id = "exec_other" }
+sink := reviewed_operator_sink(store,authority,delivery_id,definition,review["binding_digest"],render,clock)
+staged := stage_link_approval(auth,outbox,"operator",snapshot,api,["https://approve.example"],clock,10000)
+mut result := {"ok":false}
+if staged["ok"] { result = deliver_link_approval(outbox,staged["delivery_ref"],snapshot,["https://approve.example"],sink,clock,10000) }
+print(to_json(result));db_close(db);db_close(auth);db_close(outbox)

@@ -1,0 +1,30 @@
+// Trusted executor composition. The complete payload and render callback are
+// private; neither this sink nor its configuration belongs in an agent runtime.
+from src.executor.approval import review_payment_delivery, operator_authority_matches
+from src.domain.binding import snapshot_digest
+
+func current_delivery(store,authority,id,definition,reviewed_digest,payload,now_ms,deadline_ms) {
+    if type(now_ms) != "int" || now_ms < 0 || type(deadline_ms) != "int" || now_ms >= deadline_ms { return false }
+    payer := authority["payer"]
+    if operator_authority_matches(authority,payer) == false || store["execution_enabled"]() != true { return false }
+    review := review_payment_delivery(store,payer,id,definition,now_ms)
+    if review["ok"] != true || type(reviewed_digest) != "string" || review["binding_digest"] != reviewed_digest { return false }
+    if payload["execution_id"] != id || payload["snapshot_digest"] != snapshot_digest(review["snapshot"]) || payload["expires_at_ms"] != review["expires_at_ms"] { return false }
+    return store["execution_enabled"]() == true
+}
+export reviewed_operator_sink := func(store,authority,id,definition,reviewed_digest,render,clock_ms) {
+    return func(payload,deadline_ms) {
+        try {
+            now := clock_ms()
+            if current_delivery(store,authority,id,definition,reviewed_digest,payload,now,deadline_ms) == false { return false }
+            mut bounded := deadline_ms
+            if payload["expires_at_ms"] < bounded { bounded = payload["expires_at_ms"] }
+            accepted := render(payload,bounded)
+            completed := clock_ms()
+            if accepted != true || type(completed) != "int" || completed < now { return false }
+            // A false result after render cannot retract an already-delivered
+            // message. Never automatically resend after an ambiguous sink result.
+            return current_delivery(store,authority,id,definition,reviewed_digest,payload,completed,bounded)
+        } except error { return false }
+    }
+}
