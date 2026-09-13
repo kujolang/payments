@@ -38,7 +38,7 @@ A registered confirmation rule provides `id`, `assurance` and `verify(snapshot, 
 
 ## Current limits
 
-The public client imports no provider or storage modules. This embedding API alone does not isolate a malicious runtime. Network transport, production identity/approval adapters, enforced egress, validated deployment profiles and Link acceptance remain unfinished. The fixture's fixed clock, channels, issuer and audit callback must never be used for real funds.
+The public client imports no provider or storage modules. This embedding API alone does not isolate a malicious runtime. Scoped HTTP transport, a local operator issuer and synthetic OCI/Workcell profiles exist; production identity/approval installation, provider egress, selected-deployment validation and Link acceptance remain unfinished. The fixture's fixed clock, channels, issuer and audit callback must never be used for real funds.
 
 ## Private reconciliation host
 

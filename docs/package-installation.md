@@ -1,6 +1,6 @@
 # Installed client package
 
-Payments remains experimental and has not passed the real-money release gates. There is no Payments registry release or production deployment implied by the packaging fixture. Choose a reviewed full commit in a project's Kennel dependency manifest and retain the generated lockfile. The package requires Kujo 1.4.0 or later and retains its exact Ability dependency pin.
+Payments remains experimental and has not passed the real-money release gates. There is no Payments registry release or production deployment implied by the packaging fixture. Choose a reviewed full commit in a project's Kennel dependency manifest and retain the generated lockfile. The manifest declares Kujo 1.4.0 as its minimum; the recorded verification uses pinned 1.4.0 binaries, not arbitrary later releases. Retain the exact Ability dependency pin and verify runtime upgrades before use.
 
 The supported installed import modules are flat Kujo modules:
 

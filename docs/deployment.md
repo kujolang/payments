@@ -51,12 +51,23 @@ This proves the recorded profile's synthetic checks, not resistance to kernel/hy
 
 ## Financial execution
 
-The network service currently accepts and tracks intent only. Its embedding executor API and fixture example exercise authorization/submission/reconciliation; the operator-facing worker/approval flow and Link live adapter are still under construction. Do not inject real payment credentials into this service merely because the synthetic containment probe passes.
+The network service accepts and tracks intent and provides explicitly scoped conditional cancellation. It exposes no payment execution or credential endpoint. The private operator issuer, bounded worker, Link adapter and credential/enrollment components are implemented and exercised with synthetic providers. A supported live installation connecting them to verified payment authority and authoritative merchant settlement is not yet demonstrated. Do not inject real payment credentials into this service merely because the synthetic containment probe passes.
+
+| Installed component | Existing entrypoint | Installation responsibility still requiring acceptance |
+| --- | --- | --- |
+| Request service | `scripts/provision.sh`, `src/executor/gateway.kujo` | Authenticated caller/tenant provisioning, private storage and protected transport. |
+| Human financial approval | `scripts/operator.sh` | Authenticate the operator through the OS/service boundary and privately review the exact snapshot. |
+| Privileged lifecycle step | `src/application/worker.kujo` (`worker_step`) | Install trusted provider/confirmation callbacks, bound each process and schedule explicit steps outside the agent runtime. There is no generic live-worker launcher. |
+| Link credential lifecycle | `src/providers/link/enrollment.kujo`, `credentials.kujo`, `revocation.kujo` | Supported client provisioning, verified funding-authority linkage, private delivery and guarded credential publication. |
+| Financial confirmation | Installed `confirmation.verify(snapshot, observation)` | Correlate authenticated merchant/provider evidence with the exact account, payee, route and charge; token issuance or HTTP success is insufficient. |
+| Incident handling | `scripts/control.sh`, conditional cancellation and reconciliation | Pause new claims; explicitly close unclaimed work or observe claimed work. Retain all private journals; recovery copies cannot resume spending. |
+
+This is an entrypoint map, not a complete deployment recipe. The provider client, merchant confirmation source and hosting environment must be selected before their acceptance tests can be implemented and run. Those inputs belong to trusted installation, never model arguments. See [authority binding](provider-authority.md), [trusted ports](ports.md), [interrupted execution](interrupted-execution.md) and the current [release checklist](release-checklist.md).
 
 The OCI test runner requires Docker Buildx and explicitly loads built images into the local engine before verification. A successful build-cache export alone is insufficient evidence that the tested local image contains current source.
 
 ## Clean Linux verification
 
-The [CI run at 8d44c4d](https://github.com/kujolang/payments/actions/runs/34727010312) passed both the synthetic host suite and current-image OCI checks, including the newer operator and Link modules. `docs/evidence/linux-ci.json` records source/runtime pins, job IDs and full-log hashes. This supersedes the earlier missing current-build coverage, not the limits of the containment threat model. The hosted runner image is recorded by GitHub but is not itself a hermetically pinned build environment. The application runtime and container base are pinned.
+The initial [CI run at 8d44c4d](https://github.com/kujolang/payments/actions/runs/34727010312) passed both the synthetic host suite and its current-image OCI checks. `docs/evidence/linux-ci.json` records that historical source/runtime scope. Later source-scoped verification is recorded in [implementation status](implementation-status.md) and `docs/evidence`; a historical green run does not verify a later checkout. None of these runs expands the containment threat model to an untested live installation. The hosted runner image is recorded by GitHub but is not itself a hermetically pinned build environment. The application runtime and container base are pinned.
 
 For a clean Linux checkout, run `python3 scripts/deployment/fetch_runtime.py`, export `KUJO_BIN` to the resulting absolute `deployment/.runtime/kujo` path, then run `python3 scripts/ci/bootstrap.py` and `bash scripts/test.sh`. Docker Buildx is additionally required for `bash scripts/deployment/test_oci.sh`. Bootstrap downloads pinned public development sources; it does not obtain payment credentials or perform a financial operation.

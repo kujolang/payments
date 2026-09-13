@@ -20,7 +20,7 @@ Installed consumers use `from payments import purchase_request, purchase_status`
 
 See [local fixture](examples/local-fixture/README.md) for a synthetic purchase through the gateway, provider authorization, host Ability approval, one-use submission and authoritative observation. Optional [programmatic cancellation](docs/cancellation.md) uses explicit revision inspection. Agent-facing operations are request and status; the executor and provider callbacks remain private to trusted host code.
 
-The injected gateway authentication callback is an embedding boundary. The [deployment guide](docs/deployment.md) documents the scoped-token HTTP service and tested OCI profile. Operator financial authorization, Link execution and remaining live-provider gates are still required before real payment credentials are used.
+The injected gateway authentication callback is an embedding boundary. The [deployment guide](docs/deployment.md) maps the implemented service, private operator, worker and Link components to their installation responsibilities. Supported provider provisioning, authoritative settlement verification and deployment acceptance remain required before real payment credentials are used; see the [release checklist](docs/release-checklist.md).
 
 [Architecture enforcement](docs/architecture-enforcement.md) documents the checked dependency graph and negative tests.
 
