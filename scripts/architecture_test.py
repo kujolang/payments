@@ -71,6 +71,7 @@ cases = [
     ('storage/sqlite.kujo', 'src.providers.fixture.provider'),
     ('identity/canonical.kujo', 'src.providers.fixture.provider'),
     ('identity/canonical.kujo', 'src.storage.sqlite'),
+    ('identity/canonical.kujo', 'src.executor.approval'),
 ]
 with tempfile.TemporaryDirectory(prefix='payments-fence-') as directory:
     temp = Path(directory)

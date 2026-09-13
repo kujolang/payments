@@ -1,6 +1,7 @@
 // Trusted local issuer. Never expose these functions as agent tools or HTTP routes.
 // Authentication is the deploying operator's OS boundary; configuration is not a login.
 from ability import approval_binding_digest
+from src.identity.canonical import ability_principal_compatible
 from src.application.execution import execution_invocation, authorize_execution
 from src.domain.binding import principal_digest, snapshot_digest
 
@@ -26,6 +27,7 @@ export operator_authority_matches := func(authority,payer) {
     try {
         schema := parse_json(read_file("contracts/operator.schema.json"))["properties"]["authority"]
         if json_schema_validate(authority,schema)["valid"] == false { return false }
+        if ability_principal_compatible(payer) == false || ability_principal_compatible(authority["operator"]) == false { return false }
         return authority["payer"] == payer && authority["operator"]["tenant_id"] == payer["tenant_id"]
     }
     except e { return false }

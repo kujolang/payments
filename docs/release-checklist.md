@@ -32,6 +32,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Optional SDK/MCP/Dispatch preserve validated incomplete observations without successful-request claims; 21 frontend recovery cases and full local regressions passed.
 
+- [x] Closed compatible principal profile, early service/approval rejection and 36 independent flat identity vectors through actual VM/interpreter request/cancel/replay paths; no stored-hash rewrite.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

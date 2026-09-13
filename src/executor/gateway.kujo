@@ -2,6 +2,7 @@
 from src.storage.sqlite import open_store
 from src.storage.port import sqlite_port
 from src.gateway.http import request_handler
+from src.identity.canonical import ability_principal_compatible
 
 config_path := env("PAYMENTS_SERVICE_CONFIG")
 assert(config_path != "","PAYMENTS_SERVICE_CONFIG is required")
@@ -12,6 +13,7 @@ assert(settings["bind"] == "127.0.0.1" || settings["bind"] == "0.0.0.0","service
 assert(len(settings["credentials"]) > 0 && len(settings["credentials"]) <= 128,"service_credentials")
 assert(len(keys(settings["currency_table"]["exponents"])) > 0,"currency_table_empty")
 for credential in settings["credentials"] {
+    assert(ability_principal_compatible(credential["principal"]),"credential_ability_identity")
     mut seen := []
     for op in credential["operations"] { assert(contains(seen,op) == false,"duplicate_operation");seen = push(seen,op) }
     assert(type(credential["verifier"]) == "string" && len(credential["verifier"]) == 64,"credential_verifier")

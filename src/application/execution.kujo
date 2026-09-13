@@ -4,7 +4,7 @@ from src.domain.binding import frame, intent_digest, snapshot_digest, principal_
 from src.domain.validation import valid_intent, valid_snapshot, valid_capabilities
 from src.domain.lifecycle import summary, observation_event
 from src.providers.contract import call_provider, valid_provider
-from src.identity.canonical import canonical_ability_matches
+from src.identity.canonical import canonical_ability_matches, ability_principal_compatible
 
 export principal_scope := func(principal) {
     return principal_digest(principal)
@@ -65,6 +65,7 @@ export request_provider_authorization := func(store, principal, execution_id, pr
 }
 
 export execution_invocation := func(row, principal, definition) {
+    assert(ability_principal_compatible(principal),"unsupported_principal")
     assert(canonical_ability_matches("execute",definition),"definition_identity_mismatch")
     id := "execute:" + row["execution_id"]
     return {"schema":"kujo.ability.invocation/v1","invocation_id":id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":ability_definition_digest(definition)["digest"],"input":{"execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"]},"principal":principal,"request_id":id,"trace_id":id,"surface":"sdk","idempotency_key":id,"approval":{},"metadata":{}}

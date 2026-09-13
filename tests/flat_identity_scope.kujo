@@ -1,0 +1,57 @@
+from ability import approval_binding_digest
+from src.identity.canonical import ability_principal_compatible
+from src.executor.approval import operator_authority_matches
+from src.application.execution import execution_invocation
+from src.domain.binding import principal_digest
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.gateway.operations import gateway_call
+
+vectors := parse_json(read_file(env("PAYMENTS_FLAT_IDENTITY_VECTORS")))
+db := open_store(env("PAYMENTS_TEST_DB"));definition := parse_json(read_file("contracts/abilities/execute.json"))
+clock := func() { return 1000 }
+policy := func(def,inv,exposure) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"identity-test","outcome":"allow","reason":"Synthetic identity check","requirements":[],"policy_id":"fixture","policy_version":"1.0.0"} }
+audit := func(phase,inv,payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"identity:"+phase} }
+for vector in vectors {
+    payer := vector["principal"]
+    assert(ability_principal_compatible(payer),"supported_profile")
+    assert(principal_digest(payer) == vector["scope"],"independent_scope")
+    invocation := execution_invocation(vector["row"],payer,definition)
+    assert(approval_binding_digest(invocation) == vector["approval_binding"],"independent_flat_approval")
+    store := sqlite_port(db);begin := store["begin_ability"]
+    // Capture the actual runtime/store boundary, not a copied private hash helper.
+    store["begin_ability"] = func(operation,key,digest,id) {
+        mut expected := vector["request_key_digest"]
+        if operation == "kujo.payments.intent.cancel" { expected = vector["cancel_key_digest"] }
+        if key != expected { print(to_json({"expected_key":expected,"actual_key":key,"case":vector["purchase_ref"]})) };assert(key == expected,"independent_runtime_key")
+        return begin(operation,key,digest,id)
+    }
+    authenticate := func(context) { return payer }
+    config := {"authenticate":authenticate,"clock_ms":clock,"policy":policy,"audit":audit,"namespace":"flat-identity","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json")),"cancel":parse_json(read_file("contracts/abilities/cancel.json"))}}
+    input := {"purchase_ref":vector["purchase_ref"],"payee_ref":"merchant","amount":{"mode":"exact","minor":100,"currency":"USD"},"purpose":"Identity conformance","payment_profile":"default","expires_in_ms":1000}
+    request := {"operation":"request","input":input,"idempotency_key":vector["key"]}
+    accepted := gateway_call(store,request,null,config)
+    if accepted["ok"] == false { print(to_json({"case":vector["purchase_ref"],"response":accepted})) };assert(accepted["ok"],"request_with_independent_key")
+    id := accepted["result"]["execution_id"]
+    assert(gateway_call(store,request,null,config)["result"] == accepted["result"],"exact_request_replay")
+    cancelled := gateway_call(store,{"operation":"cancel","input":{"execution_id":id,"expected_revision":0},"idempotency_key":vector["key"]},null,config)
+    assert(cancelled["ok"] && cancelled["result"]["status"] == "closed","cancel_with_independent_key")
+    rows := db_query(db,"SELECT * FROM ability_calls WHERE key_digest=?",[vector["request_key_digest"]])
+    assert(len(rows) == 1 && rows[0]["receipt_json"] != null,"request_history_retained")
+    receipt := parse_json(rows[0]["receipt_json"])
+    assert(receipt["schema"] == "kujo.ability.receipt/v1" && receipt["principal"] == payer,"legacy_receipt_scope")
+}
+// Closed Payment principal profiles reject nested claims and incompatible types.
+base := {"type":"user","id":"payer","tenant_id":"tenant"}
+for invalid in [null,{}, {"type":"user","id":"payer","tenant_id":"tenant","claims":{"role":"admin"}}, {"type":"TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT","id":"payer","tenant_id":"tenant"}, {"type":"user","id":"IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII","tenant_id":"tenant"}, {"type":"user","id":1,"tenant_id":"tenant"}, {"type":"user","id":"payer","tenant_id":"非ASCII"}] {
+    assert(ability_principal_compatible(invalid) == false,"unsupported_profile")
+    mut rejected := false
+    try { execution_invocation(vectors[0]["row"],invalid,definition) } except e { rejected = true }
+    assert(rejected,"unsupported_approval_input")
+    authority := {"payer":base,"operator":invalid,"issuer_ref":"test","ttl_ms":1000}
+    assert(operator_authority_matches(authority,base) == false,"unsupported_operator")
+}
+assert(len(db_query(db,"SELECT * FROM executions",[])) == len(vectors),"no_scope_alias")
+assert(len(db_query(db,"SELECT * FROM executions WHERE claimed!=0",[])) == 0,"no_financial_action")
+db_close(db)
+print("Flat identity conformance: " + to_string(len(vectors)) + " independent approval/scope/request/cancel-key vectors, actual runtime dispatch, replay and v1 receipt preservation passed")

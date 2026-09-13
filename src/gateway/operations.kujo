@@ -3,7 +3,7 @@ from ability import create_ability_registry, register_ability_definition, regist
 from src.domain.binding import frame, principal_digest
 from src.domain.validation import valid_intent
 from src.domain.lifecycle import summary
-from src.identity.canonical import canonical_ability_matches
+from src.identity.canonical import canonical_ability_matches, ability_principal_compatible
 
 func request_digest(input) {
     mut parts := ["kujo.payment-request-binding/v1",input["purchase_ref"],input["payee_ref"],input["amount"]["mode"],to_string(input["amount"]["minor"]),input["amount"]["currency"],input["purpose"],input["payment_profile"],to_string(input["expires_in_ms"])]
@@ -36,6 +36,7 @@ export gateway_call := func(store, request, transport_context, config) {
         authenticate := config["authenticate"]
         principal := authenticate(transport_context)
         if json_schema_validate(principal,config["intent_schema"]["properties"]["principal"])["valid"] == false { return {"ok":false,"code":"unauthenticated"} }
+        if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
         scope := principal_digest(principal)
         definition := config["definitions"][operation]
         if canonical_ability_matches(operation,definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }

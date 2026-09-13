@@ -54,4 +54,6 @@ can_depend_on = ["domain", "provider_contract"]
 
 [zones.executor]
 paths = ["src/executor/**"]
-can_depend_on = ["gateway", "application", "storage", "adapters", "domain", "ports", "provider_contract"]
+# Privileged startup/approval code may read the pure identity validators.
+# The identity zone still cannot reach executor, storage or provider code.
+can_depend_on = ["gateway", "application", "storage", "adapters", "domain", "ports", "provider_contract", "identity"]
