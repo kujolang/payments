@@ -1,0 +1,28 @@
+// Private native refresh only. Device enrollment and live client/account
+// verification are separate unfinished gates; no CLI client ID is copied.
+func form_token(value) {
+    assert(type(value) == "string" && len(value) > 0 && len(value) <= 8192 && regex_match(value,"^[A-Za-z0-9._~+/-]+={0,2}$"),"oauth_token_invalid")
+    return replace(replace(replace(value,"+","%2B"),"/","%2F"),"=","%3D")
+}
+export link_refresh_form := func(client_id,refresh_token) {
+    assert(type(client_id) == "string" && regex_match(client_id,"^[A-Za-z0-9_-]{1,128}$"),"oauth_client_invalid")
+    return "grant_type=refresh_token&client_id="+client_id+"&refresh_token="+form_token(refresh_token)
+}
+export link_oauth_refresh := func(clock_ms) {
+    return func(client_id,refresh_token,deadline_ms) {
+        try {
+            if type(client_id) != "string" || regex_match(client_id,"^[A-Za-z0-9_-]{1,128}$") == false || type(deadline_ms) != "int" || clock_ms()+5000 >= deadline_ms { return {"ok":false} }
+            body := link_refresh_form(client_id,refresh_token)
+            response := http_request("https://login.link.com/device/token",{"method":"POST","headers":{"Content-Type":"application/x-www-form-urlencoded"},"body":body,"timeout":5,"max_response_bytes":32768,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"})
+            match response {
+                case Ok(value): {
+                    if value["_status"] < 200 || value["_status"] >= 300 { return {"ok":false} }
+                    native := parse_json(value["_body"])
+                    if type(native) != "dict" { return {"ok":false} }
+                    return {"ok":true,"native":native}
+                }
+                case Err(error): { return {"ok":false} }
+            }
+        } except error { return {"ok":false} }
+    }
+}
