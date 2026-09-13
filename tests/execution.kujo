@@ -1,7 +1,7 @@
 from src.storage.port import sqlite_port
 from ability import approval_binding_digest
 from src.domain.binding import snapshot_digest
-from src.storage.sqlite import open_store, intake, inspect
+from src.storage.sqlite import open_store, intake, inspect, set_execution_control
 from src.providers.fixture.provider import fixture_provider
 from src.application.execution import principal_scope, request_provider_authorization, prepare_execution, execution_invocation, authorize_execution, execute_payment, reconcile_execution
 
@@ -16,7 +16,7 @@ clock := func() { return 1500 }
 policy := func(snapshot, invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"policy1","outcome":"allow","reason":"Fixture policy; separate approval still required.","requirements":["human"],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
 audit := func(phase, invocation, payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
 verify_issuer := func(issuer, approval, invocation) { return issuer == "fixture-issuer" && approval["nonce"] == "issued-nonce" }
-for behavior in ["success","throw_after","throw_before","pending","audit_failure","expire_after_claim","short_approval"] {
+for behavior in ["success","throw_after","throw_before","pending","audit_failure","expire_after_claim","short_approval","stop_race"] {
     db := open_store(env("PAYMENTS_TEST_DB")+"-"+behavior)
     processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-processor-"+behavior)
     provider := fixture_provider(processor,examples["snapshot"],examples["capabilities"],behavior)
@@ -55,6 +55,7 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
         return 1500
     }
     selected_audit := func(phase,invocation,payload) {
+        if behavior == "stop_race" && phase == "preflight" { assert(set_execution_control(db,"paused",0,"incident-admin",1500),"stop_after_preflight") }
         if behavior == "audit_failure" && phase == "completed" { return {"ok":false} }
         return audit(phase,invocation,payload)
     }
@@ -63,9 +64,15 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
     if behavior == "success" || behavior == "short_approval" { assert(result["result"]["status"] == "succeeded","paid") }
     if behavior == "pending" { assert(result["result"]["status"] == "executing","pending") }
     if behavior == "throw_before" || behavior == "throw_after" || behavior == "expire_after_claim" { assert(result["result"]["status"] == "reconciliation_required","ambiguous") }
+    if behavior == "stop_race" {
+        assert(result["ok"] == false && inspect(db,scope,"exec_1")["claimed"] == 0,"stop_race_no_claim")
+        assert(result["ability_result"]["code"] == "ability_approval_replayed","stop_race_rejected_receipt")
+        assert(db_query(db,"SELECT consumed FROM approvals",[])[0]["consumed"] == 0,"stop_race_unconsumed")
+        assert(set_execution_control(db,"active",1,"incident-admin",1500),"resume_after_race")
+    }
     repeated := execute_payment(sqlite_port(db),principal,"exec_1",approval,definition,provider,schemas,table,"US",{"clock_ms":clock,"policy":policy,"audit":audit},confirmation)
     count := db_query(processor,"SELECT count(*) AS n FROM fixture_charges",[])[0]["n"]
-    if behavior == "throw_before" || behavior == "expire_after_claim" { assert(count == 0,"no_charge") } else { assert(count == 1,"one_charge") }
+    if behavior == "throw_before" || behavior == "expire_after_claim" || behavior == "stop_race" { assert(count == 0,"no_charge") } else { assert(count == 1,"one_charge") }
     reconciled := reconcile_execution(sqlite_port(db),principal,"exec_1",provider,schemas["observation"],confirmation,1500)
     if behavior == "throw_after" || behavior == "pending" { assert(reconciled["result"]["status"] == "succeeded","reconciled") }
     assert(contains(to_json(result),"SENTINEL") == 0,"safe_error")

@@ -135,6 +135,7 @@ export execute_payment := func(store, principal, execution_id, approval, definit
     snapshot := parse_json(row["snapshot_json"])
     if provider["id"] != snapshot["provider"]["id"] || provider["version"] != snapshot["provider"]["adapter_version"] { return {"ok":false,"code":"provider_mismatch"} }
     if row["state"] != "ready" { return {"ok":false,"code":"not_ready"} }
+    if store["execution_enabled"]() != true { return {"ok":false,"code":"execution_paused"} }
     if store["issued_approval_matches"](scope,execution_id,approval) == false { return {"ok":false,"code":"untrusted_approval"} }
     invocation := execution_invocation(row,principal,definition)
     invocation["approval"] = approval

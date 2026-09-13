@@ -23,6 +23,15 @@ export open_store := func(path) {
     db_execute(db,"CREATE TABLE IF NOT EXISTS audit(event_id TEXT PRIMARY KEY,execution_id TEXT,phase TEXT NOT NULL)",[])
     db_execute(db,"CREATE TABLE IF NOT EXISTS issued_approvals(approval_id TEXT PRIMARY KEY REFERENCES approvals(approval_id),approval_json TEXT NOT NULL)",[])
     db_execute(db,"CREATE TABLE IF NOT EXISTS provider_authorizations(execution_id TEXT PRIMARY KEY REFERENCES executions(execution_id),started INTEGER NOT NULL CHECK(started=1))",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS execution_control(id INTEGER PRIMARY KEY CHECK(id=1),mode TEXT NOT NULL CHECK(mode IN ('active','paused')),revision INTEGER NOT NULL CHECK(revision>=0))",[])
+    db_execute(db,"INSERT OR IGNORE INTO execution_control VALUES(1,'active',0)",[])
+    db_execute(db,"CREATE TABLE IF NOT EXISTS execution_control_events(revision INTEGER PRIMARY KEY,mode TEXT NOT NULL,actor_ref TEXT NOT NULL,changed_at_ms INTEGER NOT NULL)",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS permanent_execution_control BEFORE DELETE ON execution_control BEGIN SELECT RAISE(ABORT,'permanent_execution_control'); END",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS stopped_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=0 AND NEW.claimed=1 AND NOT EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active') BEGIN SELECT RAISE(ABORT,'execution_paused'); END",[])
+    db_execute(db,"CREATE TRIGGER IF NOT EXISTS stopped_native_authorization BEFORE INSERT ON provider_authorizations WHEN NOT EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active') BEGIN SELECT RAISE(ABORT,'execution_paused'); END",[])
+    for event in ["UPDATE","DELETE"] {
+        db_execute(db,"CREATE TRIGGER IF NOT EXISTS permanent_control_events_"+event+" BEFORE "+event+" ON execution_control_events BEGIN SELECT RAISE(ABORT,'permanent_control_events'); END",[])
+    }
     return db
 }
 export inspect := func(db, scope, execution_id) {
@@ -82,7 +91,7 @@ export claim := func(db, scope, execution_id, revision, approval_id, binding_dig
     mut won := false
     try {
         db_execute(db,"BEGIN IMMEDIATE",[])
-        consumed := db_execute(db,"UPDATE approvals SET consumed=1 WHERE approval_id=? AND execution_id=? AND scope=? AND binding_digest=? AND snapshot_digest=? AND invocation_id=? AND expires_at_ms>? AND consumed=0",[approval_id,execution_id,scope,binding_digest,snapshot_digest,invocation_id,now_ms])
+        consumed := db_execute(db,"UPDATE approvals SET consumed=1 WHERE approval_id=? AND execution_id=? AND scope=? AND binding_digest=? AND snapshot_digest=? AND invocation_id=? AND expires_at_ms>? AND consumed=0 AND EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active')",[approval_id,execution_id,scope,binding_digest,snapshot_digest,invocation_id,now_ms])
         if consumed == 1 {
             rows := db_execute(db,"UPDATE executions SET state='executing',claimed=1,invocation_id=?,revision=revision+1 WHERE execution_id=? AND scope=? AND snapshot_digest=? AND state='ready' AND claimed=0 AND revision=? AND expires_at_ms>?",[invocation_id,execution_id,scope,snapshot_digest,revision,now_ms])
             if rows == 1 { db_execute(db,"COMMIT",[]); won = true }
@@ -196,7 +205,7 @@ export issued_approval_matches := func(db, scope, execution_id, approval) {
 }
 
 export begin_provider_authorization := func(db, scope, execution_id) {
-    rows := db_execute(db,"INSERT OR IGNORE INTO provider_authorizations SELECT execution_id,1 FROM executions WHERE execution_id=? AND scope=? AND state IN ('awaiting_authorization','ready') AND claimed=0 AND snapshot_json IS NOT NULL",[execution_id,scope])
+    rows := db_execute(db,"INSERT OR IGNORE INTO provider_authorizations SELECT execution_id,1 FROM executions WHERE execution_id=? AND scope=? AND state IN ('awaiting_authorization','ready') AND claimed=0 AND snapshot_json IS NOT NULL AND EXISTS(SELECT 1 FROM execution_control WHERE id=1 AND mode='active')",[execution_id,scope])
     return rows == 1
 }
 
@@ -204,4 +213,25 @@ export load_approval := func(db, scope, execution_id) {
     rows := db_query(db,"SELECT i.approval_json FROM issued_approvals i JOIN approvals a ON a.approval_id=i.approval_id JOIN executions e ON e.execution_id=a.execution_id AND e.scope=a.scope WHERE a.scope=? AND a.execution_id=? AND a.consumed=0 AND e.state='ready' AND e.claimed=0",[scope,execution_id])
     if len(rows) != 1 { return null }
     return parse_json(rows[0]["approval_json"])
+}
+
+// Privileged database-wide incident control. No agent-facing store port exports it.
+export inspect_execution_control := func(db) {
+    rows := db_query(db,"SELECT mode,revision FROM execution_control WHERE id=1",[])
+    assert(len(rows) == 1,"execution_control_missing")
+    return rows[0]
+}
+export set_execution_control := func(db, mode, revision, actor_ref, now_ms) {
+    if (mode != "active" && mode != "paused") || type(revision) != "int" || revision < 0 || type(now_ms) != "int" || now_ms < 0 || type(actor_ref) != "string" || regex_match(actor_ref,"^[A-Za-z0-9_.:-]{1,128}$") == false { return false }
+    mut ok := false
+    try {
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        changed := db_execute(db,"UPDATE execution_control SET mode=?,revision=revision+1 WHERE id=1 AND revision=?",[mode,revision])
+        if changed == 1 {
+            db_execute(db,"INSERT INTO execution_control_events VALUES(?,?,?,?)",[revision+1,mode,actor_ref,now_ms])
+            db_execute(db,"COMMIT",[])
+            ok = true
+        } else { db_execute(db,"ROLLBACK",[]) }
+    } except error { try { db_execute(db,"ROLLBACK",[]) } except rollback_error { } }
+    return ok
 }

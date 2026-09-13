@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "schema": {"const": "kujo.payment-control/v1"},
+    "database": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "actor_ref": {"type": "string", "pattern": "^[A-Za-z0-9_.:-]{1,128}$"}
+  },
+  "required": ["schema", "database", "actor_ref"],
+  "additionalProperties": false
+}

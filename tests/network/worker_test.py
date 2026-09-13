@@ -15,7 +15,7 @@ def run(script,env):
     assert p.returncode==0,(p.stdout,p.stderr)
     return json.loads(p.stdout)
 
-for scenario in ('crash_after_charge','concurrent'):
+for scenario in ('crash_after_charge','concurrent','incident_pause'):
     with tempfile.TemporaryDirectory(prefix='payments-worker-') as directory:
         root=Path(directory)
         v=json.loads((ROOT/'tests/fixtures/domain.json').read_text())
@@ -39,11 +39,28 @@ for scenario in ('crash_after_charge','concurrent'):
         review=run('src/executor/operator.kujo',operator)
         operator.update(PAYMENTS_OPERATOR_ACTION='approve',PAYMENTS_REVIEW_DIGEST=review['binding_digest'])
         assert run('src/executor/operator.kujo',operator)['status']=='ready'
+        if scenario=='incident_pause':
+            control=root/'control.json'
+            control.write_text(json.dumps({'schema':'kujo.payment-control/v1','database':str(database),'actor_ref':'admin'}))
+            command={**env,'PAYMENTS_CONTROL_CONFIG':str(control),'PAYMENTS_CONTROL_ACTION':'pause','PAYMENTS_CONTROL_REVISION':'0'}
+            assert run('src/executor/control.kujo',command)['control']['mode']=='paused'
+            deferred=run('tests/worker.kujo',env)
+            assert deferred=={'ok':False,'code':'execution_deferred'},deferred
+            with sqlite3.connect(database) as db:
+                assert db.execute('SELECT count(*) FROM ability_calls').fetchone()[0]==0
+                assert db.execute('SELECT consumed FROM approvals').fetchone()[0]==0
+            command.update(PAYMENTS_CONTROL_ACTION='resume',PAYMENTS_CONTROL_REVISION='1')
+            assert run('src/executor/control.kujo',command)['control']['mode']=='active'
         if scenario=='crash_after_charge':
             # Adapter exception after the independently committed charge, then a
             # fresh process observes it. SIGKILL coverage lives in concurrency_test.
             unknown=run('tests/worker.kujo',{**env,'PAYMENTS_FIXTURE_BEHAVIOR':'throw_after'})
             assert unknown['result']['status']=='reconciliation_required',unknown
+            control=root/'control.json'
+            control.write_text(json.dumps({'schema':'kujo.payment-control/v1','database':str(database),'actor_ref':'admin'}))
+            command={**env,'PAYMENTS_CONTROL_CONFIG':str(control),'PAYMENTS_CONTROL_ACTION':'pause','PAYMENTS_CONTROL_REVISION':'0'}
+            assert run('src/executor/control.kujo',command)['control']['mode']=='paused'
+            # The normal worker must reconcile an earlier charge while paused.
         else:
             with ThreadPoolExecutor(max_workers=4) as pool:
                 outputs=list(pool.map(lambda _:run('tests/worker.kujo',env),range(4)))

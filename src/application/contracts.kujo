@@ -1,7 +1,7 @@
 export valid_store := func(store) {
     if type(store) != "dict" || has_key(store,"schema") == 0 { return false }
     if store["schema"] != "kujo.payment-store/v1" { return false }
-    for method in ["inspect","intake","save_preparation","preparation_ref","grant","claim","record_observation","begin_ability","complete_ability","issued_approval_matches","begin_provider_authorization","new_permit","load_approval"] {
+    for method in ["execution_enabled","inspect","intake","save_preparation","preparation_ref","grant","claim","record_observation","begin_ability","complete_ability","issued_approval_matches","begin_provider_authorization","new_permit","load_approval"] {
         if has_key(store,method) == 0 { return false }
         if type(store[method]) != "function" { return false }
     }

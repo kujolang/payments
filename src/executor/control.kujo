@@ -1,0 +1,26 @@
+// Database-wide administrator entrypoint. OS identity/file access is the authority.
+// Never expose this module, its configuration or the database to a requesting agent.
+from src.storage.sqlite import open_store, inspect_execution_control, set_execution_control
+func control() {
+    settings := parse_json(read_file(env("PAYMENTS_CONTROL_CONFIG")))
+    if json_schema_validate(settings,parse_json(read_file("contracts/control.schema.json")))["valid"] == false { return {"ok":false,"code":"control_config_invalid"} }
+    action := env("PAYMENTS_CONTROL_ACTION")
+    if action != "inspect" && action != "pause" && action != "resume" { return {"ok":false,"code":"control_action_invalid"} }
+    db := open_store(settings["database"])
+    mut result := {"ok":false,"code":"control_conflict"}
+    if action == "inspect" { result = {"ok":true,"control":inspect_execution_control(db)} }
+    else {
+        raw := env("PAYMENTS_CONTROL_REVISION")
+        if regex_match(raw,"^(0|[1-9][0-9]{0,14})$") {
+            mut mode := "paused"
+            if action == "resume" { mode = "active" }
+            if set_execution_control(db,mode,to_int(raw),settings["actor_ref"],current_timestamp()) { result = {"ok":true,"control":inspect_execution_control(db)} }
+        } else { result = {"ok":false,"code":"control_revision_invalid"} }
+    }
+    db_close(db)
+    return result
+}
+mut result := {"ok":false,"code":"control_failed"}
+try { result = control() } except error { result = {"ok":false,"code":"control_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }

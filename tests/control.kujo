@@ -1,0 +1,48 @@
+from src.storage.sqlite import open_store, intake, prepare, grant, claim, inspect, recover, begin_provider_authorization, inspect_execution_control, set_execution_control
+from src.domain.binding import snapshot_digest
+
+db := open_store(env("PAYMENTS_TEST_DB"))
+mode := env("PAYMENTS_TEST_CONTROL")
+if mode == "setup" {
+    v := parse_json(read_file("tests/fixtures/domain.json"))
+    s := v["snapshot"]
+    d := snapshot_digest(s)
+    assert(intake(db,"scope","key","request","exec_control",v["intent"])["ok"],"intake")
+    assert(prepare(db,"scope","exec_control",0,s,d,1000),"prepare")
+    a := {"approval_id":"approval","binding_digest":"binding","nonce":"nonce","expires_at_ms":2000}
+    assert(grant(db,"scope","exec_control",1,a,d,"invocation","issuer",1000),"grant")
+    assert(inspect_execution_control(db) == {"mode":"active","revision":0},"initial_control")
+    // If audit persistence fails, the incident mode must not change silently.
+    db_execute(db,"CREATE TRIGGER fault_control BEFORE INSERT ON execution_control_events BEGIN SELECT RAISE(ABORT,'fixture'); END",[])
+    assert(set_execution_control(db,"paused",0,"operator",1000) == false,"event_failure")
+    assert(inspect_execution_control(db) == {"mode":"active","revision":0},"event_rollback")
+    db_execute(db,"DROP TRIGGER fault_control",[])
+    assert(set_execution_control(db,"paused",0,"operator",1000),"pause")
+    assert(set_execution_control(db,"active",0,"operator",1000) == false,"stale_resume")
+    assert(claim(db,"scope","exec_control",2,"approval","binding",d,"invocation",1000) == false,"paused_claim")
+    assert(db_query(db,"SELECT consumed FROM approvals",[])[0]["consumed"] == 0,"paused_grant_not_consumed")
+    assert(begin_provider_authorization(db,"scope","exec_control") == false,"paused_native_request")
+    mut bypass := false
+    try { db_execute(db,"UPDATE executions SET claimed=1,state='executing' WHERE execution_id='exec_control'",[]); bypass = true } except error { }
+    assert(bypass == false,"direct_claim_denied")
+    try { db_execute(db,"DELETE FROM execution_control",[]); bypass = true } except error { }
+    assert(bypass == false,"control_permanent")
+    try { db_execute(db,"DELETE FROM execution_control_events",[]); bypass = true } except error { }
+    assert(bypass == false,"control_evidence_permanent")
+    assert(inspect(db,"scope","exec_control")["state"] == "ready","inspect_while_paused")
+    print(to_json({"ok":true,"control":inspect_execution_control(db)}))
+} else {
+    if mode == "claim" {
+        row := inspect(db,"scope","exec_control")
+        won := claim(db,"scope","exec_control",row["revision"],"approval","binding",row["snapshot_digest"],"invocation",1000)
+        print(to_json({"ok":true,"won":won}))
+    } else {
+        assert(mode == "recover","test_action")
+        recover(db)
+        row := inspect(db,"scope","exec_control")
+        assert(row["state"] == "reconciliation_required" && row["claimed"] == 1,"paused_recovery")
+        assert(claim(db,"scope","exec_control",row["revision"],"approval","binding",row["snapshot_digest"],"invocation",1000) == false,"no_recovery_dispatch")
+        print(to_json({"ok":true,"status":row["state"]}))
+    }
+}
+db_close(db)
