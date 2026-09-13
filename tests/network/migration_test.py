@@ -109,6 +109,28 @@ with tempfile.TemporaryDirectory(prefix='payments-migration-') as directory:
     scratch=root/'instrumented';scratch.mkdir()
     shutil.copytree(ROOT/'src',scratch/'src');shutil.copytree(ROOT/'contracts',scratch/'contracts')
     module=scratch/'src/storage/sqlite.kujo'
+    # Deterministically let another upgrader commit after a stale preflight read.
+    race_source=(ROOT/'src/storage/sqlite.kujo').read_text()
+    prefix,body=race_source.split('export migrate_store :=',1)
+    body=body.replace('        version := schema_version(db)', '        version := schema_version(db)\n        write_file(env("PAYMENTS_TEST_MARKER"),"ready")\n        while file_exists(env("PAYMENTS_TEST_RELEASE")) == false { sleep(10) }',1)
+    module.write_text(prefix+'export migrate_store :='+body)
+    race_db=root/'preflight-race.db';legacy(race_db);race_env=environment(root,race_db)
+    race_marker=root/'preflight-marker';release=root/'preflight-release'
+    race_env.update(PAYMENTS_TEST_MARKER=str(race_marker),PAYMENTS_TEST_RELEASE=str(release))
+    waiting=subprocess.Popen([KUJO,'run','src/executor/migrate.kujo','--interpreter'],cwd=scratch,env=race_env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    try:
+        deadline=time.monotonic()+15
+        while not race_marker.exists():
+            assert waiting.poll() is None,waiting.communicate()
+            assert time.monotonic()<deadline
+            time.sleep(.02)
+        assert run('src/executor/migrate.kujo',race_env)['schema_version']==2
+        release.write_text('continue')
+        out,err=waiting.communicate(timeout=10)
+        assert waiting.returncode==0 and json.loads(out)['schema_version']==2,(out,err)
+    finally:
+        if waiting.poll() is None: waiting.kill();waiting.wait()
+    module.write_text((ROOT/'src/storage/sqlite.kujo').read_text())
     code=module.read_text();needle='            db_execute(db,"INSERT INTO schema_history VALUES(2,1,?,?,?)"'
     assert code.count(needle)==1
     code=code.replace(needle,'            write_file(env("PAYMENTS_TEST_MARKER"),"ready")\n            sleep(30000)\n'+needle)

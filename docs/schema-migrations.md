@@ -30,3 +30,5 @@ There is no automatic downgrade. Replacing the live database with an old backup 
 ## Verification
 
 `tests/network/migration_test.py` exercises eight concurrent initializers, four concurrent migrators, exact preservation of consumed approvals/claims/receipts/evidence, permanent quarantine across upgrade, unknown schema and missing-trigger rejection, event-write rollback and SIGKILL during both migration and first initialization. Fault injection modifies only an isolated source copy; production code has no crash-hook environment variable. Normal CI never moves real money.
+
+Concurrent upgrades re-read the version and validate the source under `BEGIN IMMEDIATE`; an earlier version read cannot authorize validation against a now-upgraded schema. Only WAL configuration lock contention is retried during setup, with a five-second loop deadline and SQLite's configured busy timeout per call. This is a bounded initialization mechanism, never permission to repeat a consequential payment call.

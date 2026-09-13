@@ -12,7 +12,18 @@ func schema_version(db) {
     return version
 }
 func configure(db) {
-    db_query(db,"PRAGMA journal_mode=WAL",[])
+    // SQLite can return BUSY immediately when concurrent connections switch
+    // journal modes, despite busy_timeout. Retry only this nonfinancial setup.
+    deadline := current_timestamp()+5000
+    mut configured := false
+    while configured == false && current_timestamp() < deadline {
+        try { db_query(db,"PRAGMA journal_mode=WAL",[]); configured = true }
+        except error {
+            assert(contains(to_string(error),"database is locked") == 1,"payments_journal_configuration_failed")
+            if current_timestamp() < deadline { sleep(25) }
+        }
+    }
+    assert(configured,"payments_journal_configuration_timeout")
     db_query(db,"PRAGMA synchronous=FULL",[])
     db_query(db,"PRAGMA foreign_keys=ON",[])
 }
@@ -96,7 +107,6 @@ export migrate_store := func(path, actor_ref, now_ms) {
         db_query(db,"PRAGMA busy_timeout=5000",[])
         version := schema_version(db)
         assert(version == 1 || version == 2,"payments_migration_source_required")
-        if version == 1 { validate_v1(db) }
         configure(db)
         db_execute(db,"BEGIN IMMEDIATE",[])
         current := schema_version(db)
