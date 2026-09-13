@@ -108,6 +108,8 @@ export validate_mpp_challenge := func(header, expected, now_ms) {
             for key in keys(details["metadata"]) { assert(type(details["metadata"][key]) == "string","mpp_metadata_value") }
         }
         assert(details["networkId"] == expected["network_id"] && details["paymentMethodTypes"] == expected["payment_method_types"],"mpp_network")
+        if expected["external_id"] == null { assert(has_key(request,"externalId") == 0,"mpp_external_id") }
+        else { assert(request["externalId"] == expected["external_id"],"mpp_external_id") }
         if expected["recipient"] == null { assert(has_key(request,"recipient") == 0,"mpp_recipient") }
         else { assert(request["recipient"] == expected["recipient"],"mpp_recipient") }
         if expected["body_digest"] == null { assert(has_key(fields,"digest") == 0,"mpp_body") }

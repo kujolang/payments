@@ -7,11 +7,12 @@ def canon(x):return json.dumps(x,sort_keys=True,separators=(',',':'),ensure_asci
 def b64(x):return base64.urlsafe_b64encode(x.encode()).decode().rstrip('=')
 request={'amount':'5500','currency':'usd','methodDetails':{'networkId':'network_1','paymentMethodTypes':['card']}}
 fields={'id':'challenge_1','realm':'merchant.example','method':'stripe','intent':'charge','request':b64(canon(request)),'expires':'2026-09-13T00:00:00.000Z'}
-expected={'realm':'merchant.example','charge':{'minor':5500,'currency':'USD'},'network_id':'network_1','payment_method_types':['card'],'recipient':None,'body_digest':None}
+expected={'realm':'merchant.example','charge':{'minor':5500,'currency':'USD'},'network_id':'network_1','payment_method_types':['card'],'recipient':None,'body_digest':None,'external_id':None}
 def header(f):return 'Payment '+', '.join(k+'='+json.dumps(v,ensure_ascii=True) for k,v in f.items())
 cases=[]
-def add(name,f,valid=False,raw=None,now_ms=0):
+def add(name,f,valid=False,raw=None,now_ms=0,expect=None):
  c={'name':name,'header':header(f) if raw is None else raw,'valid':valid,'now_ms':now_ms}
+ if expect is not None:c['expected']=expect
  if valid:
   payload={'spt':'SENTINEL_SPT'}
   decoded=json.loads(base64.urlsafe_b64decode(f['request']+'='*((-len(f['request']))%4)))
@@ -20,7 +21,10 @@ def add(name,f,valid=False,raw=None,now_ms=0):
  cases.append(c)
 add('canonical',fields,True)
 f={**fields,'description':'A, B and "quoted" item','opaque':b64('{"order":"one"}')};add('opaque_and_quoted',f,True)
-r={**request,'description':'Coffee ☕','externalId':'order_1'};add('unicode_in_request',{**fields,'request':b64(canon(r))},True)
+r={**request,'description':'Coffee ☕'};add('unicode_in_request',{**fields,'request':b64(canon(r))},True)
+r={**request,'externalId':'order_1'};add('bound_external_id',{**fields,'request':b64(canon(r))},True,expect={**expected,'external_id':'order_1'})
+add('unexpected_external_id',{**fields,'request':b64(canon(r))})
+add('wrong_external_id',{**fields,'request':b64(canon(r))},expect={**expected,'external_id':'other_order'})
 r=copy.deepcopy(request);r['methodDetails']['metadata']={'order':'one'};add('metadata',{**fields,'request':b64(canon(r))},True)
 for key,value in [('method','tempo'),('intent','session'),('realm','evil.example'),('id','../../id'),('expires','2026-02-30T00:00:00.000Z'),('expires','2026-09-13T24:00:00.000Z'),('expires','2026-09-13T00:00:00Z'),('expires','2026-09-13T00:00:00.000+00:00'),('request','@@@@'),('opaque','not base64'),('digest','sha-256=unrequested')]:
  add('field_'+key+'_'+value,{**fields,key:value})

@@ -11,7 +11,8 @@
       "card"
     ],
     "recipient": null,
-    "body_digest": null
+    "body_digest": null,
+    "external_id": null
   },
   "cases": [
     {
@@ -34,12 +35,61 @@
     },
     {
       "name": "unicode_in_request",
-      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJkZXNjcmlwdGlvbiI6IkNvZmZlZSDimJUiLCJleHRlcm5hbElkIjoib3JkZXJfMSIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJkZXNjcmlwdGlvbiI6IkNvZmZlZSDimJUiLCJtZXRob2REZXRhaWxzIjp7Im5ldHdvcmtJZCI6Im5ldHdvcmtfMSIsInBheW1lbnRNZXRob2RUeXBlcyI6WyJjYXJkIl19fQ\", expires=\"2026-09-13T00:00:00.000Z\"",
       "valid": true,
       "now_ms": 0,
       "expires_at_ms": 1789257600000,
-      "digest": "3e76e167a665ff0464ce6639514e9beae0f03f80f303ec7725d54678591783fe",
-      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0prWlhOamNtbHdkR2x2YmlJNklrTnZabVpsWlNEaW1KVWlMQ0psZUhSbGNtNWhiRWxrSWpvaWIzSmtaWEpmTVNJc0ltMWxkR2h2WkVSbGRHRnBiSE1pT25zaWJtVjBkMjl5YTBsa0lqb2libVYwZDI5eWExOHhJaXdpY0dGNWJXVnVkRTFsZEdodlpGUjVjR1Z6SWpwYkltTmhjbVFpWFgxOSJ9LCJwYXlsb2FkIjp7ImV4dGVybmFsSWQiOiJvcmRlcl8xIiwic3B0IjoiU0VOVElORUxfU1BUIn19"
+      "digest": "7bbb4f71df842e2f96e94a862cbb70311a8e89e30bd75e9f0d023a403ba1d28e",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0prWlhOamNtbHdkR2x2YmlJNklrTnZabVpsWlNEaW1KVWlMQ0p0WlhSb2IyUkVaWFJoYVd4eklqcDdJbTVsZEhkdmNtdEpaQ0k2SW01bGRIZHZjbXRmTVNJc0luQmhlVzFsYm5STlpYUm9iMlJVZVhCbGN5STZXeUpqWVhKa0lsMTlmUSJ9LCJwYXlsb2FkIjp7InNwdCI6IlNFTlRJTkVMX1NQVCJ9fQ"
+    },
+    {
+      "name": "bound_external_id",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJleHRlcm5hbElkIjoib3JkZXJfMSIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": true,
+      "now_ms": 0,
+      "expected": {
+        "realm": "merchant.example",
+        "charge": {
+          "minor": 5500,
+          "currency": "USD"
+        },
+        "network_id": "network_1",
+        "payment_method_types": [
+          "card"
+        ],
+        "recipient": null,
+        "body_digest": null,
+        "external_id": "order_1"
+      },
+      "expires_at_ms": 1789257600000,
+      "digest": "014328cfec951ab4bf5981a187ccbc9cd12fd30a36f13b74d53bc6a3ffbfaca0",
+      "credential": "Payment eyJjaGFsbGVuZ2UiOnsiZXhwaXJlcyI6IjIwMjYtMDktMTNUMDA6MDA6MDAuMDAwWiIsImlkIjoiY2hhbGxlbmdlXzEiLCJpbnRlbnQiOiJjaGFyZ2UiLCJtZXRob2QiOiJzdHJpcGUiLCJyZWFsbSI6Im1lcmNoYW50LmV4YW1wbGUiLCJyZXF1ZXN0IjoiZXlKaGJXOTFiblFpT2lJMU5UQXdJaXdpWTNWeWNtVnVZM2tpT2lKMWMyUWlMQ0psZUhSbGNtNWhiRWxrSWpvaWIzSmtaWEpmTVNJc0ltMWxkR2h2WkVSbGRHRnBiSE1pT25zaWJtVjBkMjl5YTBsa0lqb2libVYwZDI5eWExOHhJaXdpY0dGNWJXVnVkRTFsZEdodlpGUjVjR1Z6SWpwYkltTmhjbVFpWFgxOSJ9LCJwYXlsb2FkIjp7ImV4dGVybmFsSWQiOiJvcmRlcl8xIiwic3B0IjoiU0VOVElORUxfU1BUIn19"
+    },
+    {
+      "name": "unexpected_external_id",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJleHRlcm5hbElkIjoib3JkZXJfMSIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0
+    },
+    {
+      "name": "wrong_external_id",
+      "header": "Payment id=\"challenge_1\", realm=\"merchant.example\", method=\"stripe\", intent=\"charge\", request=\"eyJhbW91bnQiOiI1NTAwIiwiY3VycmVuY3kiOiJ1c2QiLCJleHRlcm5hbElkIjoib3JkZXJfMSIsIm1ldGhvZERldGFpbHMiOnsibmV0d29ya0lkIjoibmV0d29ya18xIiwicGF5bWVudE1ldGhvZFR5cGVzIjpbImNhcmQiXX19\", expires=\"2026-09-13T00:00:00.000Z\"",
+      "valid": false,
+      "now_ms": 0,
+      "expected": {
+        "realm": "merchant.example",
+        "charge": {
+          "minor": 5500,
+          "currency": "USD"
+        },
+        "network_id": "network_1",
+        "payment_method_types": [
+          "card"
+        ],
+        "recipient": null,
+        "body_digest": null,
+        "external_id": "other_order"
+      }
     },
     {
       "name": "metadata",
