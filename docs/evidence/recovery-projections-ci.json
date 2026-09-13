@@ -1,0 +1,29 @@
+{
+  "source_commit": "2e1b960d7fd3db38a840dabc220e4c053f5511da",
+  "run_id": 34739939659,
+  "url": "https://github.com/kujolang/payments/actions/runs/34739939659",
+  "jobs": {
+    "host": {
+      "id": 103677826318,
+      "conclusion": "success",
+      "log_sha256": "0f959dc28ba8ea7a4ec944cc1265c477d27ef011ad148bca72dd4a316c171437"
+    },
+    "containment": {
+      "id": 103677826197,
+      "conclusion": "success",
+      "log_sha256": "28b6c8acac175e2276f6722f85bcc6c0776c6a02da2117789d57aaf3f04f42c0"
+    }
+  },
+  "artifact": {
+    "id": 10311519342,
+    "archive_sha256": "b3488771d8e01f797d3e058cae13d6b9db1388ae7c3f7b1b428e6dcae5e8f292",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "21 real SDK/MCP/Dispatch recovery projection cases, retained failed observations, fresh status and no intake retry; full synthetic host suite and actual OCI/Workcell containment. No successful-request fabrication, provider/live acceptance, journal repair or all-sink production claim."
+}
