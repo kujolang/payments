@@ -1,0 +1,66 @@
+{
+  "source_commit": "3650888661ab219b74421730d03eff2205b8a3d2",
+  "run_id": 34745825781,
+  "url": "https://github.com/kujolang/payments/actions/runs/34745825781",
+  "jobs": {
+    "host": {
+      "id": 103693471297,
+      "conclusion": "success",
+      "log_sha256": "fe6566b7af0cdb96d731f0e6ca1edc4f3fda756872e1c7d2b57b1f8791fc92ff"
+    },
+    "containment": {
+      "id": 103693471387,
+      "conclusion": "success",
+      "log_sha256": "e86acf7048604f0ce95aa8e25fd85c5acb87c8dd7169ab95fd689f7d69286b17"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 84,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 68,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 282,
+    "status_ms": 71,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 69.15300400000001,
+      "median_ms": 67.79530199999999,
+      "min_ms": 66.72451999999998,
+      "p95_ms": 69.15300400000001,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 72.32613300000003,
+      "median_ms": 71.7170185,
+      "min_ms": 69.65303099999994,
+      "p95_ms": 72.32613300000003,
+      "samples": 8
+    }
+  },
+  "artifact": {
+    "id": 10314291932,
+    "archive_sha256": "e483b33b83a13ff37f07ec7437ec3a6e688730516d5a85d07b52df9f7c0f3ed0",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Embedded principal admission across ten entry points, 110 rejection cases and positive storage control; full host suite and existing 30-file OCI/Workcell containment. Does not repair general Ability v1 serialization or prove the later journal-profile change, production deployment or live acceptance."
+}
