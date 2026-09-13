@@ -1,0 +1,29 @@
+{
+  "source_commit": "15253d1bb41540a8d2e432e22358f886ad03d98b",
+  "run_id": 34737608492,
+  "url": "https://github.com/kujolang/payments/actions/runs/34737608492",
+  "jobs": {
+    "host": {
+      "id": 103671656421,
+      "conclusion": "success",
+      "log_sha256": "6ae4a55bd3ec565934e13285841adf9710a170eeaf7b08acddb86803425f3878"
+    },
+    "containment": {
+      "id": 103671656323,
+      "conclusion": "success",
+      "log_sha256": "8b04a5f1b43dd54b35222ec3d9e254b911c476ded2fe86af828f24c7644061b8"
+    }
+  },
+  "artifact": {
+    "id": 10311144852,
+    "archive_sha256": "c18541d341a42464e4986c34d23ee78bce93063d2fcc057fb75df09ae6549ea5",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Reviewed private operator sink with 19 real core/Link fixture cases, unchanged financial grants/claims, existing full host suite and actual synthetic OCI/Workcell renderer/outbox/vault isolation. No production operator authentication, hard remote renderer deadline/retraction, browser/redirect certification, live OAuth/payment or all-sink deployment claim."
+}
