@@ -1,0 +1,19 @@
+{
+  "source_commit": "ff96074031fd3bf269ae5cd02295fc2c73e17c40",
+  "implementation_commit": "52ae36c",
+  "run_id": 34727473797,
+  "url": "https://github.com/kujolang/payments/actions/runs/34727473797",
+  "jobs": {
+    "host": {
+      "id": 103644068998,
+      "conclusion": "success",
+      "log_sha256": "258a286ccce4aa26d0bddc02271f12326b0a55c1042369bdecd7d028b332b548"
+    },
+    "containment": {
+      "id": 103644069093,
+      "conclusion": "success",
+      "log_sha256": "09d42b21792aab5f41d6cc67725aefbdee4e772f7900a2e9683497ba3f16f468"
+    }
+  },
+  "scope": "Synthetic full host suite plus current-image component/containment checks. No live financial actions or supported restore claim."
+}
