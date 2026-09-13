@@ -1,0 +1,49 @@
+{
+  "profile": "local synthetic authenticated HTTP gateway with real MCP client/server and fixture-only native process observer",
+  "date": "2026-09-13",
+  "platform": "macOS-26.6.2-x86_64-i386-64bit",
+  "runtime_version": "kujo 1.4.0",
+  "metrics": {
+    "first_request_ms": 242,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 535,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+    "startup_and_discovery_ms": 779,
+    "status_ms": 221,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 234.06169799999998,
+      "median_ms": 216.22257199999967,
+      "min_ms": 213.81796600000052,
+      "p95_ms": 234.06169799999998,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 285.5813350000003,
+      "median_ms": 225.71429599999988,
+      "min_ms": 203.12662400000045,
+      "p95_ms": 285.5813350000003,
+      "samples": 8
+    }
+  },
+  "measurement_sources": {
+    "tests/network/http_test.py": "9c1a3ba53de7c6ed2ca8110b808d0cf6edeccc552b4828efc4e840ba6d4939a4",
+    "examples/mcp/conformance.mjs": "2fc157ff118673860b2464d6c8127c4cd284950e9f2fc06fae9b97cf6dec3591"
+  },
+  "scope": "Eight sequential warm replay and eight warm status samples for one pending purchase. Native process observer adds startup overhead. No provider latency, financial execution, load-test, real-money, token-count or production SLO claim.",
+  "runtime_provenance": {
+    "url": "https://github.com/kujolang/kujo/releases/download/v1.4.0/kujo-v1.4.0-macos-x64.tar.gz",
+    "archive_sha256": "e0f41e86357d533f6a28a27c310a29deca21decb834f7baa550e894110e06ad5",
+    "binary_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+    "version": "kujo 1.4.0"
+  }
+}

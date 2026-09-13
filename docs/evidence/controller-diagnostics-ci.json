@@ -1,0 +1,34 @@
+{
+  "source_commit": "f35c00f7d12b5d521715dc897ead79792d2f26bb",
+  "run_id": 34745022340,
+  "url": "https://github.com/kujolang/payments/actions/runs/34745022340",
+  "jobs": {
+    "containment": {
+      "id": 103691231882,
+      "conclusion": "success",
+      "log_sha256": "09ac1bb2b30df2addd064a34f23cb422a881cfc2aac417ca97963bc8d002c74b"
+    },
+    "host": {
+      "id": 103691231900,
+      "conclusion": "success",
+      "log_sha256": "352648b71f249a0a9a4227d1d23043ca2ff4601b81bd0ebecdfeb75b410f8d0c"
+    }
+  },
+  "artifact": {
+    "id": 10314160911,
+    "archive_sha256": "d5b87e5fdd38dc382c0ad407f57c16de43310265886a436e7f0e949ac7d9bfdb",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Private test-controller timeout, launch and decoding failure diagnostic fixtures; full host suite and existing enrollment-inclusive 30-file OCI/Workcell containment. No production all-sink telemetry, provider identity or live acceptance claim."
+}

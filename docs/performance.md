@@ -12,6 +12,8 @@ The local Kujo 1.3.1 / Node 24.20.0 run measured 3,065 compact UTF-8 bytes for b
 
 Observed native counts were one catalog projection, 13 request client processes and nine status client processes. The request count includes three intentionally rejected calls (changed terms and forbidden principal/approval fields); two unknown tool names start no native client. Five repeated catalog lookups cause no additional projection. The 250 ms idle observation causes no additional native invocation; this is a bounded observation, not a claim about every deployment scheduler.
 
+A second local run used the official checksum-verified Kujo 1.4.0 macOS x64 release with the same Node and fixture sources. It passed the full HTTP/SDK/MCP conformance path with the same byte sizes and native counts; eight-sample warm medians were approximately 216/226 ms. Its first replay took 535 ms, illustrating why one sample is not a latency guarantee. [Version 1.4 evidence](evidence/mcp-performance-1.4-local.json) records exact measurements and runtime provenance. Neither local run replaces pinned Linux CI or establishes a release-to-release performance comparison.
+
 ## Enforced budgets
 
 CI limits the combined two-tool descriptor JSON to 4,096 bytes, the compact pending summary to 512 bytes and its full MCP response envelope to 1,024 bytes. These are explicit fixture regression budgets with room for modest compatible changes. Exceeding them requires reviewing the model-visible contract rather than quietly growing it. They are byte budgets, not tokenizer counts or universal bounds for all providers/statuses. Timings are recorded without brittle host-speed thresholds; existing process and transport deadlines remain enforced.
