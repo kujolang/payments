@@ -36,6 +36,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Canonical private reconciliation Ability dispatch, explicit host observation keys and durable receipts; policy/replay/concurrency/crash fixture coverage. Hosted verification is tracked in implementation-status.md.
 
+- [x] Explicit same-business-reference intake recovery using the existing request contract; six killed/live-original cases, four concurrent fresh-key requests, unchanged terms/expiry and no approval or financial claim. See [intake recovery](intake-recovery.md).
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

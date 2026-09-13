@@ -9,7 +9,7 @@ REQUEST={'operation':'request','input':INPUT,'idempotency_key':'original-key'}
 SECRET='fake-private-provider-sentinel-never-output'
 def environment(root,request,mode='',stop=''):
  path=root/('request-'+str(time.time_ns())+'.json');path.write_text(json.dumps(request))
- return {**os.environ,'PAYMENTS_TEST_DB':str(root/'state.db'),'PAYMENTS_TEST_REQUEST':str(path),'PAYMENTS_TEST_MODE':mode,'PAYMENTS_TEST_STOP':stop,'PAYMENTS_TEST_MARKER':str(root/'marker'),'PAYMENTS_PRIVATE_SENTINEL':SECRET}
+ return {**os.environ,'PAYMENTS_TEST_DB':str(root/'state.db'),'PAYMENTS_TEST_REQUEST':str(path),'PAYMENTS_TEST_MODE':mode,'PAYMENTS_TEST_STOP':stop,'PAYMENTS_TEST_MARKER':str(root/'marker'),'PAYMENTS_PRIVATE_SENTINEL':SECRET,'PAYMENTS_TEST_RELEASE':''}
 def run(root,request=REQUEST,mode=''):
  p=subprocess.run([KUJO,'run','tests/interrupted_gateway_fixture.kujo','--interpreter'],cwd=ROOT,env=environment(root,request,mode),capture_output=True,text=True,timeout=15)
  assert SECRET not in p.stdout+p.stderr
@@ -94,3 +94,56 @@ with tempfile.TemporaryDirectory(prefix='payments-interrupted-') as directory:
    assert db.execute('SELECT count(*) FROM executions WHERE claimed!=0').fetchone()[0]==0
    assert db.execute('SELECT count(*) FROM ability_calls WHERE receipt_json IS NULL').fetchone()[0]>=1
 print('Interrupted gateway: five real SIGKILL boundaries, four concurrent observation retries, unchanged journals, authenticated HTTP restart, exact terms, policy/audit/auth denial and no recreated action passed')
+
+# Recovery is a new intake operation with the same business identity, never
+# reopening the old Ability invocation. The original may still resume later.
+for stop in ('before_intake','after_intake','before_complete'):
+ for terminate_original in (False,True):
+  with tempfile.TemporaryDirectory(prefix='payments-intake-recovery-') as directory:
+   root=Path(directory);marker=root/'marker';release=root/'release'
+   env=environment(root,REQUEST,stop=stop);env['PAYMENTS_TEST_RELEASE']=str(release)
+   original=subprocess.Popen([KUJO,'run','tests/interrupted_gateway_fixture.kujo','--interpreter'],cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+   try:
+    deadline=time.monotonic()+15
+    while not marker.exists():
+     assert original.poll() is None and time.monotonic()<deadline,'original checkpoint unavailable'
+     time.sleep(.02)
+    if terminate_original:
+     original.kill();out,err=original.communicate(timeout=5)
+     assert original.returncode==-9 and SECRET not in out+err
+    prior=run(root)
+    assert not prior['ok']
+    if stop=='before_intake':assert 'result' not in prior
+    def recover(index):
+     request=copy(REQUEST);request['idempotency_key']='recovery-'+str(index)
+     return run(root,request)
+    with ThreadPoolExecutor(max_workers=4) as pool:results=list(pool.map(recover,range(4)))
+    assert all(x['ok'] for x in results),results
+    ids={x['result']['execution_id'] for x in results};assert len(ids)==1
+    with sqlite3.connect(root/'state.db') as db:
+     before=list(db.execute('SELECT execution_id,intent_json,expires_at_ms,claimed FROM executions'))
+     assert len(before)==1 and before[0][3]==0
+     assert db.execute('SELECT count(*) FROM approvals').fetchone()[0]==0
+     assert db.execute('SELECT count(*) FROM ability_calls WHERE receipt_json IS NULL').fetchone()[0]==1
+    for field,value in [('purpose','changed'),('payee_ref','other'),('amount',{'mode':'maximum','minor':5501,'currency':'USD'}),('expires_in_ms',10000)]:
+     changed=copy(REQUEST);changed['idempotency_key']='changed-'+field;changed['input'][field]=value
+     assert not run(root,changed)['ok'],field
+    if not terminate_original:
+     if stop!='before_complete':time.sleep(2.1)  # exceed the declared handler timeout deliberately
+     release.write_text('resume')
+     out,err=original.communicate(timeout=15)
+     assert original.returncode==0 and SECRET not in out+err,(out,err)
+     resumed=json.loads(out);assert resumed['result']['execution_id'] in ids,resumed
+     if stop=='before_complete':assert resumed['ok'],resumed
+     else:assert not resumed['ok'] and resumed['code']=='operation_receipt_failed',resumed
+    else:
+     old=run(root);assert not old['ok'],old
+     if stop=='before_intake':assert 'result' not in old,old
+     else:assert old['result']['execution_id'] in ids,old
+    with sqlite3.connect(root/'state.db') as db:
+     assert list(db.execute('SELECT execution_id,intent_json,expires_at_ms,claimed FROM executions'))==before,'recovery replaced terms or expiry'
+     assert db.execute('SELECT count(*) FROM approvals').fetchone()[0]==0
+     assert db.execute('SELECT count(*) FROM ability_calls WHERE receipt_json IS NULL').fetchone()[0]==int(terminate_original)
+   finally:
+    if original.poll() is None:original.kill();original.communicate(timeout=5)
+print('Intake recovery: three interruption boundaries, killed and live originals, four fresh-key contenders, unchanged business terms/expiry, no approval or financial claim and safe late original completion passed')

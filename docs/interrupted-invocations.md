@@ -14,6 +14,10 @@ When the crash happened before intake committed, there is no authoritative execu
 
 A custom storage port may add the optional `inspect_request(scope, key_hash, request_digest)` read operation. The SQLite implementation joins the request key to its execution with matching scope and request digest. Older custom ports preserve their previous behavior and receive no automatic recovery capability.
 
+## Explicit intake completion
+
+A trusted host may deliberately submit a new keyed request with the exact original input and the same business purchase reference. The existing atomic intake contract resolves concurrent or late handlers to one execution without replacing its terms or expiry. This is a new operation, not journal re-entry or financial resubmission. See [intake recovery](intake-recovery.md) for the procedure, caller responsibilities and limits.
+
 ## Remaining recovery work
 
 This does not repair the Ability journal, retire abandoned pre-intake invocations, re-enter pre-claim execution, coordinate provider/vault backups or merge restored financial history. The permanent financial claim and quarantined recovery-copy restrictions remain unchanged. Those broader release gates remain open.

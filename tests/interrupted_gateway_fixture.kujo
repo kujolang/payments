@@ -5,6 +5,13 @@ from src.gateway.operations import gateway_call
 func checkpoint(name) {
     if env("PAYMENTS_TEST_STOP") == name {
         write_file(env("PAYMENTS_TEST_MARKER"),"ready")
+        release := env("PAYMENTS_TEST_RELEASE")
+        if release != "" {
+            deadline := current_timestamp()+30000
+            while file_exists(release) == false && current_timestamp() < deadline { sleep(20) }
+            assert(file_exists(release),"test_release_timeout")
+            return null
+        }
         sleep(30000)
         assert(false,"test_supervisor_did_not_kill")
     }
