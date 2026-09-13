@@ -23,7 +23,7 @@ for mode in modes:
         assert result['ok']==(mode=='success'),(mode,result)
         staged=mode=='success' or mode.startswith(('callback_','delivery_'))
         with sqlite3.connect(outbox) as db:
-            rows=db.execute('SELECT approval_url FROM link_approval_outbox_v1').fetchall()
+            rows=db.execute('SELECT approval_url FROM link_approval_outbox_v2').fetchall()
             assert len(rows)==int(staged)
             if rows:assert rows[0][0]=='https://approve.example/consent/SENTINEL_APPROVAL_URL'
         assert ('SENTINEL_APPROVAL_URL' in sink.read_text())==(mode in ['success','callback_after_write','callback_late','callback_rollback'])
@@ -34,3 +34,13 @@ for mode in modes:
                 assert secret.encode() not in data,(mode,f.name,'unselected provider secret persisted')
             if not f.name.startswith('outbox.db') and f!=sink: assert b'SENTINEL' not in data,(mode,f.name,'URL escaped private sink')
 print('Private Link approval delivery: 24 binding/URL/callback cases, four-process staging, persistent private operator sink and zero unselected-secret/caller-output leakage passed')
+
+with tempfile.TemporaryDirectory(prefix='payments-retired-delivery-') as directory:
+    root=Path(directory);sink=root/'operator.json';sink.touch(mode=0o600)
+    env={**os.environ,'PAYMENTS_DELIVERY_AUTH':str(root/'auth.db'),'PAYMENTS_DELIVERY_OUTBOX':str(root/'outbox.db'),'PAYMENTS_DELIVERY_SINK':str(sink),'PAYMENTS_DELIVERY_CLOCK':str(root/'clock')}
+    assert run(env,'init')['ok'];staged=run(env,'stage');assert staged['ok']
+    assert run(env,'retire')=={'ok':True,'retired':1}
+    assert run(env,'stage')['ok'] is False
+    assert run({**env,'PAYMENTS_DELIVERY_REF':staged['delivery_ref']},'deliver_retired')['ok'] is False
+    assert sink.read_text()==''
+print('Retired approval URL cannot be restaged or delivered after restart/clock rollback')

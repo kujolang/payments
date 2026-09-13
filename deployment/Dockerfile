@@ -8,6 +8,7 @@ USER 65532:65532
 FROM runtime AS gateway
 COPY --chown=65532:65532 src /app/src
 COPY --chown=65532:65532 contracts /app/contracts
+COPY --chown=65532:65532 deployment/link-approval-maintenance.schema.json /app/deployment/link-approval-maintenance.schema.json
 COPY --chown=65532:65532 kennel.toml kennel.lock /app/
 COPY --chown=65532:65532 kennel_packages/ability /app/kennel_packages/ability
 ENTRYPOINT ["/usr/local/bin/kujo", "run", "src/executor/gateway.kujo", "--interpreter"]

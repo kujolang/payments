@@ -1,0 +1,17 @@
+from src.providers.link.approval_delivery import open_link_approval_outbox
+from src.providers.link.approval_retention import migrate_link_approval_outbox, retire_expired_link_approvals
+from src.providers.link.private_store import open_private_link_store
+from src.providers.link.approval_schema import approval_schema_v1
+
+db := db_connect("sqlite",env("PAYMENTS_RETENTION_DB"))
+action := env("PAYMENTS_RETENTION_ACTION")
+mut result := {"ok":false,"code":"fixture_invalid"}
+if action == "legacy_open" {
+    try { open_private_link_store(db,approval_schema_v1(),1);result = {"ok":true} } except error { result = {"ok":false} }
+} else if action == "open" {
+    try { open_link_approval_outbox(db);result = {"ok":true} } except error { result = {"ok":false} }
+} else if action == "migrate" { result = migrate_link_approval_outbox(db,true) }
+else if action == "disk_full" { pages := db_query(db,"PRAGMA page_count",[])[0]["page_count"];db_query(db,"PRAGMA max_page_count="+to_string(pages),[]);result = migrate_link_approval_outbox(db,true) }
+else if action == "no_quiescence" { result = migrate_link_approval_outbox(db,false) }
+else if action == "retire" { result = retire_expired_link_approvals(db,to_int(env("PAYMENTS_RETENTION_NOW")),to_int(env("PAYMENTS_RETENTION_LIMIT"))) }
+print(to_json(result));db_close(db)

@@ -1,4 +1,5 @@
 from src.providers.link.authorization import open_link_authorizations, request_link_authorization
+from src.providers.link.approval_retention import retire_expired_link_approvals
 from src.providers.link.approval_delivery import open_link_approval_outbox, stage_link_approval, deliver_link_approval
 fixture := parse_json(read_file("tests/fixtures/domain.json"))
 snapshot := fixture["snapshot"]
@@ -32,6 +33,12 @@ api := func(method,path,body,deadline) {
 if action == "init" {
     request_link_authorization(auth,"delivery",snapshot,"network_1","pm_fixture",true,api,10000)
     print(to_json({"ok":true}));db_close(auth);db_close(outbox);exit(0)
+}
+if action == "retire" { result := retire_expired_link_approvals(outbox,2000,10);print(to_json(result));db_close(auth);db_close(outbox);exit(0) }
+if action == "deliver_retired" {
+    forbidden := func(payload,deadline) { write_file(env("PAYMENTS_DELIVERY_SINK"),"unexpected_delivery",true);return true }
+    result := deliver_link_approval(outbox,env("PAYMENTS_DELIVERY_REF"),snapshot,["https://approve.example"],forbidden,clock,10000)
+    print(to_json(result));db_close(auth);db_close(outbox);exit(0)
 }
 if mode == "tenant" { principal := snapshot["principal"];principal["tenant_id"] = "other";snapshot["principal"] = principal }
 staged := stage_link_approval(auth,outbox,"delivery",snapshot,api,["https://approve.example"],clock,10000)

@@ -34,6 +34,7 @@ PAYMENTS_TEST_DB="$store_dir/link-authorization.db" "$KUJO_BIN" run tests/link_a
 python3 tests/network/link_issuance_test.py
 python3 tests/network/link_credentials_test.py
 python3 tests/network/link_approval_delivery_test.py
+python3 tests/network/link_approval_retention_test.py
 python3 scripts/mpp_vectors.py --check
 "$KUJO_BIN" run tests/mpp.kujo --interpreter
 PAYMENTS_TEST_DB="$store_dir/link-submit.db" "$KUJO_BIN" run tests/link_submission.kujo --interpreter

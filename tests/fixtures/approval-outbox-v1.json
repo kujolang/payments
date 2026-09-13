@@ -1,0 +1,18 @@
+{
+  "source_commit": "6b3464737d9268c4280ffdbcba52d4e507ae4ca3",
+  "user_version": 1,
+  "definitions": [
+    {
+      "name": "link_approval_outbox_v1",
+      "sql": "CREATE TABLE link_approval_outbox_v1(id TEXT PRIMARY KEY,execution_id TEXT NOT NULL,scope TEXT NOT NULL,snapshot_digest TEXT NOT NULL,approval_url TEXT NOT NULL,expires_at_ms INTEGER NOT NULL)"
+    },
+    {
+      "name": "link_approval_outbox_immutable",
+      "sql": "CREATE TRIGGER link_approval_outbox_immutable BEFORE UPDATE ON link_approval_outbox_v1 BEGIN SELECT RAISE(ABORT,'approval_delivery_immutable'); END"
+    },
+    {
+      "name": "link_approval_outbox_permanent",
+      "sql": "CREATE TRIGGER link_approval_outbox_permanent BEFORE DELETE ON link_approval_outbox_v1 BEGIN SELECT RAISE(ABORT,'approval_delivery_permanent'); END"
+    }
+  ]
+}

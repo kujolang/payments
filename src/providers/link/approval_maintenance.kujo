@@ -1,0 +1,18 @@
+// Private administrator entrypoint; never install in a requesting runtime.
+from src.providers.link.approval_retention import migrate_link_approval_outbox, retire_expired_link_approvals
+func maintenance() {
+    settings := parse_json(read_file(env("PAYMENTS_APPROVAL_MAINTENANCE_CONFIG")))
+    assert(json_schema_validate(settings,parse_json(read_file("deployment/link-approval-maintenance.schema.json")))["valid"],"approval_maintenance_config")
+    if settings["action"] == "migrate" { assert(has_key(settings,"quiesced") && settings["quiesced"] == true && has_key(settings,"batch_limit") == 0,"approval_maintenance_config") }
+    else { assert(has_key(settings,"batch_limit") && has_key(settings,"quiesced") == 0,"approval_maintenance_config") }
+    db := db_connect("sqlite",settings["database"])
+    mut result := {"ok":false,"code":"approval_maintenance_unavailable"}
+    if settings["action"] == "migrate" { result = migrate_link_approval_outbox(db,settings["quiesced"]) }
+    else { result = retire_expired_link_approvals(db,current_timestamp(),settings["batch_limit"]) }
+    db_close(db)
+    return result
+}
+mut result := {"ok":false,"code":"approval_maintenance_unavailable"}
+try { result = maintenance() } except error { result = {"ok":false,"code":"approval_maintenance_unavailable"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }

@@ -1,0 +1,51 @@
+// Privileged maintenance only. Quiescence and private backup custody belong to
+// the operator; this component neither schedules cleanup nor erases media.
+from src.providers.link.private_store import validate_private_link_store
+from src.providers.link.approval_schema import approval_schema_v1, approval_schema_v2
+
+export migrate_link_approval_outbox := func(db,quiesced) {
+    if quiesced != true { return {"ok":false,"code":"approval_migration_requires_quiescence"} }
+    try {
+        db_query(db,"PRAGMA busy_timeout=5000",[])
+        db_query(db,"PRAGMA synchronous=FULL",[])
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        version := db_query(db,"PRAGMA user_version",[])[0]["user_version"]
+        if version == 2 {
+            validate_private_link_store(db,approval_schema_v2(),2)
+            db_execute(db,"COMMIT",[])
+            return {"ok":true,"schema_version":2,"migrated":false}
+        }
+        validate_private_link_store(db,approval_schema_v1(),1)
+        assert(db_query(db,"PRAGMA integrity_check",[])[0]["integrity_check"] == "ok","approval_migration_integrity")
+        db_execute(db,"DROP TRIGGER link_approval_outbox_immutable",[])
+        db_execute(db,"DROP TRIGGER link_approval_outbox_permanent",[])
+        for definition in approval_schema_v2() { db_execute(db,definition["sql"],[]) }
+        db_execute(db,"INSERT INTO link_approval_outbox_v2 SELECT id,execution_id,scope,snapshot_digest,approval_url,expires_at_ms,NULL FROM link_approval_outbox_v1",[])
+        db_execute(db,"DROP TABLE link_approval_outbox_v1",[])
+        db_execute(db,"PRAGMA user_version=2",[])
+        validate_private_link_store(db,approval_schema_v2(),2)
+        db_execute(db,"COMMIT",[])
+        return {"ok":true,"schema_version":2,"migrated":true}
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        return {"ok":false,"code":"approval_migration_unavailable"}
+    }
+}
+
+export retire_expired_link_approvals := func(db,now_ms,limit) {
+    if type(now_ms) != "int" || now_ms < 0 || now_ms > 9007199254740991 || type(limit) != "int" || limit < 1 || limit > 1000 { return {"ok":false,"code":"approval_retention_invalid"} }
+    try {
+        db_query(db,"PRAGMA busy_timeout=5000",[])
+        db_query(db,"PRAGMA synchronous=FULL",[])
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        validate_private_link_store(db,approval_schema_v2(),2)
+        // No URL enters the selected row set or the returned evidence.
+        rows := db_query(db,"SELECT id FROM link_approval_outbox_v2 WHERE approval_url IS NOT NULL AND expires_at_ms<=? ORDER BY expires_at_ms,id LIMIT ?",[now_ms,limit])
+        for row in rows { db_execute(db,"UPDATE link_approval_outbox_v2 SET approval_url=NULL,retired_at_ms=? WHERE id=? AND approval_url IS NOT NULL AND expires_at_ms<=?",[now_ms,row["id"],now_ms]) }
+        db_execute(db,"COMMIT",[])
+        return {"ok":true,"retired":len(rows)}
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        return {"ok":false,"code":"approval_retention_unavailable"}
+    }
+}
