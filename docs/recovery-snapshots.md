@@ -43,3 +43,43 @@ Use it on a quiescent original publication in an administrator-controlled direct
 Success verifies **core integrity and quarantine**, not source authenticity, freshness, complete financial history, or arbitrary application extensions. `additional_schema_objects` reports objects outside the required core profile; their semantics require separate trusted review. A self-consistent attacker-supplied manifest is not a signature or authorization. Keep trusted custody/provenance for the source and manifest, and never use this result as permission to resume financial execution. It does not bundle or restore private provider/credential journals.
 
 `tests/network/recovery_verification_test.py` covers current and frozen-v1 publications, repeated exports, unchanged file bytes, 20 tamper/quarantine/path cases (including recomputed malicious manifests), and bounds. Existing recovery regressions remain in place.
+
+## Capture a declared set of private journals
+
+The privileged `recovery_set.py` command adds a shared SQLite write barrier around the core and up to seven private journals. Use this when a core-only copy would lose the provider references, credential-generation history, enrollment state or approval tombstones needed for incident analysis. It reuses the core snapshot/quarantine implementation; it is not a backup scheduler, credential installer or financial-history merge engine.
+
+Create a mode-0600 configuration with absolute paths and stable local aliases:
+
+```json
+{
+  "schema": "kujo.payment-recovery-set/v1",
+  "sources": {
+    "core": "/private/payments.db",
+    "provider": "/private/link-payments.db",
+    "credentials": "/private/link-vault.db",
+    "enrollment": "/private/link-enrollment.db",
+    "outbox": "/private/link-approval-outbox.db"
+  }
+}
+```
+
+These paths are examples. The operator must inventory the actual installation; a successful capture cannot detect a journal omitted from the configuration. Sources must be distinct, current-user-owned, private regular files. Symlinks, hard links and duplicate source files are rejected. Run under the trusted executor administrator in a directory whose parents are under trusted custody. For planned maintenance, pause core execution and stop/drain executor, enrollment, rotation and operator writers before capture. During an incident, record any uncertain in-flight work for reconciliation; the command itself reserves SQLite writes but cannot stop a remote request already in flight.
+
+```sh
+python3 scripts/maintenance/recovery_set.py create \
+  --config /private/recovery-config.json \
+  --directory /private/recovery/incident-set-001
+
+python3 scripts/maintenance/recovery_set.py verify \
+  --directory /private/recovery/incident-set-001
+```
+
+The destination must not exist. The same 30-second/256-MiB defaults and 300-second/16-GiB upper bounds apply; `--max-bytes` bounds the total copied database bytes, excluding the small manifests. All declared write reservations are acquired in deterministic path order before any database is captured and held until all copies are complete. Each database is copied through SQLite's backup API, including committed WAL content. Source transactions roll back without changing application rows. The core member receives its existing permanent execution quarantine; private members retain their original rows and are treated as opaque SQLite journals. SQL integrity/foreign-key checks do not establish provider-specific semantic validity.
+
+The manifest appears only after all copies finish and reservations release. It identifies fixed relative member paths, sizes and SHA-256 hashes, with `consistency: declared_sqlite_write_barrier`. The verifier checks those exact paths and private permissions, refuses extra files/sidecars, checks every member's integrity and unchanged bytes, and invokes the core quarantine verifier. It emits only member count and verification scope. Neither command prints source paths, journal rows, credential values or raw exceptions. A partial or killed capture has no valid set manifest and cannot pass verification; preserve it privately for incident review or dispose of it under the installation's retention procedure, then retry with a new destination.
+
+**The entire directory is credential-bearing private material.** These copies can contain access/refresh tokens, pending device codes and approval URLs. They are not encrypted by this command. Keep them out of agent mounts, Workcell artifacts, evidence collectors, source control, telemetry and ordinary file-sharing systems. Storage encryption, trusted custody, access control and retention belong to the operator's backup infrastructure. Mode 0600/0700 does not defend against the same OS principal or a host administrator. Hashes detect alteration relative to a trusted manifest; they are not signatures, freshness proofs or evidence that the declared set is complete.
+
+Do not attach copied private journals to a normal executor or refresh tokens from a copied vault: the live generation may have advanced, and repeating a refresh can invalidate credentials. Preserve originals for inspection and establish current account/credential authority separately before provider observation. The set is not an installable live restore. Remote settlement can precede a delayed local commit; a common database write barrier therefore cannot prove complete financial history, absence of a charge, safe approval reuse or permission to resume. Coordinated financial-history recovery and a supported operational restore procedure remain release gates.
+
+`tests/network/recovery_set_test.py` uses the actual private OCI seed for core, authorization, vault, enrollment and outbox journals. It exercises a writer against every reserved database, committed WAL inclusion, retained sentinel credentials only in private members, immutable verification, denied core resume, 13 tamper/path cases, aggregate size refusal, bounded lock contention, injected copy failure and an actual SIGKILL after private copy. Normal CI uses synthetic credentials and makes no provider or financial calls.
