@@ -3,6 +3,14 @@ from src.domain.lifecycle import transition
 // Only a successful claim return in the current invocation may authorize dispatch.
 export open_store := func(path) {
     db := db_connect("sqlite", path)
+    // Never silently initialize a foreign database or rewrite a future schema.
+    tables := db_query(db,"SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'",[])
+    if len(tables) > 0 {
+        marker := db_query(db,"SELECT name FROM sqlite_master WHERE type='table' AND name='payments_meta'",[])
+        assert(len(marker) == 1,"payments_schema_unknown")
+        versions := db_query(db,"SELECT version FROM payments_meta",[])
+        assert(len(versions) == 1 && type(versions[0]["version"]) == "int" && versions[0]["version"] == 1,"payments_schema_unsupported")
+    }
     db_query(db, "PRAGMA journal_mode=WAL", [])
     db_query(db, "PRAGMA synchronous=FULL", [])
     db_query(db, "PRAGMA foreign_keys=ON", [])
@@ -32,6 +40,7 @@ export open_store := func(path) {
     for event in ["UPDATE","DELETE"] {
         db_execute(db,"CREATE TRIGGER IF NOT EXISTS permanent_control_events_"+event+" BEFORE "+event+" ON execution_control_events BEGIN SELECT RAISE(ABORT,'permanent_control_events'); END",[])
     }
+    for statement in parse_json(read_file("contracts/storage/quarantine.sql.json")) { db_execute(db,statement,[]) }
     return db
 }
 export inspect := func(db, scope, execution_id) {

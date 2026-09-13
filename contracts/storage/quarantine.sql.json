@@ -1,0 +1,8 @@
+[
+  "CREATE TABLE IF NOT EXISTS restore_quarantine(id INTEGER PRIMARY KEY CHECK(id=1),source_digest TEXT NOT NULL,restored_at_ms INTEGER NOT NULL)",
+  "CREATE TRIGGER IF NOT EXISTS permanent_restore_marker_update BEFORE UPDATE ON restore_quarantine BEGIN SELECT RAISE(ABORT,'permanent_restore_quarantine'); END",
+  "CREATE TRIGGER IF NOT EXISTS permanent_restore_marker_delete BEFORE DELETE ON restore_quarantine BEGIN SELECT RAISE(ABORT,'permanent_restore_quarantine'); END",
+  "CREATE TRIGGER IF NOT EXISTS quarantine_resume BEFORE UPDATE OF mode ON execution_control WHEN NEW.mode='active' AND EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END",
+  "CREATE TRIGGER IF NOT EXISTS quarantine_claim BEFORE UPDATE OF claimed ON executions WHEN OLD.claimed=0 AND NEW.claimed=1 AND EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END",
+  "CREATE TRIGGER IF NOT EXISTS quarantine_native_authorization BEFORE INSERT ON provider_authorizations WHEN EXISTS(SELECT 1 FROM restore_quarantine) BEGIN SELECT RAISE(ABORT,'restore_observation_only'); END"
+]
