@@ -13,6 +13,7 @@ func context_for(row, principal, now_ms, phase) {
     return {"execution_id":row["execution_id"],"principal":principal,"tenant_id":principal["tenant_id"],"now_ms":now_ms,"deadline_ms":now_ms+10000,"phase":phase,"operation_id":row["execution_id"]+":"+phase,"snapshot_digest":row["snapshot_digest"]}
 }
 export prepare_execution := func(store, principal, execution_id, provider, schemas, table, now_ms, region) {
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -45,6 +46,7 @@ func valid_authorization_observation(result, schema, row) {
     return value["phase"] == "authorization" && value["outcome"] == "authorized" && value["execution_id"] == row["execution_id"] && value["snapshot_digest"] == row["snapshot_digest"] && value["actual_amount"] == null && value["evidence_ref"] != null
 }
 export request_provider_authorization := func(store, principal, execution_id, provider, schema, now_ms) {
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -72,6 +74,7 @@ export execution_invocation := func(row, principal, definition) {
 }
 export authorize_execution := func(store, principal, execution_id, approval, definition, issuer_ref, verify_issuer, now_ms) {
     if canonical_ability_matches("execute",definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -88,6 +91,7 @@ func unknown_observation(row, now_ms) {
     return {"schema":"kujo.payment-observation/v1","execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"],"phase":"execution","outcome":"unknown","observed_at_ms":now_ms,"evidence_ref":null,"actual_amount":null,"next_action":null,"retry_after_ms":null}
 }
 export accept_observation := func(store, principal, execution_id, provider_result, schema, confirmation, now_ms) {
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -118,6 +122,7 @@ export accept_observation := func(store, principal, execution_id, provider_resul
     return {"ok":true,"result":summary(store["inspect"](scope,execution_id))}
 }
 export reconcile_execution := func(store, principal, execution_id, provider, schema, confirmation, now_ms) {
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -132,6 +137,7 @@ export reconcile_execution := func(store, principal, execution_id, provider, sch
 }
 export execute_payment := func(store, principal, execution_id, approval, definition, provider, schemas, table, region, host, confirmation) {
     if canonical_ability_matches("execute",definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)

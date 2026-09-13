@@ -1,11 +1,13 @@
 // One bounded lifecycle step. Scheduling, identity, route selection and retries
 // belong to the trusted host/Dispatch, not to another Payments workflow engine.
 from src.application.contracts import valid_store
+from src.identity.canonical import ability_principal_compatible
 from src.application.execution import prepare_execution, request_provider_authorization, execute_payment, reconcile_payment
 from src.domain.binding import principal_digest
 from src.domain.lifecycle import summary
 
 export worker_step := func(store, principal, id, installed, host) {
+    if ability_principal_compatible(principal) == false { return {"ok":false,"code":"unsupported_principal"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     try {
         row := store["inspect"](principal_digest(principal),id)

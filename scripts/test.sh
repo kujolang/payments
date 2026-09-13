@@ -18,6 +18,7 @@ python3 scripts/ability_identity_vectors.py --output "$PAYMENTS_IDENTITY_VECTORS
 "$KUJO_BIN" run tests/ability_identities.kujo --interpreter
 "$KUJO_BIN" run tests/approval_bindings.kujo --interpreter
 python3 tests/network/identity_profile_test.py
+PAYMENTS_TEST_DB="$store_dir/application-identity.db" "$KUJO_BIN" run tests/application_identity.kujo --interpreter
 PAYMENTS_TEST_DB="$store_dir/observations.db" "$KUJO_BIN" run tests/observations.kujo
 PAYMENTS_TEST_DB="$store_dir/execution.db" "$KUJO_BIN" run tests/execution.kujo
 PAYMENTS_TEST_DB="$store_dir/gateway.db" "$KUJO_BIN" run tests/gateway.kujo

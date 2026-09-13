@@ -6,6 +6,7 @@ from src.application.execution import execution_invocation, authorize_execution
 from src.domain.binding import principal_digest, snapshot_digest
 
 func current_review(store, payer, id, definition, now_ms, allow_ready) {
+    if ability_principal_compatible(payer) == false { return {"ok":false,"code":"unsupported_principal"} }
     row := store["inspect"](principal_digest(payer),id)
     if row == null || (row["state"] != "awaiting_authorization" && (allow_ready == false || row["state"] != "ready")) || row["snapshot_json"] == null || row["claimed"] != 0 { return {"ok":false,"code":"not_reviewable"} }
     snapshot := parse_json(row["snapshot_json"])

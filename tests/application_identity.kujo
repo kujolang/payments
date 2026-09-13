@@ -1,0 +1,36 @@
+from src.application.execution import prepare_execution, request_provider_authorization, authorize_execution, accept_observation, reconcile_execution, execute_payment, reconcile_payment
+from src.application.worker import worker_step
+from src.executor.approval import review_payment, review_payment_delivery
+from src.storage.sqlite import open_store, inspect
+from src.storage.port import sqlite_port
+
+// Real storage port with an independently persisted access counter. No provider,
+// approval or policy callback may run when the principal profile is unsupported.
+db := open_store(env("PAYMENTS_TEST_DB"))
+counts := db_connect("sqlite",env("PAYMENTS_TEST_DB")+".counts")
+db_execute(counts,"CREATE TABLE accesses(n INTEGER)",[])
+store := sqlite_port(db)
+store["inspect"] = func(scope,id) { db_execute(counts,"INSERT INTO accesses VALUES(1)",[]);return inspect(db,scope,id) }
+definition := parse_json(read_file("contracts/abilities/execute.json"))
+reconciliation := parse_json(read_file("contracts/abilities/reconcile.json"))
+for principal in [{"type":"user","id":"payer","tenant_id":"tenant","claims":{"role":"admin"}},null,{},"payer",{"type":"user","id":"payer"},{"type":"user","id":"payer","tenant_id":"tenant","extra":"value"},{"type":"user","id":{"nested":"payer"},"tenant_id":"tenant"},{"type":"user","id":"payer","tenant_id":1},{"type":"user","id":"","tenant_id":"tenant"},{"type":"user","id":"payer","tenant_id":"tenant\n"},{"type":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","id":"payer","tenant_id":"tenant"}] {
+    for method in ["prepare","provider_authorization","authorize","observation","reconcile_internal","execute","worker","review","review_delivery","reconcile"] {
+        mut result := {}
+        if method == "prepare" { result = prepare_execution(store,principal,"fixture",{},{},{},1000,"US") }
+        else if method == "provider_authorization" { result = request_provider_authorization(store,principal,"fixture",{},{},1000) }
+        else if method == "authorize" { result = authorize_execution(store,principal,"fixture",{},definition,"fixture",func(a,b,c) { assert(false,"issuer_access");return false },1000) }
+        else if method == "observation" { result = accept_observation(store,principal,"fixture",{},{},{},1000) }
+        else if method == "reconcile_internal" { result = reconcile_execution(store,principal,"fixture",{},{},{},1000) }
+        else if method == "execute" { result = execute_payment(store,principal,"fixture",{},definition,{},{},{},"US",{},{}) }
+        else if method == "worker" { result = worker_step(store,principal,"fixture",{},{}) }
+        else if method == "review" { result = review_payment(store,principal,"fixture",definition,1000) }
+        else if method == "review_delivery" { result = review_payment_delivery(store,principal,"fixture",definition,1000) }
+        else { result = reconcile_payment(store,principal,"fixture","key",reconciliation,{},{},{},{}) }
+        assert(result == {"ok":false,"code":"unsupported_principal"},"application_profile_rejection:"+method)
+        assert(db_query(counts,"SELECT count(*) AS n FROM accesses",[])[0]["n"] == 0,"rejected_principal_reached_store")
+    }
+}
+assert(prepare_execution(store,{"type":"user","id":"payer","tenant_id":"tenant"},"fixture",{},{},{},1000,"US")["code"] == "invalid_execution","compatible_principal_reaches_store")
+assert(db_query(counts,"SELECT count(*) AS n FROM accesses",[])[0]["n"] == 1,"positive_store_access")
+db_close(counts);db_close(db)
+print("Application identity: 110 invalid-principal/entry-point cases reject before persistent store access")
