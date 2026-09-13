@@ -22,3 +22,26 @@ The SDK integration exposed the consequence through actual HTTP: a changed purch
 The diagnostic's internal Ability import is confined to the explicit reproducer; production code continues to use public Ability APIs. Upstream investigation and compatibility-safe remediation remain necessary. Payments does not silently substitute v2 hashes for established v1 approval/definition identities.
 
 Payments execution invocations use flat `execution_id` and `snapshot_digest` input fields; the snapshot digest comes from the separately tested field-vector binding. `tests/approval_bindings.kujo` verifies that the pinned Ability rejects changes to these two fields, principal type/id/tenant, invocation identity, Ability identity/version, supplied definition digest and expiration. Local VM and interpreter pass. This scopes the execution binding evidence; it does not prove that arbitrary nested Ability definitions have collision-resistant v1 identities. Deployed definitions remain trusted, pinned artifacts, and broader v1 compatibility remediation remains a release gate.
+
+## Canonical definition admission guard
+
+Payments now verifies the exact canonical operation definition using Ability's public `ability_definition_digest_v2` before gateway dispatch, construction of an execution invocation, authorization grant or execution. The only upstream change is facade export `fe6775d27b1742196e16f6c46f73c6cec906fe73`; the legacy serializers, registry, approval and runtime source are unchanged. The root package pins that commit; optional examples retain their independently reviewed dependency versions.
+
+`contracts/ability-identities.json` records explicit `sha256-canonical-json-v2` identities for the five canonical operation definitions. `src/identity/canonical.kujo` compiles the same inventory so runtime admission does not trust a second mutable configuration file. An independent Python serializer checks both inventories and generates 236 whole-definition mutation cases for the real Kujo helper. Request/status and execute tests verify that substitutions fail before grant or financial claim; unchanged definitions, v1 approvals, receipts and journal keys continue through existing tests. This is a Payments admission check, not another operation-contract format, a hash-algorithm migration or a claim that arbitrary v1 definitions are collision resistant.
+
+Do not replace a recorded definition identity under the same Ability ID/version. A future semantic contract change requires a new version, reviewed identity inventory and explicit pending-approval/idempotency compatibility tests. Providers extend the provider SPI; they do not rewrite canonical Payments Ability definitions. The inventory does not attest handler code or protect against a privileged operator replacing the application binary.
+
+### Remaining identity paths
+
+| Path | Current evidence/control | Remaining compatibility work |
+| --- | --- | --- |
+| Definition registration and resolution | Canonical v2 admission before the existing v1 registry; all scalar-field substitutions fail in VM/interpreter vectors | General Ability registry v2 identity and versioned receipt migration remain upstream work |
+| Gateway request fingerprint | Persisted field-framed request digest checked against every accepted replay summary; changed amount, merchant, purpose and optional fields are covered | Existing v1 operation receipts are retained; no aliasing old keys to newly computed hashes |
+| Gateway idempotency key | Legacy input is flat tenant/type/principal/key; financial scope independently uses field framing | Keep historical journal identities intact during any future algorithm migration |
+| Execution approval | Flat execution/snapshot input, exact canonical definition admission, nine binding mutations/expiry tests and exact persisted issuer approval | No arbitrary nested approval-input safety claim; no conversion of old approvals into new grants |
+| Execution request/replay | Same scoped execution key plus immutable snapshot, exact issued approval and permanent financial claim; claimed executions only return authoritative status | Interrupted Ability invocation recovery remains a separate unresolved journal gate |
+| Receipt principal comparison | Closed flat principal shape and independently scoped financial journal | No v2 receipt emission or broad dual-read receipt migration implemented |
+| Cancellation/reconciliation declarations | Identity inventory covers their canonical definitions; current worker/storage paths do not register or invoke these declarations as Abilities | Do not claim implemented Ability dispatch for the declarations alone |
+| SDK/MCP projections | Read canonical request/status schemas; server enforces the new admission guard | Projections and client-side metadata are not a privileged execution boundary |
+
+The release checklist's broader versioned Ability compatibility gate remains open. The guard addresses current canonical definition substitution without silently changing any existing v1 identity. A future migration must distinguish algorithms/schemas explicitly, retain historical receipts for observation, reject cross-version approval reuse, preserve permanent financial claims, and prove mixed-history behavior before release.

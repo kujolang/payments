@@ -42,7 +42,7 @@ def discipline(root):
             if module.startswith('src.'):
                 assert (root / (module.replace('.', '/') + '.kujo')).is_file(), f'Unresolved import: {rel}'
             else:
-                assert module == 'ability' and matches[0] in ('application', 'gateway', 'executor'), f'External import forbidden: {rel}'
+                assert module == 'ability' and matches[0] in ('application', 'gateway', 'executor', 'identity'), f'External import forbidden: {rel}'
 
 
 def fence(root, expected=0):
@@ -69,6 +69,8 @@ cases = [
     ('providers/contract.kujo', 'src.providers.fixture.provider'),
     ('providers/fixture/provider.kujo', 'src.gateway.operations'),
     ('storage/sqlite.kujo', 'src.providers.fixture.provider'),
+    ('identity/canonical.kujo', 'src.providers.fixture.provider'),
+    ('identity/canonical.kujo', 'src.storage.sqlite'),
 ]
 with tempfile.TemporaryDirectory(prefix='payments-fence-') as directory:
     temp = Path(directory)

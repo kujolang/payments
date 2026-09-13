@@ -41,6 +41,9 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
     }
     forged := parse_json(to_json(approval))
     forged["nonce"] = "forged"
+    changed_definition := parse_json(to_json(definition))
+    changed_definition["effects"] = []
+    assert(authorize_execution(sqlite_port(db),principal,"exec_1",approval,changed_definition,"fixture-issuer",verify_issuer,1500)["code"] == "definition_identity_mismatch","grant_definition_denied")
     assert(authorize_execution(sqlite_port(db),principal,"exec_1",forged,definition,"fixture-issuer",verify_issuer,1500)["ok"] == false,"forged_issuer")
     assert(authorize_execution(sqlite_port(db),principal,"exec_1",approval,definition,"fixture-issuer",verify_issuer,1500)["ok"],"authorize")
     for field in ["nonce","binding_digest","approval_id"] {
@@ -59,6 +62,9 @@ for behavior in ["success","throw_after","throw_before","pending","audit_failure
         if behavior == "audit_failure" && phase == "completed" { return {"ok":false} }
         return audit(phase,invocation,payload)
     }
+    refused := execute_payment(sqlite_port(db),principal,"exec_1",approval,changed_definition,provider,schemas,table,"US",{"clock_ms":selected_clock,"policy":policy,"audit":selected_audit},confirmation)
+    assert(refused["code"] == "definition_identity_mismatch" && inspect(db,scope,"exec_1")["claimed"] == 0,"execution_definition_denied_without_claim")
+    assert(db_query(db,"SELECT consumed FROM approvals",[])[0]["consumed"] == 0,"definition_denial_keeps_approval_unconsumed")
     result := execute_payment(sqlite_port(db),principal,"exec_1",approval,definition,provider,schemas,table,"US",{"clock_ms":selected_clock,"policy":policy,"audit":selected_audit},confirmation)
     if behavior == "audit_failure" { assert(result["ok"] == false && result["result"]["status"] == "succeeded","audit_not_financial_failure") }
     if behavior == "success" || behavior == "short_approval" { assert(result["result"]["status"] == "succeeded","paid") }

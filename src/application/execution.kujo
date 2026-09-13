@@ -4,6 +4,7 @@ from src.domain.binding import frame, intent_digest, snapshot_digest, principal_
 from src.domain.validation import valid_intent, valid_snapshot, valid_capabilities
 from src.domain.lifecycle import summary, observation_event
 from src.providers.contract import call_provider, valid_provider
+from src.identity.canonical import canonical_ability_matches
 
 export principal_scope := func(principal) {
     return principal_digest(principal)
@@ -64,10 +65,12 @@ export request_provider_authorization := func(store, principal, execution_id, pr
 }
 
 export execution_invocation := func(row, principal, definition) {
+    assert(canonical_ability_matches("execute",definition),"definition_identity_mismatch")
     id := "execute:" + row["execution_id"]
     return {"schema":"kujo.ability.invocation/v1","invocation_id":id,"ability_id":definition["id"],"ability_version":definition["version"],"definition_digest":ability_definition_digest(definition)["digest"],"input":{"execution_id":row["execution_id"],"snapshot_digest":row["snapshot_digest"]},"principal":principal,"request_id":id,"trace_id":id,"surface":"sdk","idempotency_key":id,"approval":{},"metadata":{}}
 }
 export authorize_execution := func(store, principal, execution_id, approval, definition, issuer_ref, verify_issuer, now_ms) {
+    if canonical_ability_matches("execute",definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)
@@ -127,6 +130,7 @@ export reconcile_execution := func(store, principal, execution_id, provider, sch
     return accept_observation(store,principal,execution_id,call_provider(provider,"observe",ref,ctx),schema,confirmation,now_ms)
 }
 export execute_payment := func(store, principal, execution_id, approval, definition, provider, schemas, table, region, host, confirmation) {
+    if canonical_ability_matches("execute",definition) == false { return {"ok":false,"code":"definition_identity_mismatch"} }
     if valid_store(store) == false { return {"ok":false,"code":"invalid_store"} }
     scope := principal_scope(principal)
     row := store["inspect"](scope,execution_id)

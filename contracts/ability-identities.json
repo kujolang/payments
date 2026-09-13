@@ -1,0 +1,32 @@
+{
+  "cancel": {
+    "id": "kujo.payments.intent.cancel",
+    "version": "1.0.0",
+    "algorithm": "sha256-canonical-json-v2",
+    "digest": "d46a1ff730f77cf9f686165fcb2bbbdb3996154d7cf1aaedcea4ebebd63b3b1c"
+  },
+  "execute": {
+    "id": "kujo.payments.execution.execute",
+    "version": "1.0.0",
+    "algorithm": "sha256-canonical-json-v2",
+    "digest": "c621821649b5635a67dcc0ff14ebd209b8fd7a0579298b7ed2dc711ffa7c38e8"
+  },
+  "inspect": {
+    "id": "kujo.payments.execution.inspect",
+    "version": "1.0.0",
+    "algorithm": "sha256-canonical-json-v2",
+    "digest": "799a584fbacfe47eadfdaf2b23035fc47b157b17890b0e8afa308f820680060b"
+  },
+  "reconcile": {
+    "id": "kujo.payments.execution.reconcile",
+    "version": "1.0.0",
+    "algorithm": "sha256-canonical-json-v2",
+    "digest": "9c6ae885c8467824cc1f99f18f8a20d2183acadd35eff3452b043071094d6641"
+  },
+  "request": {
+    "id": "kujo.payments.intent.request",
+    "version": "1.0.0",
+    "algorithm": "sha256-canonical-json-v2",
+    "digest": "3078ff16ea2f2ef0f1ad7cca40debcf8fa01955523f8ab202b0f025dc2bbb5bb"
+  }
+}

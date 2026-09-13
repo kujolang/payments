@@ -31,12 +31,17 @@ can_depend_on = []
 
 [zones.application]
 paths = ["src/application/execution.kujo", "src/application/worker.kujo"]
-can_depend_on = ["domain", "ports", "provider_contract"]
+can_depend_on = ["domain", "ports", "provider_contract", "identity"]
 external_allow = ["ability"]
 
 [zones.gateway]
 paths = ["src/gateway/**"]
-can_depend_on = ["domain", "ports"]
+can_depend_on = ["domain", "ports", "identity"]
+external_allow = ["ability"]
+
+[zones.identity]
+paths = ["src/identity/**"]
+can_depend_on = []
 external_allow = ["ability"]
 
 [zones.storage]

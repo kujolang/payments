@@ -1,0 +1,18 @@
+from src.identity.canonical import canonical_ability_matches
+from ability import ability_definition_digest
+vectors := parse_json(read_file(env("PAYMENTS_IDENTITY_VECTORS")))
+for vector in vectors {
+    assert(canonical_ability_matches(vector["operation"],vector["definition"]) == vector["matches"],"definition_identity_vector")
+}
+assert(canonical_ability_matches("execute",null) == false,"malformed_definition")
+original := parse_json(read_file("contracts/abilities/execute.json"))
+changed := parse_json(to_json(original))
+input_schema := changed["input_schema"]
+input_schema["additionalProperties"] = true
+changed["input_schema"] = input_schema
+// Frozen v1 identity: a future migration must not silently relabel old evidence.
+legacy := ability_definition_digest(original)["digest"]
+assert(legacy == "00f65a051d700d106a5546c359f67b43e8ba04c560adf6bb8938e84d9abfdf1d","legacy_definition_identity_preserved")
+assert(ability_definition_digest(changed)["digest"] == legacy,"historical_definition_collision_fixture")
+assert(canonical_ability_matches("execute",changed) == false,"colliding_legacy_definition_rejected")
+print("Canonical Ability identity: " + to_string(len(vectors)) + " independent mutations passed")

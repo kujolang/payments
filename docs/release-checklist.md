@@ -17,6 +17,7 @@ Status: implementation in progress; not approved for real-money release. A check
 - [x] Optional Dispatch persisted wait/resume observer with fresh status and no financial approval.
 - [x] Optional Workcell isolated intent export, verified artifacts and separate trusted payment intake (synthetic Docker profile).
 - [x] Changed-term replay postcondition and flat execution approval binding regression tests.
+- [x] Canonical Ability v2 definition admission, frozen v1 compatibility case and independent definition mutation vectors.
 
 ## Required before real-money release
 

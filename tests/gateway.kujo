@@ -11,6 +11,16 @@ authenticate := func(context) { if context == "authenticated-test-channel" { ret
 policy := func(definition, invocation, exposure) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"gateway-policy","outcome":"allow","reason":"Fixture access policy","requirements":[],"policy_id":"kujo.fixture","policy_version":"1.0.0"} }
 audit := func(phase, invocation, payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"audit:"+phase} }
 config := {"authenticate":authenticate,"clock_ms":clock,"policy":policy,"audit":audit,"namespace":"fixture-installation","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json"))}}
+for operation in ["request","inspect"] {
+    // Rebuild configuration explicitly; callable configuration cannot survive JSON.
+    definitions := parse_json(to_json(config["definitions"]))
+    changed_definition := definitions[operation]
+    changed_definition["description"] = "Unreviewed replacement"
+    definitions[operation] = changed_definition
+    bad_config := {"authenticate":authenticate,"clock_ms":clock,"policy":policy,"audit":audit,"namespace":"fixture-installation","currency_table":config["currency_table"],"intent_schema":config["intent_schema"],"definitions":definitions}
+    denied := gateway_call(sqlite_port(db),{"operation":operation,"input":{},"idempotency_key":"definition-probe"},"authenticated-test-channel",bad_config)
+    assert(denied["code"] == "definition_identity_mismatch","gateway_definition_denied_before_input")
+}
 transport := func(request) { return gateway_call(sqlite_port(db),request,"authenticated-test-channel",config) }
 input := {"purchase_ref":"purchase1","payee_ref":"merchant1","amount":{"mode":"maximum","minor":5500,"currency":"USD"},"purpose":"Fixture purchase","payment_profile":"default","expires_in_ms":1000}
 response := purchase_request(transport,input,"key")
