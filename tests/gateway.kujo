@@ -15,6 +15,9 @@ transport := func(request) { return gateway_call(sqlite_port(db),request,"authen
 input := {"purchase_ref":"purchase1","payee_ref":"merchant1","amount":{"mode":"maximum","minor":5500,"currency":"USD"},"purpose":"Fixture purchase","payment_profile":"default","expires_in_ms":1000}
 response := purchase_request(transport,input,"key")
 assert(response["ok"],"request")
+mut changed := parse_json(to_json(input))
+changed["purpose"] = "Changed request must not replay as accepted"
+assert(purchase_request(transport,changed,"key")["ok"] == false,"changed_terms_replay_denied")
 id := response["result"]["execution_id"]
 assert(response["result"]["status"] == "awaiting_authorization","async_intake")
 assert(purchase_request(transport,input,"key")["result"]["execution_id"] == id,"stable_identity")

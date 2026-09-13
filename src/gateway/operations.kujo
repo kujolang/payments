@@ -78,6 +78,17 @@ export gateway_call := func(store, request, transport_context, config) {
         begin := func(key_digest, digest, inv) { return store["begin_ability"](inv["ability_id"],key_digest,digest,inv["invocation_id"]) }
         complete := func(key_digest, digest, receipt) { return store["complete_ability"](receipt["ability_id"],key_digest,digest,receipt) }
         result := execute_ability(registry,invocation,{"clock_ms":clock,"policy":config["policy"],"audit":config["audit"],"begin_idempotency":begin,"complete_idempotency":complete})
+        // A replayed Ability receipt is not proof that its purchase terms match.
+        // Verify the persisted payment-specific field binding before acknowledging
+        // either success or a safe summary after audit failure. This also covers
+        // concurrent intake/replay without changing existing Ability digests.
+        if operation == "request" && has_key(result,"receipt") {
+            candidate := result["receipt"]["result"]
+            if validate_ability_value(candidate,definition["output_schema"],"output")["ok"] {
+                authoritative := store["inspect"](scope,candidate["execution_id"])
+                if authoritative == null || authoritative["request_digest"] != request_digest(input) { return {"ok":false,"code":"idempotency_conflict"} }
+            }
+        }
         // Only a compact domain summary crosses the model-facing boundary.
         if result["ok"] == true { return {"ok":true,"result":result["receipt"]["result"]} }
         if has_key(result,"receipt") {

@@ -1,0 +1,6 @@
+// Diagnostic only: uses the exact installed Ability internal implementation.
+// Not a production import or a proposed replacement for canonical v1 identities.
+from src.internal import json_digest, json_digest_v2, canonical_json
+first := {"input":{"purpose":"first"},"principal":{"id":"payer"}}
+second := {"input":{"purpose":"second"},"principal":{"id":"payer"}}
+print(to_json({"v1_first":json_digest(first),"v1_second":json_digest(second),"v1_canonical_first":canonical_json(first),"v1_canonical_second":canonical_json(second),"v2_distinct":json_digest_v2(first) != json_digest_v2(second)}))
