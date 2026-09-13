@@ -62,9 +62,13 @@ for scenario in ["success","lost_charge","changed_challenge","unverified_2xx"] {
     host := {"clock_ms":clock,"policy":policy,"audit":audit,"reconciliation_key":uuid_v4()}
     store := sqlite_port(db)
     assert(intake(db,principal_digest(principal),"key","request","exec_1",v["intent"])["ok"],"intake")
+    prepare_start := performance_now()
     pending := worker_step(store,principal,"exec_1",installed,host)
+    prepare_ms := performance_now()-prepare_start
     assert(pending["ok"] && pending["result"]["status"] == "awaiting_authorization","pending")
+    poll_start := performance_now()
     assert(worker_step(store,principal,"exec_1",installed,host)["ok"],"approval_poll")
+    poll_ms := performance_now()-poll_start
     assert(db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='POST'",[])[0]["n"] == 1,"one_native_issuance")
     assert(db_query(processor,"SELECT count(*) AS n FROM charges",[])[0]["n"] == 0,"no_charge_before_operator")
     row := inspect(db,principal_digest(principal),"exec_1")
@@ -78,19 +82,31 @@ for scenario in ["success","lost_charge","changed_challenge","unverified_2xx"] {
     changed_merchant["binding_digest"] = sha256("changed-route")
     changed_provider := link_provider(private,config,api,changed_merchant,clock)
     assert(call_provider(changed_provider,"observe",{"prepared_ref":ref},context)["ok"] == false,"installed_route_changed")
+    review_start := performance_now()
     review := review_payment(store,principal,"exec_1",definition,1500)
     authority := {"payer":principal,"operator":{"type":"human","id":"operator","tenant_id":principal["tenant_id"]},"issuer_ref":"fixture-operator","ttl_ms":300}
     assert(approve_reviewed_payment(store,principal,"exec_1",definition,authority,review["binding_digest"],1500)["ok"],"operator")
+    review_ms := performance_now()-review_start
+    submit_start := performance_now()
     first := worker_step(store,principal,"exec_1",installed,host)
+    submit_ms := performance_now()-submit_start
     if scenario == "success" { assert(first["result"]["status"] == "succeeded","settled") }
     else { assert(first["result"]["status"] == "reconciliation_required","unknown_not_paid") }
+    followup_start := performance_now()
     second := worker_step(store,principal,"exec_1",installed,host)
+    followup_ms := performance_now()-followup_start
     if scenario == "lost_charge" { assert(second["result"]["status"] == "succeeded","reconciled") }
     pays := db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='pay'",[])[0]["n"]
     if scenario == "changed_challenge" {
         assert(pays == 0 && db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind='credential'",[])[0]["n"] == 0,"mutation_before_secret")
     } else { assert(pays == 1,"one_submission") }
     for value in [pending,review,first,second,db_query(db,"SELECT * FROM issued_approvals",[]),db_query(db,"SELECT * FROM observations",[])] { assert(contains(to_json(value),"SENTINEL") == 0,"no_secret_in_generic_boundary") }
+    if env("PAYMENTS_MEASURE_LINK") == "1" {
+        mut calls := {}
+        for kind in ["POST","GET","probe","pay","credential"] { calls[kind] := db_query(processor,"SELECT count(*) AS n FROM calls WHERE kind=?",[kind])[0]["n"] }
+        metrics := {"schema":"kujo.payment-fixture-measurement/v1","scenario":scenario,"phase_ms":{"prepare_and_authorize":prepare_ms,"authorization_poll":poll_ms,"operator_review_and_grant":review_ms,"submit":submit_ms,"followup":followup_ms},"calls":calls,"summary_bytes":{"pending":byte_length(to_json(pending["result"])),"first":byte_length(to_json(first["result"])),"followup":byte_length(to_json(second["result"]))},"first_status":first["result"]["status"],"followup_status":second["result"]["status"]}
+        print("Link measurement: "+to_json(metrics))
+    }
     db_close(processor)
     db_close(private)
     db_close(db)
