@@ -1,0 +1,44 @@
+{
+  "source_commit": "ac26e3b151237e0ed96091c46861465afd31860c",
+  "run_id": 34731947795,
+  "url": "https://github.com/kujolang/payments/actions/runs/34731947795",
+  "jobs": {
+    "host": {
+      "id": 103656233377,
+      "conclusion": "success",
+      "log_sha256": "c22fed587f44511ce356755b39993a2703e363aebf299f37fb8395402ed0fcd6"
+    },
+    "containment": {
+      "id": 103656233209,
+      "conclusion": "success",
+      "log_sha256": "9ebd81870671dc6bc25eda8f10161bc4dd6628d9572edc155f20591d0499eef7"
+    }
+  },
+  "artifact": {
+    "id": 10309607468,
+    "name": "payments-workcell-evidence",
+    "archive_sha256": "35bece0485e67c93104ca1b972d4f21c2aea5f220add918533f7a6ca0525f488",
+    "manifest_verified_files": 6,
+    "retention_days": 14
+  },
+  "workcell": {
+    "source": {
+      "workcell_commit": "e2915a3fbf5befe28cab09509f8a79bc93976975",
+      "runtime_commit": "692512a9070fdba713f160d795bbddb8077db7b5",
+      "runtime_version": "kujo 1.2.1"
+    },
+    "image": "sha256:59c1db120e5cfc82bdcceeb50059a60fdcbe8624c21b50163f8c07699d1aa8e6",
+    "run_id": "wc-9c6b0964b65147088b7935d040bd328d",
+    "receipt_sha256": "e817b2860c076104de708beed575d08f779c86fff2cda795ee13e3c38aa6a8b2",
+    "verified": true,
+    "runtime_sha256": "6e701d3f440091141bbcd48fd4bbaaae0a52f94cd37d897649d4638f81dfdaf3",
+    "payment_execution_id": "execution:9489c47b15b423298c18b9ef4d2dd396c142c3407e4dfc53964205043ea0dd48"
+  },
+  "observed": {
+    "cleanup_status": "complete",
+    "artifact_bytes": 206,
+    "elapsed_ms": 3916,
+    "docker_server": "28.0.4"
+  },
+  "scope": "Actual pinned Workcell Docker lifecycle, hostile probes, manifest/receipt verification, separate trusted Payments intake, credential canary scan and cancellation unit fixtures. Full synthetic host suite passed. No real financial action, daemon-failure cleanup, model-network egress or all-sink production claim."
+}

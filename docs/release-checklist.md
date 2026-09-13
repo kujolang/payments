@@ -15,6 +15,7 @@ Status: implementation in progress; not approved for real-money release. A check
 - [x] Optional Agents SDK request/status projection, cross-run replay and callback error tests.
 - [x] Optional two-tool MCP STDIO frontend using canonical Kujo projection and public client.
 - [x] Optional Dispatch persisted wait/resume observer with fresh status and no financial approval.
+- [x] Optional Workcell isolated intent export, verified artifacts and separate trusted payment intake (synthetic Docker profile).
 - [x] Changed-term replay postcondition and flat execution approval binding regression tests.
 
 ## Required before real-money release
@@ -25,7 +26,6 @@ Status: implementation in progress; not approved for real-money release. A check
 - [ ] Establish authoritative merchant/order/settlement evidence. HTTP success and token issuance alone are insufficient.
 - [ ] Complete supported deployment egress/isolation and all-sink secret-leak conformance, including failure/debug paths in selected integrations.
 - [ ] Complete coordinated private-journal backup/history recovery and interrupted Ability invocation handling. Current recovery artifacts cannot be re-enabled for spending.
-- [ ] Complete the remaining planned Workcell composition example, or explicitly defer them in the reviewed release scope. They remain optional integrations, not core dependencies.
 - [ ] Measure model-visible schema/output size, polling/subprocess cost and execution latency with bounded fixtures.
 - [ ] Complete provider sandbox acceptance against pinned/reviewed behavior; normal CI must remain synthetic.
 - [ ] Review release artifacts, installation/upgrades, operational instructions and all readiness claims against current evidence.
