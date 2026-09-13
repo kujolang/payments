@@ -1,0 +1,29 @@
+{
+  "source_commit": "85300feb79e36d7052a0c0d9a2e0e9d007973e85",
+  "run_id": 34744086846,
+  "url": "https://github.com/kujolang/payments/actions/runs/34744086846",
+  "jobs": {
+    "host": {
+      "id": 103688639173,
+      "conclusion": "success",
+      "log_sha256": "8ccac3248e5205723244a042c70025d73d1672d53ec84be83f5b88edaf05145f"
+    },
+    "containment": {
+      "id": 103688639096,
+      "conclusion": "success",
+      "log_sha256": "07a9489b8fbf583067f73584756ab4251e89d0efb683f8df853e53785f2def27"
+    }
+  },
+  "artifact": {
+    "id": 10313417726,
+    "archive_sha256": "ff219d2f947a879930cf5e47b63ac10e11fc6271721f2545f0d7fb17490265e7",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Private Link enrollment lifecycle, 22 fault cases, four-way contention, four process-kill boundaries and guarded publication; full synthetic host suite and existing 24-file OCI/Workcell containment. This run predates dedicated enrollment storage/operator containment probes. No supported registration, actual account verification or live provider acceptance claim."
+}
