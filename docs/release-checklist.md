@@ -18,6 +18,7 @@ Status: implementation in progress; not approved for real-money release. A check
 - [x] Optional Workcell isolated intent export, verified artifacts and separate trusted payment intake (synthetic Docker profile).
 - [x] Changed-term replay postcondition and flat execution approval binding regression tests.
 - [x] Canonical Ability v2 definition admission, frozen v1 compatibility case and independent definition mutation vectors.
+- [x] Private Link credential rotation journal and synthetic concurrency/crash fixtures; enrollment and live OAuth conformance remain open.
 
 ## Required before real-money release
 
