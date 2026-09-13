@@ -44,7 +44,7 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Declared private-journal recovery capture with a shared SQLite write barrier, permanent core quarantine, member verification and real crash fixtures. This preserves private evidence; complete financial-history recovery and live restore remain open.
 
-- [x] Safe abandonment of interrupted unclaimed execution through existing conditional cancellation: five real process checkpoints with killed/live originals, preserved reservations and post-claim observation-only behavior. [Procedure and scope](interrupted-execution.md). Financial re-entry is unsupported.
+- [x] Safe abandonment of interrupted unclaimed execution through existing conditional cancellation: five real process checkpoints with killed/live originals, preserved reservations and post-claim observation-only behavior. [Procedure and scope](interrupted-execution.md); [verified Linux/containment evidence](evidence/interrupted-execution-ci.json). Financial re-entry is unsupported.
 
 ## Required before real-money release
 

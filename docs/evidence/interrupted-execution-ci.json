@@ -1,0 +1,285 @@
+{
+  "source_commit": "d4ce0424b78eee1d7d73cdbc323df8a2937697f2",
+  "run_id": 34749563387,
+  "url": "https://github.com/kujolang/payments/actions/runs/34749563387",
+  "jobs": {
+    "host": {
+      "id": 103703561355,
+      "conclusion": "success",
+      "log_sha256": "c851c0aaf1256e1c45e1ecf1def63e9f7f549fcb63e3c4942aa1b82990fd7b3f"
+    },
+    "containment": {
+      "id": 103703561610,
+      "conclusion": "success",
+      "log_sha256": "f1a47c7b201a288b61ab6d9892c72f84aa907b55e8d663fb28f7e2345ca56187"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 79,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 59,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 243,
+    "status_ms": 63,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 60.587107999999944,
+      "median_ms": 59.027514999999994,
+      "min_ms": 58.456985999999915,
+      "p95_ms": 60.587107999999944,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 348.280446,
+      "median_ms": 121.84165050000001,
+      "min_ms": 61.08111800000006,
+      "p95_ms": 348.280446,
+      "samples": 8
+    }
+  },
+  "link_metrics": {
+    "flows_per_process": 4,
+    "native_process_count": 8,
+    "process_ms": {
+      "max_ms": 1613.689144999995,
+      "median_ms": 1279.7498784999846,
+      "min_ms": 1094.082095999994,
+      "p95_ms": 1613.689144999995,
+      "samples": 8
+    },
+    "scenarios": {
+      "changed_challenge": {
+        "calls_per_flow": {
+          "GET": 2,
+          "POST": 1,
+          "credential": 0,
+          "pay": 0,
+          "probe": 2
+        },
+        "phase_ms": {
+          "authorization_poll": {
+            "max_ms": 94.90434200000016,
+            "median_ms": 15.446761000000038,
+            "min_ms": 13.962883000000033,
+            "p95_ms": 94.90434200000016,
+            "samples": 8
+          },
+          "followup": {
+            "max_ms": 81.69002000000023,
+            "median_ms": 53.26353599999999,
+            "min_ms": 49.09319300000004,
+            "p95_ms": 81.69002000000023,
+            "samples": 8
+          },
+          "operator_review_and_grant": {
+            "max_ms": 47.715656999999965,
+            "median_ms": 44.792741999999976,
+            "min_ms": 42.55653199999995,
+            "p95_ms": 47.715656999999965,
+            "samples": 8
+          },
+          "prepare_and_authorize": {
+            "max_ms": 109.48837700000001,
+            "median_ms": 33.763979000000006,
+            "min_ms": 30.334795999999983,
+            "p95_ms": 109.48837700000001,
+            "samples": 8
+          },
+          "submit": {
+            "max_ms": 115.58819800000015,
+            "median_ms": 71.27012450000001,
+            "min_ms": 68.20570699999996,
+            "p95_ms": 115.58819800000015,
+            "samples": 8
+          }
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 111,
+          "pending": 114
+        }
+      },
+      "lost_charge": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "phase_ms": {
+          "authorization_poll": {
+            "max_ms": 86.24579099999997,
+            "median_ms": 14.861336499999993,
+            "min_ms": 13.457512000000008,
+            "p95_ms": 86.24579099999997,
+            "samples": 8
+          },
+          "followup": {
+            "max_ms": 92.19797,
+            "median_ms": 51.21405950000005,
+            "min_ms": 48.02980400000001,
+            "p95_ms": 92.19797,
+            "samples": 8
+          },
+          "operator_review_and_grant": {
+            "max_ms": 52.390131,
+            "median_ms": 44.603590999999994,
+            "min_ms": 41.33483699999999,
+            "p95_ms": 52.390131,
+            "samples": 8
+          },
+          "prepare_and_authorize": {
+            "max_ms": 61.702128999999985,
+            "median_ms": 31.693117499999985,
+            "min_ms": 30.662902999999943,
+            "p95_ms": 61.702128999999985,
+            "samples": 8
+          },
+          "submit": {
+            "max_ms": 179.130339,
+            "median_ms": 95.49788750000002,
+            "min_ms": 72.93771700000002,
+            "p95_ms": 179.130339,
+            "samples": 8
+          }
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 109,
+          "pending": 114
+        }
+      },
+      "success": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "phase_ms": {
+          "authorization_poll": {
+            "max_ms": 111.22310000000002,
+            "median_ms": 14.264219999999995,
+            "min_ms": 13.154943,
+            "p95_ms": 111.22310000000002,
+            "samples": 8
+          },
+          "followup": {
+            "max_ms": 3.4176669999999376,
+            "median_ms": 3.295505500000033,
+            "min_ms": 3.013056000000006,
+            "p95_ms": 3.4176669999999376,
+            "samples": 8
+          },
+          "operator_review_and_grant": {
+            "max_ms": 43.400541000000004,
+            "median_ms": 41.9325985,
+            "min_ms": 40.750469,
+            "p95_ms": 43.400541000000004,
+            "samples": 8
+          },
+          "prepare_and_authorize": {
+            "max_ms": 221.73460000000003,
+            "median_ms": 48.247967,
+            "min_ms": 30.880607,
+            "p95_ms": 221.73460000000003,
+            "samples": 8
+          },
+          "submit": {
+            "max_ms": 366.72139699999997,
+            "median_ms": 93.52891249999999,
+            "min_ms": 73.93210400000001,
+            "p95_ms": 366.72139699999997,
+            "samples": 8
+          }
+        },
+        "summary_bytes": {
+          "first": 109,
+          "followup": 109,
+          "pending": 114
+        }
+      },
+      "unverified_2xx": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "phase_ms": {
+          "authorization_poll": {
+            "max_ms": 42.55381800000009,
+            "median_ms": 15.38775550000014,
+            "min_ms": 14.253115000000093,
+            "p95_ms": 42.55381800000009,
+            "samples": 8
+          },
+          "followup": {
+            "max_ms": 58.829701000000114,
+            "median_ms": 53.12533000000002,
+            "min_ms": 48.91337599999997,
+            "p95_ms": 58.829701000000114,
+            "samples": 8
+          },
+          "operator_review_and_grant": {
+            "max_ms": 88.21218599999997,
+            "median_ms": 44.424938499999996,
+            "min_ms": 42.487990999999965,
+            "p95_ms": 88.21218599999997,
+            "samples": 8
+          },
+          "prepare_and_authorize": {
+            "max_ms": 113.83110800000009,
+            "median_ms": 34.557426499999906,
+            "min_ms": 32.56875099999991,
+            "p95_ms": 113.83110800000009,
+            "samples": 8
+          },
+          "submit": {
+            "max_ms": 182.51045099999988,
+            "median_ms": 86.38321149999996,
+            "min_ms": 75.58665200000007,
+            "p95_ms": 182.51045099999988,
+            "samples": 8
+          }
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 111,
+          "pending": 114
+        }
+      }
+    },
+    "schema": "kujo.payment-fixture-performance/v1",
+    "scope": "synthetic_in_process_provider_callbacks"
+  },
+  "artifact": {
+    "id": 10314524716,
+    "archive_sha256": "1c1748c05bee9db51cf74e35576cab8c796a4eb26be22e75735b604fa3ced344",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Interrupted financial execution: five checkpoints, killed/live originals, canonical scoped cancellation and preserved financial claims/tombstones; no financial re-entry. Repeated synthetic Link lifecycle measurements; full host suite and synthetic 30-file OCI/Workcell containment. No authenticity, freshness, arbitrary extension semantics, complete financial-history, coordinated restore, production or live-provider acceptance claim."
+}
