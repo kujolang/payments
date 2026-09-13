@@ -1,0 +1,18 @@
+{
+  "source_commit": "ea7f8cac586edffd886c06201cbaf3257fd92bae",
+  "run_id": 34729823675,
+  "url": "https://github.com/kujolang/payments/actions/runs/34729823675",
+  "jobs": {
+    "host": {
+      "id": 103650430392,
+      "conclusion": "success",
+      "log_sha256": "5e863aa894f7579d3832e48c7bf864da654492b293412a4c2e29124081f680d0"
+    },
+    "containment": {
+      "id": 103650430294,
+      "conclusion": "success",
+      "log_sha256": "8b2c720fa9280cfa51b20d0a904c50dc168e9b3d5e22bfe94016101a0ca49427"
+    }
+  },
+  "scope": "Synthetic full host suite including pinned Agents SDK HTTP composition, changed-term replay rejection, flat execution approval binding tests and concurrent migration regression; current-image component and containment suite. No live-provider acceptance or arbitrary nested v1 digest correctness claim."
+}
