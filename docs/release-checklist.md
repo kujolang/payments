@@ -22,6 +22,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Executor-only approval URL staging/delivery component and 24 synthetic binding/URL/callback cases; synthetic OCI/Workcell private-outbox containment verified; authenticated operator installation remains open.
 
+- [x] Bounded logical approval-URL retirement, permanent tombstones and explicit private outbox v1-to-v2 upgrade; local and both pinned Linux/containment jobs passed.
+
 ## Required before real-money release
 
 - [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.

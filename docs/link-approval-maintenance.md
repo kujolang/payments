@@ -40,3 +40,5 @@ This is logical retention control, not secure media erasure or provider revocati
 ## Evidence scope
 
 Native tests exercise frozen v1 preservation, new/old opener separation, four-process upgrade and cleanup races, exact batch bounds, permanent identity/retirement guards, re-staging/direct-delivery denial, administrator validation, disk-full rollback, and SIGKILL rollback during migration and retirement. Normal CI uses synthetic URLs and does not call Link or move money. Full release requirements remain in [the release checklist](release-checklist.md).
+
+Both pinned Linux jobs passed at `ce87be7` in [CI run 34736615489](https://github.com/kujolang/payments/actions/runs/34736615489). The downloaded OCI/Workcell evidence passed archive and manifest checks, reported private v2 outbox/vault positive controls, both 18-file agent probes and complete cleanup. See `docs/evidence/approval-retention-ci.json` for the exact source and scope.

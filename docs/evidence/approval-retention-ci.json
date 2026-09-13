@@ -1,0 +1,28 @@
+{
+  "source_commit": "ce87be7d5c9daf8e8e5ba39997e25cb346171aee",
+  "run_id": 34736615489,
+  "url": "https://github.com/kujolang/payments/actions/runs/34736615489",
+  "jobs": {
+    "host": {
+      "id": 103669064766,
+      "conclusion": "success",
+      "log_sha256": "cd2847a6a7604e5900cdcf8574542d20222e3cace557a61a8ca19ca70e6be4fa"
+    },
+    "containment": {
+      "id": 103669064594,
+      "conclusion": "success",
+      "log_sha256": "f15b229ab4048c2ca297abf624346a4ba3177ea0ff3ff2b8f3f096e306e1bcc5"
+    }
+  },
+  "artifact": {
+    "id": 10310914166,
+    "archive_sha256": "82d9d4bfcfd57f878e9a58e84731e886b5c3d779198b87127d2c1a6157d565b5",
+    "verified_manifest_files": 6,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 18,
+    "workcell_file_probes": 18,
+    "cleanup_status": "complete"
+  },
+  "scope": "Private outbox v2 and explicit frozen-v1 upgrade; bounded concurrent URL retirement, permanent tombstones, disk-full/SIGKILL rollback, administrator command and existing full host suite. Actual synthetic OCI/Workcell outbox/vault isolation. No secure media erasure, backup recovery, provider revocation, production notifier, live OAuth/payment or all-sink certification."
+}
