@@ -1,0 +1,15 @@
+{
+  "reviewed_at": "2026-09-13",
+  "payments_source_commit": "f3850c4b1ec5d949d61232608d0c01914a15b443",
+  "provider_commit": "4aa62ba34eaeb884d00041681f5c7801521c0bf8",
+  "observed_organization_head": "4aa62ba34eaeb884d00041681f5c7801521c0bf8",
+  "provider_source_sha256": {
+    "README.md": "cd5063ac15c9d5bcc1291cdde92e42fb7c0f2e66e41719f815a7e12700061629",
+    "packages/cli/src/auth/auth-resource.ts": "84d779e86e56fa216ded9a81a918dc1add324955d64f55e40a6f8e207dd66270",
+    "packages/cli/src/auth/config.ts": "388fd93050a4ae49172fcc1820e1726a8f6ecb7642199bc6a463a19f38fb39b4",
+    "packages/cli/src/auth/session.ts": "1f84b059d439604aa0ae94c0c3a5802cea82f8aac5973d8c6e655ae971410636",
+    "packages/sdk/src/resources/user-info.ts": "9f05f06deae86df3c8a2a9bbf1fdd5fb80c3f0dc3f199ed3b0dd45a33d551740"
+  },
+  "decision": "account_ref is a host-owned alias; require verified payment-authority linkage, not a universal global provider user identifier",
+  "scope": "Source/architecture review only. Existing acceptance callback remains unverified for deployment; no provider account/login/payment call, registration approval, CLI execution or dependency change."
+}

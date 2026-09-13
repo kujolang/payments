@@ -47,12 +47,12 @@ Status: implementation in progress; not approved for real-money release. A check
 ## Required before real-money release
 
 - [x] Resolve compatibility for the frozen Payments profile: complete v2 definition admission, flat approval binding and independent domain replay checks. General Ability v1 nested serialization remains unresolved upstream and is excluded from this scoped decision; see [identity compatibility](identity-compatibility.md).
-- [ ] Verify stable payer/provider-account identity against current supported provider behavior.
+- [ ] Verify the selected payment authority is bound to the authenticated principal, tenant and account alias through supported provider/provisioning evidence. A global provider user ID is not mandatory; an alias or login result alone is insufficient. See [authority binding](provider-authority.md).
 - [ ] Implement and validate OAuth lifecycle and private approval delivery without credential-bearing agent output.
 - [ ] Establish authoritative merchant/order/settlement evidence. HTTP success and token issuance alone are insufficient.
 - [ ] Complete supported deployment egress/isolation and all-sink secret-leak conformance, including failure/debug paths in selected integrations.
 - [ ] Complete coordinated private-journal backup/history recovery and interrupted Ability invocation handling. Current recovery artifacts cannot be re-enabled for spending.
-- [ ] Measure model-visible schema/output size, polling/subprocess cost and execution latency with bounded fixtures.
+- [x] Measure model-visible schema/output size, polling/subprocess cost and execution latency with bounded MCP and full Link fixtures. Source-scoped local/Linux evidence is in [performance](performance.md); real-provider latency, deployment load and tokenizer-specific costs remain separate acceptance work.
 - [ ] Complete provider sandbox acceptance against pinned/reviewed behavior; normal CI must remain synthetic.
 - [ ] Review release artifacts, installation/upgrades, operational instructions and all readiness claims against current evidence.
 - [ ] Obtain separate authorization for any live financial acceptance test, then record its exact scope and outcome. A generic build instruction is not authorization to move funds.
