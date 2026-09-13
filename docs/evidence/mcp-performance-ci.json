@@ -1,0 +1,66 @@
+{
+  "source_commit": "68f4b18cd359acedc20ad32363890ea5f273fec7",
+  "run_id": 34745435820,
+  "url": "https://github.com/kujolang/payments/actions/runs/34745435820",
+  "jobs": {
+    "host": {
+      "id": 103692431744,
+      "conclusion": "success",
+      "log_sha256": "2a60fbe62310c733c8cb921ab5f20caa8044a6aaba7f9f16d2f736c5d0c67c76"
+    },
+    "containment": {
+      "id": 103692431900,
+      "conclusion": "success",
+      "log_sha256": "8e9f4f3ea8a053f8e8fd126fb3fa7312c446139b889dcf5123c3993f96f92f21"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 87,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 72,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 317,
+    "status_ms": 73,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 70.95064200000002,
+      "median_ms": 69.26581749999997,
+      "min_ms": 68.67183600000021,
+      "p95_ms": 70.95064200000002,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 74.02984100000003,
+      "median_ms": 72.03405999999995,
+      "min_ms": 71.19685000000004,
+      "p95_ms": 74.02984100000003,
+      "samples": 8
+    }
+  },
+  "artifact": {
+    "id": 10314011794,
+    "archive_sha256": "21e4b76b3509b917fafc3de17ab85cef48380991f28d1823f1b9cd55c9d0ae13",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Repeated instrumented MCP calls, byte budgets and actual native process counts; full host suite and existing 30-file OCI/Workcell containment. No production latency, tokenizer, supported-provider execution or live acceptance claim."
+}
