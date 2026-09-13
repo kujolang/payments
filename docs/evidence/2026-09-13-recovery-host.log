@@ -1,0 +1,22 @@
+Selected verification lines from GitHub run 34727839884
+2026-09-13T00:23:34.0274212Z domain validation passed
+2026-09-13T00:23:34.1142844Z Cross-language binding vectors passed: 67
+2026-09-13T00:23:34.1555509Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T00:23:34.6250239Z Kujo SQLite: 8-process race and SIGKILL before/after dispatch passed; no resumed dispatch
+2026-09-13T00:23:34.6662938Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T00:23:34.7045069Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T00:23:34.7475538Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T00:23:35.9857043Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T00:23:36.3198739Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T00:23:36.6986423Z HTTP service: authenticated tenant isolation, hidden operations, bounded input, replay and token non-persistence passed
+2026-09-13T00:23:36.7772434Z Provisioning: private permissions, token suppression and overwrite refusal passed
+2026-09-13T00:23:39.2574817Z Architecture: 24 files; Fence passed; 11 forbidden edges and 3 coverage/external mutations rejected
+2026-09-13T00:23:39.6806482Z Operator: scope, review binding, changed definition, expiry, durable separate-process grant, replay denial and normalized errors passed
+2026-09-13T00:23:39.9229726Z Execution control: persistent pause, stale resume denial, transactional audit rollback, concurrent claim denial, at-most-one resumed claim and paused recovery passed
+2026-09-13T00:23:40.3532752Z Recovery snapshot: committed WAL, stale pre-claim denial, permanent quarantine, resume/bypass denial, post-claim reconciliation, bounds, permissions and future-schema refusal passed
+2026-09-13T00:23:42.0840091Z Bounded worker: asynchronous operator grant, native authorization dedupe, four-process dispatch race, post-charge reconciliation and terminal replay passed
+2026-09-13T00:23:42.1480839Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T00:23:42.3938899Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T00:23:42.5293801Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T00:23:43.1936227Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T00:23:43.9264453Z Native merchant HTTP: immutable request/body binding, private credential, duplicate-header/redirect/size/deadline denial and sanitized output passed

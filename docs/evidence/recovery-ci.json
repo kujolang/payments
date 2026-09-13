@@ -1,0 +1,19 @@
+{
+  "source_commit": "1dd05961287a98cd25fc1452c82034237afe254a",
+  "implementation_commit": "ce892eb",
+  "run_id": 34727839884,
+  "url": "https://github.com/kujolang/payments/actions/runs/34727839884",
+  "jobs": {
+    "host": {
+      "id": 103645068684,
+      "conclusion": "success",
+      "log_sha256": "2d1ed6fe872df912d773949aa3803cad4f384848fa0f03dd7d187af0e2c86b20"
+    },
+    "containment": {
+      "id": 103645068545,
+      "conclusion": "success",
+      "log_sha256": "d6be1cc5a3de636033b00c9273c1899cbf3a5f1a85223f95d5c565fefa6ce15a"
+    }
+  },
+  "scope": "Core SQLite observation-only snapshots, full synthetic host suite and current-image containment. No live financial-history restore, multi-journal backup or provider acceptance claim."
+}
