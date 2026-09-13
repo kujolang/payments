@@ -1,0 +1,19 @@
+{
+  "source_commit": "b116c7892c5a3742c410ebc975fe92185e0eaba5",
+  "runtime_version": "1.4.0",
+  "runtime_sha256": "05e812e2b4dc0cbfa3e1a2900b5d2d99297949b76deee9f96663a1accecedb48",
+  "log_sha256": "ed3fb4ed238e7aab8b697a12aabb9df5231c8aebda6f3c0ca684b00c954a4787",
+  "passed_commands": [
+    "ability_identity_vectors.py",
+    "ability_identities.kujo (VM)",
+    "ability_identities.kujo (interpreter)",
+    "approval_bindings.kujo (interpreter)",
+    "identity_profile_test.py",
+    "application_identity.kujo (interpreter)",
+    "execution.kujo (interpreter)",
+    "gateway.kujo (interpreter)",
+    "interrupted_gateway_test.py",
+    "reconciliation_test.py"
+  ],
+  "scope": "Frozen Payments profile compatibility; no general Ability serializer repair, historical hash migration, full local host-suite rerun or live-provider acceptance."
+}

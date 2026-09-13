@@ -1,0 +1,66 @@
+{
+  "source_commit": "b116c7892c5a3742c410ebc975fe92185e0eaba5",
+  "run_id": 34747021106,
+  "url": "https://github.com/kujolang/payments/actions/runs/34747021106",
+  "jobs": {
+    "containment": {
+      "id": 103696704328,
+      "conclusion": "success",
+      "log_sha256": "1de17b814bb2f0c40d6411fe332f53b4fa03d5f13bf5f69ea092de96ed7017df"
+    },
+    "host": {
+      "id": 103696704378,
+      "conclusion": "success",
+      "log_sha256": "00602d8b72ed285617a2afe42bb039b07a522ae5405094a4db515f470c1b7ca4"
+    }
+  },
+  "mcp_metrics": {
+    "first_request_ms": 83,
+    "idle_observation_ms": 250,
+    "measurement_version": 1,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    },
+    "node_version": "v24.20.0",
+    "replay_ms": 67,
+    "response_envelope_utf8_bytes": 438,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "startup_and_discovery_ms": 307,
+    "status_ms": 71,
+    "summary_utf8_bytes": 182,
+    "tool_schema_utf8_bytes": 3065,
+    "warm_replay": {
+      "max_ms": 68.57456300000001,
+      "median_ms": 66.93069600000001,
+      "min_ms": 66.28135700000007,
+      "p95_ms": 68.57456300000001,
+      "samples": 8
+    },
+    "warm_status": {
+      "max_ms": 72.59881500000006,
+      "median_ms": 70.40631899999994,
+      "min_ms": 69.78515000000016,
+      "p95_ms": 72.59881500000006,
+      "samples": 8
+    }
+  },
+  "artifact": {
+    "id": 10313829709,
+    "archive_sha256": "67882ed40e1e5c622c922c5b4e5dc6941a4456435b934efec0751544264a8301",
+    "verified_manifest_files": 6,
+    "positive_controls": [
+      "private_reviewed_operator_sink_positive_control",
+      "private_approval_outbox_positive_control",
+      "private_credential_vault_positive_control",
+      "private_enrollment_device_positive_control",
+      "private_enrollment_tokens_positive_control",
+      "private_enrollment_operator_positive_control"
+    ],
+    "agent_file_probes": 30,
+    "workcell_file_probes": 30,
+    "cleanup_status": "complete"
+  },
+  "scope": "Published recovery snapshot core integrity/quarantine verifier; full host suite and synthetic 30-file OCI/Workcell containment. No authenticity, freshness, arbitrary extension semantics, complete financial-history, coordinated restore, production or live-provider acceptance claim."
+}

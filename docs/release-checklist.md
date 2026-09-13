@@ -44,7 +44,7 @@ Status: implementation in progress; not approved for real-money release. A check
 
 ## Required before real-money release
 
-- [ ] Resolve versioned Ability digest compatibility and assess every affected identity path. The request replay fix and flat input tests do not repair arbitrary nested definition digests.
+- [x] Resolve compatibility for the frozen Payments profile: complete v2 definition admission, flat approval binding and independent domain replay checks. General Ability v1 nested serialization remains unresolved upstream and is excluded from this scoped decision; see [identity compatibility](identity-compatibility.md).
 - [ ] Verify stable payer/provider-account identity against current supported provider behavior.
 - [ ] Implement and validate OAuth lifecycle and private approval delivery without credential-bearing agent output.
 - [ ] Establish authoritative merchant/order/settlement evidence. HTTP success and token issuance alone are insufficient.
