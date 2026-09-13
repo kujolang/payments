@@ -1,0 +1,29 @@
+{
+  "source_commit": "599f8506869dd68ded6d32539ebc3a5ed9208df9",
+  "run_id": 34738832485,
+  "url": "https://github.com/kujolang/payments/actions/runs/34738832485",
+  "jobs": {
+    "host": {
+      "id": 103674929281,
+      "conclusion": "success",
+      "log_sha256": "c9ba6c11c459b8581cbceab0afbc60a307cd266a94cbe8cd9aad59c16521d1c0"
+    },
+    "containment": {
+      "id": 103674929351,
+      "conclusion": "success",
+      "log_sha256": "488f780563b685c9ebc5257b6af9f4c2f63878f70a1505e68fb914fd3f4c7c0e"
+    }
+  },
+  "artifact": {
+    "id": 10311947605,
+    "archive_sha256": "c3eaa79c6b57a6fb25fccc5d24731eb3ee5b3c50a362bb0f0ebdec9af30510c1",
+    "verified_manifest_files": 6,
+    "reviewed_operator_sink_positive_control": true,
+    "approval_outbox_positive_control": true,
+    "credential_vault_positive_control": true,
+    "agent_file_probes": 24,
+    "workcell_file_probes": 24,
+    "cleanup_status": "complete"
+  },
+  "scope": "Conditional gateway cancellation and explicit inspect v2, eight real cancellation/claim races, 278 independent definition mutation vectors, full synthetic host suite and actual OCI/Workcell containment. No provider-side cancellation, live payment/OAuth or all-sink production isolation claim."
+}
