@@ -1,0 +1,19 @@
+{
+  "source_commit": "b2b5bfeb4c942296e34543918dc72bbc35131e20",
+  "implementation_commit": "b84b5a3",
+  "run_id": 34728510725,
+  "url": "https://github.com/kujolang/payments/actions/runs/34728510725",
+  "jobs": {
+    "host": {
+      "id": 103646898899,
+      "conclusion": "success",
+      "log_sha256": "46946b1c34b1af25c127ea10b926177129c137ebf40a22e356e129eaed322918"
+    },
+    "containment": {
+      "id": 103646898827,
+      "conclusion": "success",
+      "log_sha256": "61dc9076088d796e02a8b272b132d0653c5b2ec8425eb7772486c0ba9ceeed17"
+    }
+  },
+  "scope": "Frozen core v1-to-v2 migration and atomic initialization; full synthetic host suite and current-image containment. No older-schema migration, live history merge or provider acceptance claim."
+}

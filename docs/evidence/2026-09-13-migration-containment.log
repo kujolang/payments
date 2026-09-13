@@ -1,0 +1,14 @@
+Selected verification lines from GitHub run 34728510725
+2026-09-13T00:39:26.2526790Z domain validation passed
+2026-09-13T00:39:26.4399628Z Cross-language binding vectors passed: 67
+2026-09-13T00:39:26.6216167Z Pinned Ability definitions and seven domain schemas passed
+2026-09-13T00:39:26.7669970Z Lifecycle: 60 state/event cases and evidence mismatch checks passed
+2026-09-13T00:39:26.9209029Z SQLite intake, approval consumption, durable claim and recovery passed
+2026-09-13T00:39:27.0861287Z Observation CAS, atomic receipt failure, reconciliation and conflicting evidence passed
+2026-09-13T00:39:28.2449563Z Actual Ability + fixture execution: authorization, one-use submit, normalized errors and reconciliation passed
+2026-09-13T00:39:28.6757060Z Gateway: authenticated intake, stable replay, fresh status, strict money and minimal surface passed
+2026-09-13T00:39:29.0682948Z Link native authorization: one-shot issuance, strict binding, settlement separation, secret suppression and pre-network transport denial passed
+2026-09-13T00:39:29.2623614Z MPP: 58 independent canonical encoding, header, amount, route, expiry and credential vectors passed
+2026-09-13T00:39:29.4955825Z Link MPP submission: final challenge validation, private SPT credential, one-shot send, ambiguous reconciliation and sanitized observation passed
+2026-09-13T00:39:30.2251456Z Link five-method SPI through worker and Ability: native approval, operator grant, private credential, one-shot submission and confirmed reconciliation passed
+2026-09-13T00:39:31.2557650Z OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works
