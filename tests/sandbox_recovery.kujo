@@ -1,0 +1,48 @@
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant, recover_sandbox_purchase
+from src.domain.binding import snapshot_digest
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+db := db_connect("sqlite",env("PAYMENTS_RECOVERY_DB"))
+open_sandbox_merchant(db)
+processor := db_connect("sqlite",env("PAYMENTS_RECOVERY_PROCESSOR"))
+mode := env("PAYMENTS_RECOVERY_MODE")
+if mode == "create" {
+    clock := func() { return 1500 }
+    create := func(body,key,deadline) {
+        native := {"object":"payment_intent","id":"pi_fixture","livemode":false,"amount":5500,"amount_received":5500,"amount_capturable":0,"currency":"usd","status":"succeeded","on_behalf_of":null,"transfer_data":null,"latest_charge":"ch_fixture","metadata":body["metadata"],"client_secret":"SENTINEL_CLIENT_SECRET"}
+        db_execute(processor,"INSERT INTO payments VALUES(?)",[to_json(native)])
+        write_file(env("PAYMENTS_RECOVERY_MARKER"),"charged")
+        sleep(30000)
+        assert(false,"supervisor_must_kill")
+        return {"ok":true,"native":native}
+    }
+    ports := sandbox_merchant(db,"acct_fixture",create,clock)
+    ports["submit"](snapshot,"spt_SENTINEL",10000)
+} else {
+    // Reconciliation remains useful after the purchase authorization expired.
+    clock := func() { return 3000 }
+    read := func(path,deadline) {
+        if path == "/v1/account" {
+            mut account := "acct_fixture"
+            if mode == "wrong_account" { account = "acct_other" }
+            return {"ok":true,"native":{"object":"account","id":account}}
+        }
+        rows := db_query(processor,"SELECT body FROM payments",[])
+        assert(len(rows) == 1,"one_original_charge")
+        native := parse_json(rows[0]["body"])
+        if mode == "wrong_amount" { native["amount_received"] = 1 }
+        if mode == "live" { native["livemode"] = true }
+        if mode == "wrong_binding" { native["metadata"] = {"kujo_snapshot_digest":"wrong","kujo_execution_id":snapshot["execution_id"]} }
+        if mode == "pending" { native["status"] = "processing" }
+        if mode == "wrong_id" { native["id"] = "pi_other" }
+        if mode == "exception" { assert(false,"SENTINEL_PROVIDER_ERROR") }
+        return {"ok":true,"native":native}
+    }
+    mut candidate := "pi_fixture"
+    if mode == "substitute" { candidate = "pi_other" }
+    if mode == "missing_claim" { snapshot["execution_id"] = "unknown" }
+    result := recover_sandbox_purchase(db,"acct_fixture",snapshot,candidate,read,clock,10000)
+    print(to_json(result))
+    assert(contains(to_json(result)+to_json(db_query(db,"SELECT * FROM sandbox_purchases",[])),"SENTINEL") == 0,"private_recovery")
+}
+db_close(processor)
+db_close(db)

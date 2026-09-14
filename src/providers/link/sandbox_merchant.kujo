@@ -2,6 +2,7 @@
 // the buyer lifecycle. This is not a generic seller/order-management API.
 from src.providers.link.private_store import open_private_link_store
 from src.domain.binding import snapshot_digest, frame
+from src.providers.link.stripe_sandbox import stripe_sandbox_evidence
 
 func reserve_purchase(db,execution_id,digest,account_id,key) {
     // A caller-owned transaction must fail before any provider call.
@@ -55,4 +56,32 @@ export sandbox_merchant := func(db,account_id,create_payment_intent,clock_ms) {
         } except error { return {"ok":false,"code":"sandbox_submission_unknown"} }
     }
     return {"lookup":lookup,"submit":submit}
+}
+
+// Private operator recovery, never an agent-visible tool. The candidate ID is
+// only a lookup hint: authenticated Stripe evidence must prove the whole binding.
+export recover_sandbox_purchase := func(db,account_id,snapshot,payment_intent_id,read,clock_ms,deadline_ms) {
+    try {
+        digest := snapshot_digest(snapshot)
+        if type(payment_intent_id) != "string" || regex_match(payment_intent_id,"^pi_[A-Za-z0-9]+$") == false { return {"ok":false,"code":"sandbox_recovery_unverified"} }
+        rows := db_query(db,"SELECT * FROM sandbox_purchases WHERE execution_id=? AND snapshot_digest=? AND stripe_account_id=?",[snapshot["execution_id"],digest,account_id])
+        if len(rows) != 1 || (rows[0]["payment_intent_id"] != null && rows[0]["payment_intent_id"] != payment_intent_id) { return {"ok":false,"code":"sandbox_recovery_unverified"} }
+        candidate := func(execution_id,hash) { return {"snapshot_digest":digest,"stripe_account_id":account_id,"payment_intent_id":payment_intent_id} }
+        evidence := stripe_sandbox_evidence(account_id,candidate,read,clock_ms)
+        observed := evidence["observe"](null,snapshot,{"execution_id":snapshot["execution_id"],"snapshot_digest":digest,"deadline_ms":deadline_ms})
+        if observed["outcome"] != "succeeded" { return {"ok":false,"code":"sandbox_recovery_unverified"} }
+        // Expiration prevents new charges, not evidence recovery of an old one.
+        // No create callback is reachable and no reservation is removed.
+        db_execute(db,"BEGIN IMMEDIATE",[])
+        try {
+            db_execute(db,"UPDATE sandbox_purchases SET payment_intent_id=? WHERE execution_id=? AND snapshot_digest=? AND stripe_account_id=? AND payment_intent_id IS NULL",[payment_intent_id,snapshot["execution_id"],digest,account_id])
+            current := db_query(db,"SELECT payment_intent_id FROM sandbox_purchases WHERE execution_id=? AND snapshot_digest=? AND stripe_account_id=?",[snapshot["execution_id"],digest,account_id])
+            db_execute(db,"COMMIT",[])
+            recorded := len(current) == 1 && current[0]["payment_intent_id"] == payment_intent_id
+            return {"ok":recorded,"recorded":recorded}
+        } except error {
+            try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+            return {"ok":false,"code":"sandbox_recovery_unverified"}
+        }
+    } except error { return {"ok":false,"code":"sandbox_recovery_unverified"} }
 }

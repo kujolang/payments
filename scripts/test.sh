@@ -46,6 +46,7 @@ PAYMENTS_TEST_DB="$store_dir/link-authorization.db" "$KUJO_BIN" run tests/link_a
 "$KUJO_BIN" run tests/sandbox_create.kujo --interpreter
 PAYMENTS_TEST_DB="$store_dir/sandbox-merchant.db" "$KUJO_BIN" run tests/sandbox_merchant.kujo --interpreter
 python3 tests/network/sandbox_merchant_test.py
+python3 tests/network/sandbox_recovery_test.py
 python3 tests/network/link_issuance_test.py
 python3 tests/network/link_payment_journal_test.py
 python3 tests/network/link_credentials_test.py
