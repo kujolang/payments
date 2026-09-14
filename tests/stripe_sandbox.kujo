@@ -1,0 +1,67 @@
+from src.providers.link.stripe_sandbox import stripe_sandbox_api, stripe_sandbox_evidence
+from src.domain.binding import snapshot_digest
+from src.providers.link.submission import observe_link_submission
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+digest := snapshot_digest(snapshot)
+clock := func() { return 1500 }
+context := {"execution_id":snapshot["execution_id"],"snapshot_digest":digest,"deadline_ms":13000}
+for scenario in ["success","missing_binding","wrong_binding","wrong_account","wrong_id","live","non_bool_mode","pending","partial","float_amount","currency","capturable","transfer","behalf","metadata","execution","missing_charge","exception","malformed"] {
+    lookup := func(id,hash) {
+        assert(id == snapshot["execution_id"] && hash == digest,"lookup_scope")
+        if scenario == "missing_binding" { return null }
+        mut bound := digest
+        if scenario == "wrong_binding" { bound = "other" }
+        return {"snapshot_digest":bound,"stripe_account_id":"acct_fixture","payment_intent_id":"pi_fixture"}
+    }
+    api := func(path,deadline) {
+        assert(deadline == 13000 || deadline == 4000,"bounded_read")
+        if scenario == "exception" { assert(false,"SENTINEL_OAUTH") }
+        if scenario == "malformed" { return {"ok":true,"native":{"secret":"SENTINEL_API"}} }
+        if path == "/v1/account" {
+            mut account := "acct_fixture"
+            if scenario == "wrong_account" { account = "acct_other" }
+            return {"ok":true,"native":{"object":"account","id":account,"email":"SENTINEL_EMAIL"}}
+        }
+        assert(path == "/v1/payment_intents/pi_fixture","exact_retrieval")
+        mut native := {"object":"payment_intent","id":"pi_fixture","livemode":false,"status":"succeeded","amount":5500,"amount_received":5500,"amount_capturable":0,"currency":"usd","on_behalf_of":null,"transfer_data":null,"metadata":{"kujo_snapshot_digest":digest,"kujo_execution_id":snapshot["execution_id"]},"latest_charge":"ch_fixture","client_secret":"SENTINEL_CLIENT_SECRET","payment_method":"SENTINEL_CARD"}
+        if scenario == "wrong_id" { native["id"] = "pi_other" }
+        if scenario == "live" { native["livemode"] = true }
+        if scenario == "non_bool_mode" { native["livemode"] = 0 }
+        if scenario == "pending" { native["status"] = "processing" }
+        if scenario == "partial" { native["amount_received"] = 5499 }
+        if scenario == "float_amount" { native["amount"] = 5500.0 }
+        if scenario == "currency" { native["currency"] = "eur" }
+        if scenario == "capturable" { native["amount_capturable"] = 1 }
+        if scenario == "transfer" { native["transfer_data"] = {"destination":"acct_other"} }
+        if scenario == "behalf" { native["on_behalf_of"] = "acct_other" }
+        if scenario == "metadata" { native["metadata"]["kujo_snapshot_digest"] = "other" }
+        if scenario == "execution" { native["metadata"]["kujo_execution_id"] = "other" }
+        if scenario == "missing_charge" { native["latest_charge"] = null }
+        return {"ok":true,"native":native}
+    }
+    ports := stripe_sandbox_evidence("acct_fixture",lookup,api,clock)
+    observed := ports["observe"](null,snapshot,context)
+    assert(contains(to_json(observed),"SENTINEL") == 0,"no_private_data")
+    if scenario == "success" {
+        assert(observed["outcome"] == "succeeded","confirmed_test_charge")
+        observed = observe_link_submission(null,snapshot,{"observe":ports["observe"]},context,clock)
+        assert(ports["confirmation"]["verify"](snapshot,observed),"independent_confirmation")
+        observed["evidence_ref"] = "wrong"
+        assert(ports["confirmation"]["verify"](snapshot,observed) == false,"evidence_replay")
+        short := {"execution_id":snapshot["execution_id"],"snapshot_digest":digest,"deadline_ms":3500}
+        assert(ports["observe"](null,snapshot,short)["outcome"] == "unknown","bounded_observation")
+    } else {
+        assert(observed["outcome"] == "unknown" && observed["actual_amount"] == null && observed["evidence_ref"] == null,"uncertainty_not_failure_or_success")
+        assert(ports["confirmation"]["verify"](snapshot,observed) == false,"no_false_confirmation")
+    }
+}
+for key in ["sk_live_fixture","pk_test_fixture","sk_test_fixture\nInjected"] {
+    mut rejected := false
+    try { stripe_sandbox_api(key,"acct_fixture","2026-08-27.dahlia",clock) } except error { rejected = true }
+    assert(rejected,"only_test_server_keys")
+}
+transport := {"read":stripe_sandbox_api("sk_test_fixture","acct_fixture","2026-08-27.dahlia",clock)}
+assert(transport["read"]("/v1/payment_intents/pi_fixture/confirm",13000)["ok"] == false,"no_writes")
+assert(transport["read"]("/v1/payment_intents/pi_fixture?expand[]=payment_method",13000)["ok"] == false,"no_expansion")
+assert(transport["read"]("/v1/account",1500)["ok"] == false,"no_expired_network")
+print("Stripe sandbox evidence: exact account, intent, amount, snapshot and execution binding; unknown outcomes; secret suppression; read-only test-key transport passed")

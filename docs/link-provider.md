@@ -49,6 +49,10 @@ Tests cover 58 independent codec vectors, re-probe mutation rejection, missing/m
 
 A five-method integration fixture exercises the real worker, Ability operator approval, core SQLite claims and a separate fake merchant ledger. Success, post-charge response loss, changed challenges and unverified HTTP success remain distinct. These are synthetic effects, not a Link sandbox attestation.
 
+## Sandbox confirmation component
+
+The private [Stripe sandbox evidence component](stripe-sandbox-evidence.md) now provides exact PaymentIntent/account verification and a confirmation callback. Its synthetic tests do not close the merchant journal, endpoint, authentication or provider-backed acceptance gates below.
+
 ## Settlement evidence release gate
 
 The observer is still a trusted host port. A merchant callback or HTTP success alone is insufficient: the host confirmation rule must validate authoritative evidence for the registered merchant, order, amount, currency and provider account. The reviewed Link transaction list does not establish this complete correlation, and `/userinfo` does not document a stable account subject. Do not infer payer identity from an alias or match settlements by amount and time.
