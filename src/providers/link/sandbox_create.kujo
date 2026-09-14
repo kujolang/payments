@@ -1,0 +1,57 @@
+// Private Stripe sandbox creation transport. Only the merchant journal may use
+// this consequential callback after committing its permanent execution claim.
+from src.providers.link.stripe_sandbox import stripe_sandbox_api
+
+export sandbox_create_form := func(body) {
+    assert(type(body) == "dict" && len(keys(body)) == 5,"sandbox_create_fields")
+    for key in keys(body) { assert(contains(["amount","currency","payment_method_data","confirm","metadata"],key),"sandbox_create_field") }
+    assert(type(body["amount"]) == "int" && body["amount"] > 0 && body["amount"] <= 99999999,"sandbox_create_amount")
+    assert(type(body["currency"]) == "string" && regex_match(body["currency"],"^[a-z]{3}$") && type(body["confirm"]) == "bool" && body["confirm"] == true,"sandbox_create_currency")
+    data := body["payment_method_data"]
+    assert(type(data) == "dict" && len(keys(data)) == 1,"sandbox_create_method")
+    spt := data["shared_payment_granted_token"]
+    assert(type(spt) == "string" && len(spt) <= 8192 && regex_match(spt,"^spt_[A-Za-z0-9]+$"),"sandbox_create_token")
+    metadata := body["metadata"]
+    assert(type(metadata) == "dict" && len(keys(metadata)) == 2,"sandbox_create_metadata")
+    digest := metadata["kujo_snapshot_digest"]
+    execution := metadata["kujo_execution_id"]
+    assert(type(digest) == "string" && regex_match(digest,"^[a-f0-9]{64}$"),"sandbox_create_digest")
+    assert(type(execution) == "string" && len(execution) <= 128 && regex_match(execution,"^[A-Za-z0-9_.:-]+$"),"sandbox_create_execution")
+    return "amount="+to_string(body["amount"])+"&currency="+body["currency"]+"&payment_method_data%5Bshared_payment_granted_token%5D="+spt+"&confirm=true&metadata%5Bkujo_snapshot_digest%5D="+digest+"&metadata%5Bkujo_execution_id%5D="+replace(execution,":","%3A")
+}
+
+// The two callbacks are trusted installation ports, not requester input.
+export sandbox_creation_port := func(account_id,read_account,post,clock_ms) {
+    return func(body,key,deadline_ms) {
+        try {
+            form := sandbox_create_form(body)
+            if type(key) != "string" || regex_match(key,"^[a-f0-9]{64}$") == false || type(deadline_ms) != "int" || clock_ms()+2000 >= deadline_ms { return {"ok":false} }
+            account := read_account("/v1/account",deadline_ms)
+            if account["ok"] != true || account["native"]["object"] != "account" || account["native"]["id"] != account_id || clock_ms()+1000 >= deadline_ms { return {"ok":false} }
+            // No retry, no redirect, no user-selected path. Unknown is retained
+            // by the caller's permanent claim even when the POST response is lost.
+            return post(form,key,deadline_ms)
+        } except error { return {"ok":false} }
+    }
+}
+
+export stripe_sandbox_create := func(secret_key,account_id,api_version,clock_ms) {
+    // Reuse the test-key, account, version and read-transport validation.
+    read_account := stripe_sandbox_api(secret_key,account_id,api_version,clock_ms)
+    post := func(form,key,deadline_ms) {
+        try {
+            if byte_length(form) > 16384 || clock_ms()+1000 >= deadline_ms { return {"ok":false} }
+            response := http_request("https://api.stripe.com/v1/payment_intents",{"method":"POST","headers":{"Authorization":"Bearer "+secret_key,"Stripe-Version":api_version,"Idempotency-Key":key,"Content-Type":"application/x-www-form-urlencoded"},"body":form,"timeout":1,"max_response_bytes":65536,"redirects":"none","pin_dns":true,"destination_policy":"deny_private"})
+            match response {
+                case Ok(value): {
+                    if value["_status"] != 200 { return {"ok":false} }
+                    native := parse_json(value["_body"])
+                    if type(native) != "dict" { return {"ok":false} }
+                    return {"ok":true,"native":native}
+                }
+                case Err(error): { return {"ok":false} }
+            }
+        } except error { return {"ok":false} }
+    }
+    return sandbox_creation_port(account_id,read_account,post,clock_ms)
+}

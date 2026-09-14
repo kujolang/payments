@@ -10,7 +10,7 @@ for scenario in ["success","lost","malformed","wrong_amount","wrong_digest","liv
     db_execute(ledger,"CREATE TABLE effects(id INTEGER)",[])
     create := func(body,key,deadline) {
         db_execute(ledger,"INSERT INTO effects VALUES(1)",[])
-        assert(body["shared_payment_granted_token"] == "SENTINEL_SPT" && body["confirm"] == true,"private_credential")
+        assert(body["payment_method_data"]["shared_payment_granted_token"] == "SENTINEL_SPT" && body["confirm"] == true,"private_credential")
         assert(body["metadata"]["kujo_snapshot_digest"] == snapshot_digest(snapshot),"exact_digest")
         if scenario == "lost" { assert(false,"SENTINEL_PROVIDER_ERROR") }
         if scenario == "malformed" { return {"ok":true,"native":{"secret":"SENTINEL_SECRET"}} }

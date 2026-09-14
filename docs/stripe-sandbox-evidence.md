@@ -20,7 +20,7 @@ The trusted `lookup(execution_id, snapshot_digest)` must read an immutable merch
 }
 ```
 
-Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. The private `sandbox_merchant.kujo` component now implements this journal and its lookup. The merchant HTTP endpoint and production Stripe creation transport still need integration; the journal does not claim those exist.
+Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. The private `sandbox_merchant.kujo` component now implements this journal and its lookup. The merchant HTTP endpoint still needs integration. The bounded test-only creation transport described below is implemented; provider-backed acceptance remains outstanding.
 
 ## Acceptance rule
 
@@ -59,3 +59,22 @@ A validated test PaymentIntent ID can be attached once. It cannot be replaced, r
 If the process dies after Stripe accepts creation but before the identifier is durably saved, the claim remains without a lookup result. This remains unresolved and requires an authenticated operator recovery process; never infer failure or automatically create another PaymentIntent. Such recovery and an end-to-end merchant HTTP service remain unfinished. The module also refuses to execute inside a caller-owned transaction so a later rollback cannot erase its reservation after a provider call.
 
 `tests/sandbox_merchant.kujo` covers successful recording, lost/malformed provider responses, binding mismatches, receipt-write failure, immutable identifiers, unique transaction ownership, caller-transaction refusal and restart. `tests/network/sandbox_merchant_test.py` runs four independent Kujo processes against a fake API ledger with no deduplication: both successful and lost-response cases produce one call. These are synthetic process tests, not Stripe account conformance or protection against an operator deleting the database.
+
+## Test-only creation transport
+
+`stripe_sandbox_create(secret_key, account_id, api_version, clock_ms)` in `sandbox_create.kujo` is the concrete `create_payment_intent` callback for the merchant journal. It reuses the read transport's test-key, account and API-version validation. Before its single POST, it retrieves `/v1/account` with the same key and checks the installed merchant account. The only write destination is `https://api.stripe.com/v1/payment_intents`; redirects, retries and alternate routing fields are absent. Each request has a one-second timeout, pinned DNS, private-address denial and a 64 KiB response cap. Two seconds of remaining budget are required before account preflight.
+
+The current [Stripe seller SPT documentation](https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens?agent-seller=seller), read September 14, 2026, specifies `payment_method_data[shared_payment_granted_token]`. The transport encodes that nested field, exact integer amount/currency, `confirm=true` and the two binding metadata fields. The journal callback shape was updated to match. Unknown fields, live/publishable keys, malformed IDs, and form-injection characters are rejected. The amount ceiling in this adapter is a Stripe request constraint, not a generic Kujo money limit.
+
+Connect the components inside the privileged merchant installation:
+
+```kujo
+create := stripe_sandbox_create(test_key, account_id, api_version, clock)
+merchant := sandbox_merchant(private_db, account_id, create, clock)
+read := stripe_sandbox_api(test_key, account_id, api_version, clock)
+evidence := stripe_sandbox_evidence(account_id, merchant["lookup"], read, clock)
+```
+
+Call `open_sandbox_merchant(private_db)` first. Supply the `test_key` through the private installation, never a model-facing argument or command line. This snippet is component wiring, not a runnable merchant server or completed Link login flow.
+
+`tests/sandbox_create.kujo` verifies the form contract and fail-closed preflight, and composes the real journal, creation port, Link sanitization and confirmation callbacks against a synthetic processor. Production transport HTTP/TLS behavior and actual sandbox permissions still need account-backed acceptance; these tests make no such claim. A failed or ambiguous creation remains permanently claimed by the journal, including account/preflight failures. Fix configuration and inspect the claim rather than retrying the same execution.

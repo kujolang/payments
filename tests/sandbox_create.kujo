@@ -1,0 +1,85 @@
+from src.providers.link.sandbox_create import sandbox_create_form, sandbox_creation_port, stripe_sandbox_create
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant
+from src.providers.link.stripe_sandbox import stripe_sandbox_evidence
+from src.providers.link.submission import observe_link_submission
+from src.domain.binding import snapshot_digest
+body := {"amount":5500,"currency":"usd","payment_method_data":{"shared_payment_granted_token":"spt_SENTINEL"},"confirm":true,"metadata":{"kujo_snapshot_digest":sha256("snapshot"),"kujo_execution_id":"exec:1"}}
+encoded := sandbox_create_form(body)
+assert(contains(encoded,"payment_method_data%5Bshared_payment_granted_token%5D=spt_SENTINEL") == 1,"current_nested_spt_field")
+assert(contains(encoded,"kujo_execution_id%5D=exec%3A1") == 1,"metadata_form_encoding")
+for scenario in ["success","wrong_account","account_error","lost_post","deadline","float","extra_field","injection","wrong_token_field"] {
+    ledger := db_connect("sqlite",":memory:")
+    db_execute(ledger,"CREATE TABLE calls(kind TEXT)",[])
+    read_account := func(path,deadline) {
+        db_execute(ledger,"INSERT INTO calls VALUES('read')",[])
+        assert(path == "/v1/account","read_identity_only")
+        if scenario == "account_error" { assert(false,"SENTINEL_ACCOUNT_ERROR") }
+        mut id := "acct_fixture"
+        if scenario == "wrong_account" { id = "acct_other" }
+        return {"ok":true,"native":{"object":"account","id":id}}
+    }
+    post := func(form,key,deadline) {
+        db_execute(ledger,"INSERT INTO calls VALUES('post')",[])
+        assert(form == encoded && key == sha256("key"),"exact_post")
+        if scenario == "lost_post" { assert(false,"SENTINEL_POST_ERROR") }
+        return {"ok":true,"native":{"id":"pi_fixture"}}
+    }
+    clock := func() { return 1500 }
+    port := {"create":sandbox_creation_port("acct_fixture",read_account,post,clock)}
+    input := parse_json(to_json(body))
+    mut deadline := 10000
+    if scenario == "deadline" { deadline = 3500 }
+    if scenario == "float" { input["amount"] = 5500.0 }
+    if scenario == "extra_field" { input["transfer_data"] = {"destination":"acct_other"} }
+    if scenario == "injection" { input["payment_method_data"] = {"shared_payment_granted_token":"spt_a&amount=1"} }
+    if scenario == "wrong_token_field" { input["payment_method_data"] = {"token":"spt_a"} }
+    result := port["create"](input,sha256("key"),deadline)
+    count := db_query(ledger,"SELECT count(*) AS n FROM calls WHERE kind='post'",[])[0]["n"]
+    if scenario == "success" { assert(result["ok"] && count == 1,"create_once") }
+    else {
+        assert(result == {"ok":false},"fixed_failure")
+        if scenario == "lost_post" { assert(count == 1,"lost_post_not_retried") } else { assert(count == 0,"deny_before_post") }
+    }
+    assert(contains(to_json(result),"SENTINEL") == 0,"error_suppression")
+    db_close(ledger)
+}
+for key in ["sk_live_fixture","pk_test_fixture"] {
+    mut denied := false
+    clock := func() { return 1500 }
+    try { stripe_sandbox_create(key,"acct_fixture","2026-08-27.dahlia",clock) } except error { denied = true }
+    assert(denied,"no_live_or_publishable_key")
+}
+print("Sandbox creation: nested SPT form, exact metadata, account preflight, fixed errors, no retry and test-only keys passed")
+
+// Compose the actual journal, creation port, sanitization and confirmation ports.
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+digest := snapshot_digest(snapshot)
+db := db_connect("sqlite",":memory:")
+open_sandbox_merchant(db)
+processor := db_connect("sqlite",":memory:")
+db_execute(processor,"CREATE TABLE payments(body TEXT)",[])
+clock := func() { return 1500 }
+read := func(path,deadline) {
+    if path == "/v1/account" { return {"ok":true,"native":{"object":"account","id":"acct_fixture"}} }
+    assert(path == "/v1/payment_intents/pi_fixture","exact_processor_lookup")
+    rows := db_query(processor,"SELECT body FROM payments",[])
+    if len(rows) != 1 { return {"ok":false} }
+    return {"ok":true,"native":parse_json(rows[0]["body"])}
+}
+post := func(form,key,deadline) {
+    assert(contains(form,"payment_method_data%5Bshared_payment_granted_token%5D=spt_SENTINEL") == 1,"wire_token")
+    native := {"object":"payment_intent","id":"pi_fixture","livemode":false,"amount":5500,"amount_received":5500,"amount_capturable":0,"currency":"usd","status":"succeeded","on_behalf_of":null,"transfer_data":null,"latest_charge":"ch_fixture","metadata":{"kujo_snapshot_digest":digest,"kujo_execution_id":snapshot["execution_id"]},"client_secret":"SENTINEL_CLIENT_SECRET"}
+    db_execute(processor,"INSERT INTO payments VALUES(?)",[to_json(native)])
+    return {"ok":true,"native":native}
+}
+create := sandbox_creation_port("acct_fixture",read,post,clock)
+merchant := sandbox_merchant(db,"acct_fixture",create,clock)
+assert(merchant["submit"](snapshot,"spt_SENTINEL",10000)["recorded"],"journal_and_wire")
+assert(merchant["submit"](snapshot,"spt_SENTINEL",10000)["ok"] == false,"no_second_creation")
+evidence := stripe_sandbox_evidence("acct_fixture",merchant["lookup"],read,clock)
+observed := observe_link_submission(null,snapshot,{"observe":evidence["observe"]},{"execution_id":snapshot["execution_id"],"snapshot_digest":digest,"deadline_ms":10000,"now_ms":1500},clock)
+assert(evidence["confirmation"]["verify"](snapshot,observed),"authenticated_fixture_confirmation")
+assert(contains(to_json(observed)+to_json(db_query(db,"SELECT * FROM sandbox_purchases",[])),"SENTINEL") == 0,"private_response_not_journaled")
+db_close(processor)
+db_close(db)
+print("Sandbox merchant creation and independent confirmation composition passed (synthetic effects)")

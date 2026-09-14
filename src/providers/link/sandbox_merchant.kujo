@@ -43,7 +43,7 @@ export sandbox_merchant := func(db,account_id,create_payment_intent,clock_ms) {
             claimed := reserve_purchase(db,snapshot["execution_id"],digest,account_id,key)
             if claimed != 1 { return {"ok":false,"code":"sandbox_submission_already_claimed"} }
             if clock_ms()+1000 >= deadline_ms || clock_ms() >= snapshot["expires_at_ms"] { return {"ok":false,"code":"sandbox_submission_unknown"} }
-            body := {"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"shared_payment_granted_token":spt,"confirm":true,"metadata":{"kujo_snapshot_digest":digest,"kujo_execution_id":snapshot["execution_id"]}}
+            body := {"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"payment_method_data":{"shared_payment_granted_token":spt},"confirm":true,"metadata":{"kujo_snapshot_digest":digest,"kujo_execution_id":snapshot["execution_id"]}}
             result := create_payment_intent(body,key,deadline_ms)
             if result["ok"] != true { return {"ok":false,"code":"sandbox_submission_unknown"} }
             native := result["native"]
