@@ -39,7 +39,25 @@
         "archive executable equals npm executable and metadata SHA-256"
       ],
       "local_execution_tested": false
+    },
+    {
+      "artifact_id": 10363021079,
+      "target": "darwin-arm64",
+      "archive": "kujo-payments-dev-e9e5a67-macos-arm64.tar.gz",
+      "archive_sha256": "0d3ee626ec311e129d99b67cdec2018368e4300b8d8d1758fdeb55cc5475231c",
+      "metadata": {
+        "runtimeVersion": "1.4.0",
+        "gitCommit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+        "target": "darwin-arm64",
+        "sha256": "045e818ea77e228fc8336dfb876c4f0e07a7e4e48e8fe0fec9ffd5cea5f93dab"
+      },
+      "checks": [
+        "archive checksum matches accompanying SHA-256 file",
+        "npm metadata source commit and target match selected workflow",
+        "archive executable equals npm executable and metadata SHA-256"
+      ],
+      "local_execution_tested": false
     }
   ],
-  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Linux binaries were not executed on this Intel macOS host. Remaining platform jobs and packaged Payments runtime acceptance are pending. No provider API call or money movement."
+  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Linux and ARM macOS binaries were not executed on this Intel macOS host. Intel macOS/Windows platform jobs and packaged Payments runtime acceptance are pending. No provider API call or money movement."
 }
