@@ -44,6 +44,8 @@ python3 tests/network/reconciliation_test.py
 PAYMENTS_TEST_DB="$store_dir/link-authorization.db" "$KUJO_BIN" run tests/link_authorization.kujo --interpreter
 "$KUJO_BIN" run tests/stripe_sandbox.kujo --interpreter
 "$KUJO_BIN" run tests/sandbox_create.kujo --interpreter
+"$KUJO_BIN" run tests/sandbox_endpoint.kujo --interpreter
+python3 tests/network/sandbox_endpoint_test.py
 PAYMENTS_TEST_DB="$store_dir/sandbox-merchant.db" "$KUJO_BIN" run tests/sandbox_merchant.kujo --interpreter
 python3 tests/network/sandbox_merchant_test.py
 python3 tests/network/sandbox_recovery_test.py

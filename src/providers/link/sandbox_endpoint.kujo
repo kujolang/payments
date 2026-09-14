@@ -1,0 +1,46 @@
+// One installed sandbox purchase route. Host owns routing, authorization,
+// request size limits and process isolation; credentials stay in this process.
+from src.providers.link.mpp import validate_mpp_challenge, mpp_received_spt
+from src.providers.link.merchant_http import mpp_body_digest
+
+func response(status,code,challenge) {
+    reply := json_response(status,{"code":code})
+    reply = set_header(reply,"Cache-Control","no-store")
+    reply = set_header(reply,"X-Content-Type-Options","nosniff")
+    if challenge != null { reply = set_header(reply,"WWW-Authenticate",challenge) }
+    return reply
+}
+export sandbox_purchase_handler := func(snapshot,challenge,expected,body,merchant,clock_ms) {
+    // Capture immutable data copies; never accept a snapshot from HTTP JSON.
+    frozen := parse_json(to_json(snapshot))
+    constraints := parse_json(to_json(expected))
+    assert(type(body) == "string" && byte_length(body) <= 8192,"sandbox_route_body")
+    assert(constraints["body_digest"] == mpp_body_digest(body),"sandbox_route_digest")
+    initial := validate_mpp_challenge(challenge,constraints,clock_ms())
+    assert(initial["ok"] && initial["digest"] == frozen["request_binding"]["terms_digest"] && initial["expires_at_ms"] >= frozen["expires_at_ms"] && frozen["charge"] == constraints["charge"],"sandbox_route_binding")
+    return func(request) {
+        try {
+            if clock_ms() >= frozen["expires_at_ms"] { return response(410,"purchase_expired",null) }
+            if request["method"] != "POST" || type(request["body"]) != "string" || request["body"] != body { return response(400,"purchase_request_mismatch",null) }
+            mut credential := null
+            mut count := 0
+            for key in keys(request["headers"]) {
+                if to_lower(key) == "authorization" { count = count+1; credential = request["headers"][key] }
+            }
+            if count == 0 { return response(402,"payment_required",challenge) }
+            if count != 1 { return response(400,"payment_credential_rejected",null) }
+            // Released v1.4.0 collapses duplicate same-case headers. It cannot
+            // execute this endpoint until the runtime supplies multiplicity.
+            if has_key(request,"header_values") == 0 { return response(503,"runtime_header_values_required",null) }
+            values := request["header_values"]["authorization"]
+            if type(values) != "array" || len(values) != 1 || values[0] != credential { return response(400,"payment_credential_rejected",null) }
+            validated := validate_mpp_challenge(challenge,constraints,clock_ms())
+            decoded := mpp_received_spt(credential,validated)
+            if decoded["ok"] != true { return response(400,"payment_credential_rejected",null) }
+            result := merchant["submit"](frozen,decoded["spt"],clock_ms()+5000)
+            // Accepted only means the ID was recorded, never confirmed payment.
+            if result["ok"] == true { return response(202,"payment_recorded",null) }
+            return response(409,"payment_requires_reconciliation",null)
+        } except error { return response(503,"payment_outcome_unknown",null) }
+    }
+}

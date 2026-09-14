@@ -1,0 +1,46 @@
+from src.providers.link.mpp import mpp_credential, mpp_base64url, validate_mpp_challenge, mpp_received_spt
+from src.providers.link.merchant_http import mpp_body_digest
+from src.providers.link.sandbox_endpoint import sandbox_purchase_handler
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+vector := parse_json(read_file("tests/fixtures/mpp.json"))
+expected := vector["expected"]
+body := "{}"
+expected["body_digest"] = mpp_body_digest(body)
+challenge := vector["cases"][0]["header"]+", digest=\""+expected["body_digest"]+"\""
+validated := validate_mpp_challenge(challenge,expected,1500)
+snapshot["request_binding"] = {"route_id":"route","route_version":"v1","resource_ref":"order","terms_digest":validated["digest"]}
+credential := mpp_credential(validated,"spt_SENTINEL")
+assert(mpp_received_spt(credential,validated) == {"ok":true,"spt":"spt_SENTINEL"},"decode_private_credential")
+for header in [credential+"=", "Bearer spt_SENTINEL", vector["cases"][0]["credential"], "Payment "+mpp_base64url("{\"payload\":{\"spt\":\"spt_SENTINEL\"}}") ] {
+    assert(mpp_received_spt(header,validated) == {"ok":false},"reject_unbound_credential")
+}
+ledger := db_connect("sqlite",":memory:")
+db_execute(ledger,"CREATE TABLE calls(id INTEGER)",[])
+submit := func(snap,spt,deadline) {
+    assert(snap == snapshot && spt == "spt_SENTINEL" && deadline == 6500,"private_route_input")
+    db_execute(ledger,"INSERT INTO calls VALUES(1)",[])
+    return {"ok":true,"recorded":true}
+}
+clock := func() { return 1500 }
+handler := {"call":sandbox_purchase_handler(snapshot,challenge,expected,body,{"submit":submit},clock)}
+for request in [
+    {"method":"POST","body":body,"headers":{}},
+    {"method":"POST","body":"changed","headers":{"Authorization":credential}},
+    {"method":"GET","body":body,"headers":{"Authorization":credential}},
+    {"method":"POST","body":body,"headers":{"Authorization":credential,"authorization":credential}},
+    {"method":"POST","body":body,"headers":{"Authorization":"invalid"}}
+] {
+    result := handler["call"](request)
+
+}
+assert(len(db_query(ledger,"SELECT * FROM calls",[])) == 0,"no_effect_on_probe_or_invalid_request")
+result := handler["call"]({"method":"POST","body":body,"headers":{"Authorization":credential},"header_values":{"authorization":[credential]}})
+assert(len(db_query(ledger,"SELECT * FROM calls",[])) == 1,"valid_route_submits")
+
+if env("PAYMENTS_ENDPOINT_PORT") != "" {
+    mut server := http_listen("127.0.0.1",to_int(env("PAYMENTS_ENDPOINT_PORT")))
+    server = server.route("POST","/purchase",handler["call"])
+    server.listen()
+}
+db_close(ledger)
+print("Sandbox endpoint: bound credential decoding, challenge probe, body/method/duplicate-header rejection and private submission passed")

@@ -125,3 +125,16 @@ export mpp_credential := func(validated, spt) {
     if has_key(validated["request"],"externalId") { payload["externalId"] = validated["request"]["externalId"] }
     return "Payment "+mpp_base64url(to_json({"challenge":validated["wire"],"payload":payload}))
 }
+
+// Privileged merchant receive path. Never expose the returned token to a model.
+export mpp_received_spt := func(header,validated) {
+    try {
+        assert(type(header) == "string" && len(header) <= 16392 && substring(header,0,8) == "Payment ","mpp_received_header")
+        decoded := parse_json(decode_url(substring(header,8,len(header))))
+        spt := decoded["payload"]["spt"]
+        // Exact roundtrip binds the challenge and rejects extra/duplicate keys,
+        // external-ID changes and alternative JSON/base64 encodings.
+        assert(mpp_credential(validated,spt) == header,"mpp_received_binding")
+        return {"ok":true,"spt":spt}
+    } except error { return {"ok":false} }
+}
