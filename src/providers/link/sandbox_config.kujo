@@ -1,0 +1,40 @@
+// Offline matching buyer/merchant configuration. No authorization, provider call,
+// credential or claimed execution is created by this function.
+from src.providers.link.provider import assemble_link_snapshot
+from src.providers.link.mpp import validate_mpp_challenge
+from src.providers.link.merchant_http import merchant_http
+from src.domain.validation import valid_intent, valid_capabilities, valid_snapshot
+from src.domain.binding import snapshot_digest
+
+export sandbox_configuration := func(plan,schemas,now_ms) {
+    try {
+        assert(type(plan) == "dict" && len(keys(plan)) == 9,"sandbox_plan_fields")
+        for key in keys(plan) { assert(contains(["installed","intent","execution_id","currency_table","region","challenge","route","local_fixture","merchant"],key),"sandbox_plan_field") }
+        installed := plan["installed"]
+        assert(type(installed) == "dict" && len(keys(installed)) == 5,"sandbox_installation_fields")
+        for key in keys(installed) { assert(contains(["snapshot","capabilities","expected","payment_method","test_mode"],key),"sandbox_installation_field") }
+        assert(type(installed["payment_method"]) == "string" && regex_match(installed["payment_method"],"^[A-Za-z0-9_]{1,128}$"),"sandbox_payment_profile")
+        seller := plan["merchant"]
+        assert(type(seller) == "dict" && len(keys(seller)) == 3 && type(seller["account_id"]) == "string" && regex_match(seller["account_id"],"^acct_[A-Za-z0-9]+$") && type(seller["api_version"]) == "string" && regex_match(seller["api_version"],"^[0-9]{4}-[0-9]{2}-[0-9]{2}(\\.[a-z]+)?$") && type(seller["port"]) == "int" && seller["port"] >= 1024 && seller["port"] <= 65535,"sandbox_merchant_config")
+        assert(type(installed["test_mode"]) == "bool" && installed["test_mode"] == true,"sandbox_test_mode")
+        assert(installed["snapshot"]["provider"]["id"] == "link" && installed["snapshot"]["provider"]["adapter_version"] == "0.1.0" && installed["capabilities"]["provider_id"] == "link" && installed["capabilities"]["adapter_version"] == "0.1.0","sandbox_provider")
+        assert(valid_intent(plan["intent"],schemas["intent"],plan["currency_table"],now_ms),"sandbox_intent")
+        assert(valid_capabilities(installed["capabilities"],schemas["capabilities"],now_ms),"sandbox_capabilities")
+        assert(type(plan["execution_id"]) == "string" && regex_match(plan["execution_id"],"^[A-Za-z0-9_.:-]{1,128}$"),"sandbox_execution")
+        validated := validate_mpp_challenge(plan["challenge"],installed["expected"],now_ms)
+        assert(validated["ok"],"sandbox_challenge")
+        snapshot := assemble_link_snapshot(installed,plan["intent"],plan["execution_id"],validated,now_ms)
+        assert(valid_snapshot(snapshot,schemas["snapshot"],plan["intent"],installed["capabilities"],plan["currency_table"],now_ms,plan["region"]),"sandbox_terms")
+        clock := func() { return now_ms }
+        deny := func(ref,snapshot,context) { assert(false,"offline_configuration_only"); return null }
+        route := merchant_http(plan["route"],deny,clock,plan["local_fixture"])
+        assert(plan["route"]["method"] == "POST" && type(plan["route"]["body"]) == "string","sandbox_post_route")
+        assert(route["origin"] == snapshot["payee"]["origin"] && route["body_digest"] == installed["expected"]["body_digest"],"sandbox_route_destination")
+        for key in ["route_id","route_version","resource_ref"] { assert(route[key] == snapshot["request_binding"][key],"sandbox_route_identity") }
+        merchant := {"schema":"kujo.stripe-sandbox-merchant/v1","account_id":plan["merchant"]["account_id"],"api_version":plan["merchant"]["api_version"],"port":plan["merchant"]["port"],"snapshot":snapshot,"challenge":plan["challenge"],"expected":installed["expected"],"body":plan["route"]["body"]}
+        // Existing provider factory receives its original template; it derives
+        // the same digest after independently probing the real merchant route.
+        buyer := {"schema":"kujo.link-sandbox-installation/v1","intent":plan["intent"],"execution_id":plan["execution_id"],"installed":installed,"route":plan["route"],"local_fixture":plan["local_fixture"],"currency_table":plan["currency_table"],"region":plan["region"],"expected_snapshot_digest":snapshot_digest(snapshot)}
+        return {"ok":true,"merchant":merchant,"buyer":buyer}
+    } except error { return {"ok":false,"code":"sandbox_plan_rejected"} }
+}

@@ -143,3 +143,22 @@ PAYMENTS_SANDBOX_PAYMENT_INTENT=pi_candidate bash scripts/sandbox-merchant.sh re
 Recovery may read Stripe but cannot create a charge. It requires the matching existing claim and authenticated evidence; a candidate ID alone is insufficient. It can run after snapshot expiration. Local authorization is the private OS environment, not a new remote authentication scheme. Run buyer reconciliation separately after recovery records the ID.
 
 `tests/network/sandbox_operator_test.py` runs the actual launcher using a fake key: offline validation, permission/symlink/live-key refusals, missing-claim recovery and uncredentialed HTTP 402 startup. No credentialed Stripe request is made. The separate source-runtime endpoint test proves credential parsing with a synthetic callback; it does not substitute for real sandbox acceptance.
+
+## Build matching buyer and merchant configuration
+
+Use `scripts/sandbox-configure.sh` to publish both configurations into a new private directory without manually copying snapshot digests. Its input is a reviewed private plan file, not model-supplied checkout content:
+
+```bash
+export KUJO_BIN=/absolute/path/to/reviewed/kujo
+export PAYMENTS_SANDBOX_PLAN=/absolute/path/to/reviewed-plan.json
+export PAYMENTS_SANDBOX_DIR=/absolute/path/to/new-private-directory
+bash scripts/sandbox-configure.sh
+```
+
+The plan contains exactly `installed`, `intent`, `execution_id`, `currency_table`, `region`, `challenge`, `route`, `local_fixture`, and `merchant`. `installed` is the existing Link provider installation (`snapshot`, `capabilities`, `expected`, `payment_method`, `test_mode`); test mode must be true. `merchant` contains account ID, API version and local port. `route` is the existing immutable merchant HTTP route. The intent, capabilities, currency table, region and resulting snapshot must pass the existing domain validation. The actual merchant URL, body digest and route identities must match the installation.
+
+The provider and setup command now share `assemble_link_snapshot`, so capability digest, intent digest, execution/principal binding, challenge terms and expiration clamps cannot drift through duplicated setup logic. The live provider still probes and validates the merchant independently; offline configuration does not bypass that check or prepopulate its journal. `tests/sandbox_config.kujo` compares generated merchant terms with the actual provider factory's preparation and checks rejected test-mode, money, body, origin and expiration changes.
+
+Successful setup atomically publishes mode-private `merchant.json` and `buyer.json` without replacing an existing directory. It creates no keys, approval, credential store, provider session, financial claim or payment. Place the merchant's test key locally in `stripe-test-key` afterward as described above. Treat these files as sensitive operator configuration; they contain purchase/principal and private payment-profile references, not agent-facing outputs.
+
+`buyer.json` records the intended Link installation, route and expected snapshot digest. A complete authenticated buyer runner is still required. Generating the file does not establish Link access or prove the deployed merchant route is reachable. Local fixture mode only permits explicit loopback HTTP; it is not a deployment isolation guarantee. A real HTTPS route needs operator-controlled routing to the loopback service.

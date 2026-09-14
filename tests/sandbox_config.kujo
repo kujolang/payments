@@ -1,0 +1,43 @@
+from src.providers.link.sandbox_config import sandbox_configuration
+from src.providers.link.provider import link_provider
+from src.providers.link.merchant_http import merchant_http, mpp_body_digest
+from src.domain.binding import snapshot_digest
+v := parse_json(read_file("tests/fixtures/domain.json"))
+mpp := parse_json(read_file("tests/fixtures/mpp.json"))
+mut schemas := {}
+for name in ["intent","capabilities","snapshot"] { schemas[name] = parse_json(read_file("contracts/"+name+".schema.json")) }
+mut template := v["snapshot"]
+template["provider"] = {"id":"link","adapter_version":"0.1.0","account_ref":"account_1"}
+mut caps := v["capabilities"]
+caps["provider_id"] = "link"
+caps["adapter_version"] = "0.1.0"
+expected := mpp["expected"]
+expected["body_digest"] = mpp_body_digest("{}")
+challenge := mpp["cases"][0]["header"]+", digest=\""+expected["body_digest"]+"\""
+installed := {"snapshot":template,"capabilities":caps,"expected":expected,"payment_method":"pm_fixture","test_mode":true}
+plan := {"installed":installed,"intent":v["intent"],"execution_id":"exec_actual","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","challenge":challenge,"route":{"url":"https://example.com/purchase","method":"POST","body":"{}","route_id":"mpp_1","route_version":"v1","resource_ref":"order_1"},"local_fixture":false,"merchant":{"account_id":"acct_fixture","api_version":"2026-08-27.dahlia","port":8080}}
+output := sandbox_configuration(plan,schemas,1500)
+assert(output["ok"],"coordinated_config")
+clock := func() { return 1500 }
+never := func(a,b,c,d) { assert(false,"must_not_call_provider"); return null }
+observe := func(a,b,c) { assert(false,"must_not_observe"); return null }
+route := merchant_http(plan["route"],observe,clock,false)
+probe := func(context) { return {"status":402,"challenge":challenge} }
+route["probe"] = probe
+private := db_connect("sqlite",":memory:")
+provider := link_provider(private,output["buyer"]["installed"],never,route,clock)
+prepared := provider["prepare"](plan["intent"],{"principal":plan["intent"]["principal"],"execution_id":plan["execution_id"]})
+assert(prepared["terms"] == output["merchant"]["snapshot"],"real_provider_same_terms")
+assert(snapshot_digest(prepared["terms"]) == output["buyer"]["expected_snapshot_digest"],"same_digest")
+for scenario in ["live","amount","body","origin","expired"] {
+    changed := parse_json(to_json(plan))
+    if scenario == "live" { config := changed["installed"]; config["test_mode"] = false; changed["installed"] = config }
+    if scenario == "amount" { intent := changed["intent"]; intent["amount"] = {"mode":"maximum","minor":1,"currency":"USD"}; changed["intent"] = intent }
+    if scenario == "body" { request := changed["route"]; request["body"] = "changed"; changed["route"] = request }
+    if scenario == "origin" { request := changed["route"]; request["url"] = "https://other.example/purchase"; changed["route"] = request }
+    mut now := 1500
+    if scenario == "expired" { now = 2000 }
+    assert(sandbox_configuration(changed,schemas,now)["ok"] == false,"invalid_plan")
+}
+db_close(private)
+print("Sandbox configuration: actual provider preparation matches merchant digest; live mode, limits, body, origin and expiration rejected")

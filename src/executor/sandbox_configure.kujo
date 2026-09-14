@@ -1,0 +1,23 @@
+// Offline setup only. No credential, approval or financial execution is created.
+from src.providers.link.sandbox_config import sandbox_configuration
+func configure() {
+    path := env("PAYMENTS_SANDBOX_PLAN")
+    regular_file_digest(path,65536)
+    plan := parse_json(read_file(path))
+    mut schemas := {}
+    for name in ["intent","capabilities","snapshot"] { schemas[name] = parse_json(read_file("contracts/"+name+".schema.json")) }
+    result := sandbox_configuration(plan,schemas,current_timestamp())
+    if result["ok"] == false { return result }
+    destination := env("PAYMENTS_SANDBOX_DIR")
+    parent := dirname(destination)
+    stage := create_temp_dir(parent,".payments-sandbox-")
+    // Atomic no-replace publication; no partly written configuration is served.
+    write_file_atomic_beneath(stage,"merchant.json",to_json(result["merchant"]))
+    write_file_atomic_beneath(stage,"buyer.json",to_json(result["buyer"]))
+    assert(publish_directory_noreplace(stage,destination),"sandbox_publish_failed")
+    return {"ok":true,"code":"sandbox_configuration_created"}
+}
+mut result := {"ok":false,"code":"sandbox_configuration_failed"}
+try { result = configure() } except error { result = {"ok":false,"code":"sandbox_configuration_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }

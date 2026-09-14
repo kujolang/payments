@@ -6,6 +6,27 @@ from src.providers.link.authorization import request_link_authorization, observe
 from src.providers.link.mpp import validate_mpp_challenge
 from src.providers.link.submission import prepare_link_submission, submit_link_once, observe_link_submission
 
+// Shared deterministic preparation for the provider and private sandbox setup.
+// This assembles terms only: it grants no authorization and performs no effect.
+export assemble_link_snapshot := func(installed,intent,execution_id,challenge,now_ms) {
+    assert(challenge["ok"] == true,"link_challenge_invalid")
+    mut snapshot := parse_json(to_json(installed["snapshot"]))
+    snapshot["execution_id"] = execution_id
+    snapshot["principal"] = intent["principal"]
+    snapshot["intent_digest"] = intent_digest(intent)
+    snapshot["capabilities_digest"] = capabilities_digest(installed["capabilities"])
+    mut binding := snapshot["request_binding"]
+    binding["terms_digest"] = challenge["digest"]
+    snapshot["request_binding"] = binding
+    mut expires := snapshot["expires_at_ms"]
+    if expires > intent["expires_at_ms"] { expires = intent["expires_at_ms"] }
+    if expires > challenge["expires_at_ms"] { expires = challenge["expires_at_ms"] }
+    if expires > installed["capabilities"]["valid_until_ms"] { expires = installed["capabilities"]["valid_until_ms"] }
+    snapshot["expires_at_ms"] = expires
+    assert(expires > now_ms,"link_preparation_expired")
+    return snapshot
+}
+
 export link_provider := func(db, installed, api, merchant, clock_ms) {
     assert(type(api) == "function" && type(clock_ms) == "function","link_host_ports")
     assert(installed["snapshot"]["provider"]["id"] == "link" && installed["snapshot"]["provider"]["adapter_version"] == "0.1.0","link_installation_identity")
@@ -43,20 +64,7 @@ export link_provider := func(db, installed, api, merchant, clock_ms) {
         assert(response["status"] == 402,"link_challenge_required")
         challenge := validate_mpp_challenge(response["challenge"],installed["expected"],clock_ms())
         assert(challenge["ok"],"link_challenge_invalid")
-        mut snapshot := parse_json(to_json(installed["snapshot"]))
-        snapshot["execution_id"] = context["execution_id"]
-        snapshot["principal"] = intent["principal"]
-        snapshot["intent_digest"] = intent_digest(intent)
-        snapshot["capabilities_digest"] = capabilities_digest(installed["capabilities"])
-        mut binding := snapshot["request_binding"]
-        binding["terms_digest"] = challenge["digest"]
-        snapshot["request_binding"] = binding
-        mut expires := snapshot["expires_at_ms"]
-        if expires > intent["expires_at_ms"] { expires = intent["expires_at_ms"] }
-        if expires > challenge["expires_at_ms"] { expires = challenge["expires_at_ms"] }
-        if expires > installed["capabilities"]["valid_until_ms"] { expires = installed["capabilities"]["valid_until_ms"] }
-        snapshot["expires_at_ms"] = expires
-        assert(expires > clock_ms(),"link_preparation_expired")
+        snapshot := assemble_link_snapshot(installed,intent,context["execution_id"],challenge,clock_ms())
         assert(prepare_link_submission(db,ref,snapshot,response["challenge"],installed["expected"],clock_ms())["ok"],"link_mpp_preparation")
         db_execute(db,"INSERT OR IGNORE INTO link_provider_prepared VALUES(?,?,?,?,?,?)",[ref,scope,context["execution_id"],installation_digest,intent_digest(intent),to_json(snapshot)])
         saved := db_query(db,"SELECT * FROM link_provider_prepared WHERE ref=?",[ref])

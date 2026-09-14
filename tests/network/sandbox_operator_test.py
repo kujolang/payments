@@ -36,6 +36,39 @@ with tempfile.TemporaryDirectory(prefix='payments-sandbox-operator-') as directo
     settings = {'schema':'kujo.stripe-sandbox-merchant/v1','account_id':'acct_fixture',
                 'api_version':'2026-08-27.dahlia','port':port,'snapshot':snapshot,
                 'challenge':challenge,'expected':expected,'body':body}
+    # Exercise offline publication, then use its actual merchant configuration.
+    domain = json.loads((ROOT/'tests/fixtures/domain.json').read_text())
+    intent = domain['intent']
+    intent['expires_at_ms'] = snapshot['expires_at_ms']
+    caps = domain['capabilities']
+    caps.update(provider_id='link', adapter_version='0.1.0',
+                observed_at_ms=int(time.time()*1000)-1000,
+                valid_until_ms=snapshot['expires_at_ms'])
+    snapshot['provider'] = {'id':'link','adapter_version':'0.1.0','account_ref':'account_1'}
+    plan = {'installed':{'snapshot':snapshot,'capabilities':caps,'expected':expected,
+                        'payment_method':'pm_fixture','test_mode':True},
+            'intent':intent,'execution_id':snapshot['execution_id'],
+            'currency_table':{'version':'fixture-v1','exponents':{'USD':2}},'region':'US',
+            'challenge':challenge,'local_fixture':False,
+            'route':{'url':'https://example.com/purchase','method':'POST','body':body,
+                     'route_id':'mpp_1','route_version':'v1','resource_ref':'order_1'},
+            'merchant':{'account_id':'acct_fixture','api_version':'2026-08-27.dahlia','port':port}}
+    plan_file = root/'plan.json'
+    plan_file.write_text(encode(plan)); plan_file.chmod(0o600)
+    configured = root/'configured'
+    configure_env = {**os.environ,'KUJO_BIN':KUJO,'PAYMENTS_SANDBOX_PLAN':str(plan_file),
+                     'PAYMENTS_SANDBOX_DIR':str(configured)}
+    configured_result = subprocess.run(['bash','scripts/sandbox-configure.sh'],cwd=ROOT,
+                                     env=configure_env,capture_output=True,text=True,timeout=15)
+    assert configured_result.returncode == 0, (configured_result.stdout,configured_result.stderr)
+    assert configured.stat().st_mode & 0o077 == 0
+    for name in ('merchant.json','buyer.json'):
+        assert (configured/name).stat().st_mode & 0o077 == 0
+    assert not (configured/'stripe-test-key').exists()
+    again = subprocess.run(['bash','scripts/sandbox-configure.sh'],cwd=ROOT,
+                           env=configure_env,capture_output=True,text=True,timeout=15)
+    assert again.returncode != 0, 'configuration overwritten'
+    settings = json.loads((configured/'merchant.json').read_text())
     config = root/'merchant.json'
     key = root/'stripe-test-key'
     config.write_text(encode(settings)); config.chmod(0o600)
