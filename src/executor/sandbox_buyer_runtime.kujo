@@ -1,0 +1,50 @@
+// Private deterministic runner. Human approval still uses the existing Ability
+// binding and operator authority; scheduling remains one explicit worker step.
+from src.providers.link.provider import link_provider
+from src.application.worker import worker_step
+from src.executor.approval import review_payment, approve_reviewed_payment
+from src.domain.binding import principal_digest, intent_digest, snapshot_digest
+from src.domain.lifecycle import summary
+from src.domain.validation import valid_intent
+
+export sandbox_buyer_runtime := func(buyer,store,provider_db,connection,merchant,confirmation,schemas,host) {
+    config := parse_json(to_json(buyer))
+    assert(config["schema"] == "kujo.link-sandbox-installation/v1" && type(config["installed"]["test_mode"]) == "bool" && config["installed"]["test_mode"] == true,"sandbox_buyer_installation")
+    assert(type(config["expected_snapshot_digest"]) == "string" && regex_match(config["expected_snapshot_digest"],"^[a-f0-9]{64}$"),"sandbox_expected_snapshot")
+    principal := config["intent"]["principal"]
+    scope := principal_digest(principal)
+    id := config["execution_id"]
+    clock := host["clock_ms"]
+    provider := link_provider(provider_db,config["installed"],connection["api"],merchant,clock)
+    original_prepare := provider["prepare"]
+    prepare := func(intent,context) {
+        result := original_prepare(intent,context)
+        assert(snapshot_digest(result["terms"]) == config["expected_snapshot_digest"],"sandbox_preparation_changed")
+        return result
+    }
+    provider["prepare"] = prepare
+    installed := {"provider":provider,"schemas":schemas,"currency_table":config["currency_table"],"region":config["region"],"definition":parse_json(read_file("contracts/abilities/execute.json")),"reconciliation_definition":parse_json(read_file("contracts/abilities/reconcile.json")),"confirmation":confirmation}
+    request := func() {
+        if valid_intent(config["intent"],schemas["intent"],config["currency_table"],clock()) == false { return {"ok":false,"code":"sandbox_intent_invalid"} }
+        digest := intent_digest(config["intent"])
+        result := store["intake"](scope,"sandbox:"+id,digest,id,config["intent"])
+        if result["ok"] == false { return result }
+        return {"ok":true,"result":summary(store["inspect"](scope,id))}
+    }
+    status := func() {
+        row := store["inspect"](scope,id)
+        if row == null { return {"ok":false,"code":"not_found"} }
+        return {"ok":true,"result":summary(row)}
+    }
+    step := func() {
+        row := store["inspect"](scope,id)
+        if row == null { return {"ok":false,"code":"not_found"} }
+        if row["snapshot_digest"] != null && row["snapshot_digest"] != config["expected_snapshot_digest"] { return {"ok":false,"code":"sandbox_preparation_changed"} }
+        // Read-only reconciliation must remain possible after wallet revocation.
+        if row["claimed"] == 0 && row["state"] != "succeeded" && row["state"] != "closed" && connection["ready"](clock()+10000) == false { return {"ok":false,"code":"sandbox_link_connection_unavailable"} }
+        return worker_step(store,principal,id,installed,host)
+    }
+    review := func() { return review_payment(store,principal,id,installed["definition"],clock()) }
+    approve := func(digest) { return approve_reviewed_payment(store,principal,id,installed["definition"],host["authority"],digest,clock()) }
+    return {"request":request,"status":status,"step":step,"review":review,"approve":approve}
+}

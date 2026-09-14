@@ -1,0 +1,49 @@
+from src.executor.sandbox_buyer_runtime import sandbox_buyer_runtime
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.providers.link.provider import assemble_link_snapshot
+from src.providers.link.mpp import validate_mpp_challenge
+from src.domain.binding import snapshot_digest
+v := parse_json(read_file("tests/fixtures/domain.json"));mpp := parse_json(read_file("tests/fixtures/mpp.json"))
+config := {"snapshot":v["snapshot"],"capabilities":v["capabilities"],"expected":mpp["expected"],"payment_method":"pm_fixture","test_mode":true}
+template := config["snapshot"];template["provider"] = {"id":"link","adapter_version":"0.1.0","account_ref":"account_1"};config["snapshot"] = template
+caps := config["capabilities"];caps["provider_id"] = "link";caps["adapter_version"] = "0.1.0";config["capabilities"] = caps
+expected := assemble_link_snapshot(config,v["intent"],"exec_1",validate_mpp_challenge(mpp["cases"][0]["header"],mpp["expected"],1500),1500)
+buyer := {"schema":"kujo.link-sandbox-installation/v1","intent":v["intent"],"execution_id":"exec_1","installed":config,"currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","expected_snapshot_digest":snapshot_digest(expected)}
+ledger := db_connect("sqlite",":memory:");db_execute(ledger,"CREATE TABLE events(kind TEXT)",[])
+clock := func() { return 1500 }
+ready := func(deadline) { return len(db_query(ledger,"SELECT * FROM events WHERE kind='connected'",[])) > 0 }
+api := func(method,path,body,deadline) {
+    db_execute(ledger,"INSERT INTO events VALUES('api')",[])
+    return {"ok":true,"native":{"id":"spend_fixture","amount":5500,"currency":"usd","credential_type":"shared_payment_token","network_id":"network_1","status":"approved","shared_payment_token":"SENTINEL_SPT"}}
+}
+probe := func(context) { return {"status":402,"challenge":mpp["cases"][0]["header"]} }
+pay := func(header,context) { db_execute(ledger,"INSERT INTO events VALUES('paid')",[]);assert(false,"SENTINEL_LOST_RESPONSE");return null }
+observe := func(ref,snapshot,context) { return {"execution_id":"exec_1","snapshot_digest":snapshot_digest(snapshot),"phase":"execution","outcome":"succeeded","observed_at_ms":1500,"actual_amount":snapshot["charge"],"evidence_ref":"synthetic-ledger"} }
+verify := func(snapshot,observation) { return len(db_query(ledger,"SELECT * FROM events WHERE kind='paid'",[])) == 1 }
+merchant := {"origin":"https://example.com","body_digest":null,"route_id":"mpp_1","route_version":"v1","resource_ref":"order_1","binding_digest":sha256("route"),"probe":probe,"pay":pay,"observe":observe}
+mut schemas := {};for name in ["intent","snapshot","capabilities","observation"] { schemas[name] = parse_json(read_file("contracts/"+name+".schema.json")) }
+policy := func(snapshot,invocation) { return {"schema":"kujo.ability.policy-decision/v1","decision_id":"fixture","outcome":"allow","reason":"Separate fixture operator grant","requirements":[],"policy_id":"fixture","policy_version":"1.0.0"} }
+audit := func(phase,invocation,payload) { return {"ok":true,"written":true,"phase":phase,"event_id":"fixture:"+phase} }
+authority := {"payer":v["intent"]["principal"],"operator":{"type":"human","id":"operator","tenant_id":"tenant_1"},"issuer_ref":"fixture","ttl_ms":300}
+host := {"clock_ms":clock,"policy":policy,"audit":audit,"authority":authority,"reconciliation_key":"fixture-reconcile"}
+db := open_store(env("PAYMENTS_TEST_DB"));private := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-provider")
+runner := sandbox_buyer_runtime(buyer,sqlite_port(db),private,{"api":api,"ready":ready},merchant,{"id":"fixture","assurance":"provider_confirmed","verify":verify},schemas,host)
+assert(runner["request"]()["ok"] && runner["request"]()["ok"],"idempotent_intake")
+assert(runner["step"]()["code"] == "sandbox_link_connection_unavailable","connection_before_issuance")
+assert(len(db_query(ledger,"SELECT * FROM events",[])) == 0,"no_provider_contact")
+db_execute(ledger,"INSERT INTO events VALUES('connected')",[])
+assert(runner["step"]()["ok"],"request_provider_authorization")
+changed := parse_json(to_json(buyer));changed["expected_snapshot_digest"] = sha256("different")
+other := sandbox_buyer_runtime(changed,sqlite_port(db),private,{"api":api,"ready":ready},merchant,{"id":"fixture","assurance":"provider_confirmed","verify":verify},schemas,host)
+assert(other["step"]()["code"] == "sandbox_preparation_changed","configuration_drift")
+review := runner["review"]();assert(review["ok"],"review")
+assert(runner["approve"]("wrong")["ok"] == false,"wrong_grant_digest")
+assert(runner["approve"](review["binding_digest"])["ok"],"explicit_operator_grant")
+result := runner["step"]();assert(result["result"]["status"] == "reconciliation_required","lost_payment_response")
+db_execute(ledger,"DELETE FROM events WHERE kind='connected'",[])
+assert(runner["step"]()["result"]["status"] == "succeeded","reconcile_without_wallet")
+assert(runner["status"]()["result"]["status"] == "succeeded","compact_status")
+assert(len(db_query(ledger,"SELECT * FROM events WHERE kind='paid'",[])) == 1,"one_charge")
+db_close(private);db_close(db);db_close(ledger)
+print("Sandbox buyer runner: bounded steps, guarded connection, explicit Ability approval, lost-response reconciliation after revocation and one charge passed")

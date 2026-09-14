@@ -1,0 +1,28 @@
+// Private buyer connection. Reuse accepted enrollment plus the credential vault;
+// never copy a CLI session, accept model-supplied tokens, or mint account proof.
+from src.providers.link.credentials import inspect_link_credentials, link_credential_api
+from src.providers.link.enrollment import inspect_link_enrollment, link_enrollment_api
+from src.domain.binding import principal_digest
+
+export sandbox_link_connection := func(enrollment_db,vault_db,enrollment_id,config,buyer,clock_ms) {
+    frozen := parse_json(to_json(config))
+    principal := buyer["intent"]["principal"]
+    binding := frozen["binding"]
+    assert(buyer["schema"] == "kujo.link-sandbox-installation/v1" && type(buyer["installed"]["test_mode"]) == "bool" && buyer["installed"]["test_mode"] == true,"sandbox_buyer_connection")
+    assert(binding["tenant_id"] == principal["tenant_id"] && binding["payer_ref"] == principal_digest(principal) && binding["account_ref"] == buyer["installed"]["snapshot"]["provider"]["account_ref"],"sandbox_connection_scope")
+    native := link_credential_api(vault_db,frozen["credential_id"],binding,clock_ms)
+    guarded := link_enrollment_api(enrollment_db,enrollment_id,frozen,native)
+    ready := func(deadline_ms) {
+        try {
+            if type(deadline_ms) != "int" || clock_ms()+5000 >= deadline_ms { return false }
+            enrollment := inspect_link_enrollment(enrollment_db,enrollment_id,frozen)
+            credential := inspect_link_credentials(vault_db,frozen["credential_id"],binding)
+            return enrollment["ok"] == true && enrollment["state"] == "accepted" && credential["ok"] == true && credential["state"] == "active" && credential["expires_at_ms"] > deadline_ms
+        } except error { return false }
+    }
+    api := func(method,path,body,deadline_ms) {
+        if ready(deadline_ms) == false { return {"ok":false,"code":"sandbox_link_connection_unavailable"} }
+        return guarded(method,path,body,deadline_ms)
+    }
+    return {"ready":ready,"api":api}
+}

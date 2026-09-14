@@ -1,0 +1,42 @@
+from src.providers.link.sandbox_connection import sandbox_link_connection
+from src.providers.link.credentials import open_link_credentials, install_link_credentials, disable_link_credentials
+from src.providers.link.enrollment import open_link_enrollment, start_link_enrollment, poll_link_enrollment, accept_link_enrollment
+from src.domain.binding import principal_digest
+principal := parse_json(read_file("tests/fixtures/domain.json"))["intent"]["principal"]
+buyer := {"schema":"kujo.link-sandbox-installation/v1","intent":{"principal":principal},"installed":{"test_mode":true,"snapshot":{"provider":{"account_ref":"account_1"}}}}
+config := {"credential_id":"credential_1","binding":{"tenant_id":principal["tenant_id"],"payer_ref":principal_digest(principal),"account_ref":"account_1","client_id":"registered_fixture","scope":"offline spend"},"label":"Kujo Payments","origins":["https://app.link.com"]}
+enrollment := db_connect("sqlite",":memory:");open_link_enrollment(enrollment)
+vault := db_connect("sqlite",":memory:");open_link_credentials(vault)
+clock := func() { return 6000 }
+connection := sandbox_link_connection(enrollment,vault,"enrollment_1",config,buyer,clock)
+assert(connection["ready"](16000) == false,"missing_connection")
+assert(connection["api"]("POST","/spend_requests",{},16000) == {"ok":false,"code":"sandbox_link_connection_unavailable"},"no_issuance_before_enrollment")
+for field in ["tenant_id","payer_ref","account_ref"] {
+    altered := parse_json(to_json(config))
+    binding := altered["binding"];binding[field] = "other";altered["binding"] = binding
+    mut rejected := false
+    try { sandbox_link_connection(enrollment,vault,"enrollment_1",altered,buyer,clock) } except error { rejected = true }
+    assert(rejected,"cross_scope_connection")
+}
+start_clock := func() { return 1000 }
+device := func(phase,client,value,label,deadline) {
+    if phase == "start" { return {"ok":true,"outcome":"received","native":{"device_code":"SENTINEL_DEVICE","user_code":"SENTINEL CODE","verification_uri":"https://app.link.com/verify","verification_uri_complete":"https://app.link.com/verify?code=fake","expires_in":120,"interval":5}} }
+    return {"ok":true,"outcome":"received","native":{"access_token":"SENTINEL_ACCESS","refresh_token":"SENTINEL_REFRESH","token_type":"Bearer","scope":"offline spend","expires_in":60}}
+}
+assert(start_link_enrollment(enrollment,"enrollment_1",config,device,start_clock,11000)["state"] == "pending","fixture_enrollment")
+assert(connection["ready"](16000) == false,"pending_not_published")
+assert(poll_link_enrollment(enrollment,"enrollment_1",config,device,clock,16000)["state"] == "received","fixture_tokens")
+accept := func(id,binding,tokens,started,deadline) {
+    assert(connection["ready"](16000) == false,"accepting_not_published")
+    return install_link_credentials(vault,id,binding,tokens,started)["ok"]
+}
+assert(accept_link_enrollment(enrollment,"enrollment_1",config,accept,clock,16000)["state"] == "accepted","fixture_acceptance")
+assert(connection["ready"](16000),"accepted_active_connection")
+assert(connection["ready"](70000) == false,"expiry_before_deadline")
+// Unsupported route is denied by native transport before network access.
+assert(connection["api"]("GET","/not-allowed",null,16000)["ok"] == false,"native_route_allowlist")
+assert(disable_link_credentials(vault,"credential_1",config["binding"],0)["ok"],"disable")
+assert(connection["ready"](16000) == false,"disabled_not_published")
+assert(connection["api"]("POST","/spend_requests",{},16000)["code"] == "sandbox_link_connection_unavailable","disabled_before_network")
+db_close(vault);db_close(enrollment)
+print("Sandbox buyer connection: tenant/principal/account binding, accepted enrollment, vault expiry and disable guard passed without network")
