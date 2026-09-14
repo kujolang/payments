@@ -10,6 +10,10 @@ for scenario in ["success","lost_create","malformed","wrong_amount","wrong_curre
     api := func(method,path,body,deadline) {
         db_execute(ledger,"INSERT INTO calls VALUES(?)",[method])
         if method == "POST" {
+            // Pinned Link README requires at least 100 context characters.
+            assert(type(body["context"]) == "string" && len(body["context"]) >= 100,"provider_context_minimum")
+            assert(contains(body["context"],snapshot["payee"]["origin"]) == 1,"approval_merchant_context")
+            assert(contains(body["context"],"5500 USD minor units") == 1,"approval_exact_money_context")
             assert(body["amount"] == 5500 && type(body["amount"]) == "int","exact_amount")
             assert(body["request_approval"] == true && body["test"] == true,"explicit_native_approval")
             assert(body["credential_type"] == "shared_payment_token" && body["network_id"] == "network_1","spt_scope")

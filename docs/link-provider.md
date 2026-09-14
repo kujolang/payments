@@ -10,6 +10,8 @@ Relevant primary files are `packages/sdk/src/resources/spend-request.ts`, `resou
 
 ## Implemented boundary
 
+Spend-request context is derived from the bound merchant origin, exact amount/currency and snapshot digest. It meets the pinned Link README's 100-character minimum without forwarding agent prose or private principal identifiers. The regression fixture checks this requirement; provider-backed sandbox acceptance is still outstanding.
+
 `src/providers/link/api.kujo` constructs a private bearer-authenticated transport to the fixed official origin. It permits only spend-request creation and retrieval paths, refuses delegated creation and arbitrary URLs, uses DNS pinning/private-address denial, disables redirects, caps requests/responses, and requires enough deadline for a bounded five-second call. It does not retry HTTP 401 or any other error. Raw error bodies and exceptions become fixed private error codes. Successful native bodies remain privileged adapter data, never generic receipts or tool output. No CLI or shell is invoked.
 
 `authorization.kujo` owns a private SQLite issuance journal distinct from the generic payment store. It reserves a reference before the POST and makes that reservation permanent. The native idempotency key binds snapshot, tenant, account alias, provider network, payment-method selection and test mode. It supplements the local one-shot reservation; unknown native idempotency retention is not treated as permission to recreate a request after a lost response.

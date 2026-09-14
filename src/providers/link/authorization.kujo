@@ -37,7 +37,10 @@ export request_link_authorization := func(db, ref, snapshot, network_id, payment
             if len(prior) != 1 || prior[0]["request_key"] != key { return unknown() }
             return observe_link_authorization(db,ref,snapshot,api,deadline_ms)
         }
-        body := {"idempotency_key":key,"payment_details":payment_method,"credential_type":"shared_payment_token","network_id":network_id,"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"context":"Authorized Kujo purchase "+ref,"request_approval":true,"test":test_mode}
+        // Link requires at least 100 context characters. Use the bound purchase
+        // facts, never free-form agent text, private identities or credentials.
+        context := "Kujo requests approval for a one-time purchase. Merchant: "+snapshot["payee"]["origin"]+"; amount: "+to_string(snapshot["charge"]["minor"])+" "+snapshot["charge"]["currency"]+" minor units. Purchase snapshot digest: "+digest
+        body := {"idempotency_key":key,"payment_details":payment_method,"credential_type":"shared_payment_token","network_id":network_id,"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"context":context,"request_approval":true,"test":test_mode}
         result := api("POST","/spend_requests",body,deadline_ms)
         if result["ok"] != true { return unknown() }
         native := result["native"]
