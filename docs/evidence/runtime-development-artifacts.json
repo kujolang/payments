@@ -93,7 +93,41 @@
           "result": "process killed after synthetic charge, mismatch denial, expired purchase recovery without duplicate charge"
         }
       ]
+    },
+    {
+      "artifact_id": 10363701807,
+      "target": "win32-x64",
+      "archive": "kujo-payments-dev-e9e5a67-windows-x64.zip",
+      "archive_sha256": "7bddcfc002313a1fb1f5ccd3d4876a38f8853e17d895d59ab515a346d54f044e",
+      "metadata": {
+        "runtimeVersion": "1.4.0",
+        "gitCommit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+        "target": "win32-x64",
+        "sha256": "ab8148f7b934e478eca049adf3344a397be196c93baf4d3899a76b3a76bf6ad1"
+      },
+      "checks": [
+        "archive checksum matches accompanying SHA-256 file",
+        "npm metadata source commit and target match selected workflow",
+        "archive executable equals npm executable and metadata SHA-256"
+      ],
+      "local_execution_tested": false
     }
   ],
-  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Only Intel macOS was locally executed, for the three named synthetic fixtures; Linux and ARM macOS execution is not claimed. Windows build and downstream packaging remain pending. Link provisioning, live provider acceptance and deployment isolation are not established. No provider API call or money movement."
+  "scope": "Manual branch workflow artifacts; not a tagged release. All five platform archives passed checksum, expected source/target metadata and archive/npm executable equality checks. This proves content consistency with selected workflow metadata, not independently signed provenance. Only Intel macOS was locally executed for the three named synthetic fixtures. Neutral npm tarball was inspected but not installed. Link provisioning, provider-backed purchase and deployment isolation remain unverified. No provider API call or money movement.",
+  "neutral_npm_package": {
+    "artifact_id": 10363458451,
+    "name": "@kujolang/kujo-runtime",
+    "version": "1.4.0",
+    "tarball_sha256": "d216e0817a8d9ba0b7eda8599b71a97b3044fa0c95ade4a1c830f5e2b92afa50",
+    "optionalDependencies": {
+      "@kujolang/kujo-darwin-arm64": "1.4.0",
+      "@kujolang/kujo-darwin-x64": "1.4.0",
+      "@kujolang/kujo-linux-arm64": "1.4.0",
+      "@kujolang/kujo-linux-x64": "1.4.0",
+      "@kujolang/kujo-win32-x64": "1.4.0"
+    },
+    "lifecycle_install_scripts": false,
+    "installed": false,
+    "limitation": "Installing the neutral development tarball alone can resolve published 1.4.0 platform packages instead of these development binaries. Use the exact verified standalone executable for this sandbox; no npm installation acceptance is claimed."
+  }
 }
