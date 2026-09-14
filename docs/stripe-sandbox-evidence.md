@@ -97,6 +97,8 @@ An uncredentialed matching request receives HTTP 402 and the fixed challenge. A 
 
 The actual HTTP test exposed a runtime boundary gap: Kujo v1.4.0 collapses duplicate same-case request headers in its `headers` dictionary. A source change in `kujolang/kujo` adds lowercase `header_values` arrays in both runtimes without changing the compatibility dictionary. This is unreleased. This new sandbox handler requires that field for credentialed requests and returns HTTP 503 `runtime_header_values_required` on the released binary. Do not advertise this endpoint as installable with v1.4.0 alone. No runtime release or installer update has been performed here.
 
+The isolated runtime change is tracked in [Kujo PR #9](https://github.com/kujolang/kujo/pull/9), based on main and excluding unrelated hardening work. Its local validation covers all eight routed HTTP integration tests, including duplicate-header preservation in both runtimes, and this repository's synthetic loopback endpoint test with the rebuilt binary. A draft PR and locally passing tests are not a released dependency or provider-backed sandbox acceptance. Recheck the PR and release artifacts before changing the installation requirements.
+
 `tests/network/sandbox_endpoint_test.py` verifies the released-runtime refusal by default. Set `PAYMENTS_HEADER_VALUES_RUNTIME=1` with a built supporting runtime to require the positive HTTP path and duplicate-header rejection. The test uses a synthetic merchant callback and never contacts Stripe. The host still owns bounded ingress, TLS/route deployment, authentication, no-header/body logging and process isolation. There is no implication that all other Kujo HTTP handlers automatically reject duplicates.
 
 ## Private merchant launcher
