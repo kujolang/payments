@@ -20,7 +20,7 @@ The trusted `lookup(execution_id, snapshot_digest)` must read an immutable merch
 }
 ```
 
-Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. The private `sandbox_merchant.kujo` component now implements this journal and its lookup. The merchant HTTP endpoint still needs integration. The bounded test-only creation transport described below is implemented; provider-backed acceptance remains outstanding.
+Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. The private `sandbox_merchant.kujo` component now implements this journal and its lookup. The merchant HTTP handler and launcher described below are implemented. The bounded test-only creation transport described below is implemented; provider-backed acceptance remains outstanding.
 
 ## Acceptance rule
 
@@ -161,7 +161,7 @@ The provider and setup command now share `assemble_link_snapshot`, so capability
 
 Successful setup atomically publishes mode-private `merchant.json` and `buyer.json` without replacing an existing directory. It creates no keys, approval, credential store, provider session, financial claim or payment. Place the merchant's test key locally in `stripe-test-key` afterward as described above. Treat these files as sensitive operator configuration; they contain purchase/principal and private payment-profile references, not agent-facing outputs.
 
-`buyer.json` records the intended Link installation, route and expected snapshot digest. A complete authenticated buyer runner is still required. Generating the file does not establish Link access or prove the deployed merchant route is reachable. Local fixture mode only permits explicit loopback HTTP; it is not a deployment isolation guarantee. A real HTTPS route needs operator-controlled routing to the loopback service.
+`buyer.json` records the intended Link installation, route and expected snapshot digest. The private buyer runner and launcher described below consume this file; supported real enrollment is still required. Generating the file does not establish Link access or prove the deployed merchant route is reachable. Local fixture mode only permits explicit loopback HTTP; it is not a deployment isolation guarantee. A real HTTPS route needs operator-controlled routing to the loopback service.
 
 ## Buyer connection and lifecycle runner
 
@@ -171,8 +171,36 @@ For this sandbox installation, the enrollment binding's `tenant_id` must equal t
 
 `sandbox_buyer_runtime` in `src/executor/sandbox_buyer_runtime.kujo` supplies private `request`, `status`, `step`, `review` and `approve` callbacks. It accepts the generated buyer config, core store, private provider database, guarded connection, merchant port, authoritative confirmation, schemas and trusted host callbacks. It uses the existing core intake, worker, Ability approval and operator authority. No workflow engine or provider-shaped public tools were added.
 
-Before unclaimed execution advances, `step` requires a ready connection. This avoids permanently reserving a Link authorization request when enrollment is not usable. Each prepared snapshot must match the generated expected digest. `approve` requires the existing reviewed Ability binding digest and the installed operator authority. The callbacks are private operator/programmatic controls, not an agent-visible projection or a complete CLI launcher.
+Before unclaimed execution advances, `step` requires a ready connection. This avoids permanently reserving a Link authorization request when enrollment is not usable. Each prepared snapshot must match the generated expected digest. `approve` requires the existing reviewed Ability binding digest and the installed operator authority. The callbacks are private operator/programmatic controls, not an agent-visible projection. The launcher below invokes them.
 
 A claimed payment can still reconcile with the merchant when Link credentials expire or are disabled. It must not need an active wallet merely to determine whether an earlier payment succeeded. No automatic polling, refresh or financial retry occurs. An operator/Dispatch host invokes one bounded step at a time.
 
-`tests/sandbox_connection.kujo` exercises real enrollment/vault helper composition using synthetic device responses, cross-scope rejection, pending/accepting guards, expiry and disablement. `tests/sandbox_buyer.kujo` exercises real core/Ability/Link runner composition with synthetic ports: idempotent intake, no provider request before connection readiness, configuration-drift rejection, explicit correct-digest approval, lost-response reconciliation after wallet disablement and exactly one charge. Normal CI makes no Link or Stripe request. The top-level authenticated buyer launcher and real enrollment acceptance remain unfinished.
+`tests/sandbox_connection.kujo` exercises real enrollment/vault helper composition using synthetic device responses, cross-scope rejection, pending/accepting guards, expiry and disablement. `tests/sandbox_buyer.kujo` exercises real core/Ability/Link runner composition with synthetic ports: idempotent intake, no provider request before connection readiness, configuration-drift rejection, explicit correct-digest approval, lost-response reconciliation after wallet disablement and exactly one charge. Normal CI makes no Link or Stripe request. The private buyer launcher below is implemented; supported real enrollment acceptance and provider-backed testing remain unfinished.
+
+## Private buyer launcher
+
+`scripts/sandbox-buyer.sh` now invokes the existing guarded lifecycle runner. It shares the merchant launcher's private-file checks and uses the same protected sandbox directory. Add a mode-0600 `buyer-host.json` containing exactly:
+
+- `schema`: `kujo.link-sandbox-host/v1`;
+- `authority`: the existing operator authority object (`payer`, `operator`, `issuer_ref`, `ttl_ms`), matching the buyer principal;
+- `enrollment_id`: the identifier of the verified Link enrollment;
+- `enrollment`: the existing enrollment configuration (`credential_id`, `binding`, `label`, `origins`), with the sandbox binding rules above;
+- `reconciliation_key`: a stable private identifier of 32–128 permitted identifier characters, generated uniquely for the installation.
+
+The fixed private stores are `buyer.db`, `link.db`, `enrollment.db`, `vault.db`, and `merchant.db`. The launcher checks existing SQLite files and sidecars before startup. Missing local stores can be initialized, but an empty enrollment/vault is never treated as connected. Enrollment acceptance must come through the reviewed provider-account verification process; do not seed database rows or copy a CLI token to bypass it.
+
+```bash
+bash scripts/sandbox-buyer.sh connection
+bash scripts/sandbox-buyer.sh request
+bash scripts/sandbox-buyer.sh status
+bash scripts/sandbox-buyer.sh step
+bash scripts/sandbox-buyer.sh review
+PAYMENTS_REVIEW_DIGEST=reviewed_binding_digest bash scripts/sandbox-buyer.sh approve
+bash scripts/sandbox-buyer.sh step
+```
+
+These commands belong to the private operator environment. `connection` returns a boolean readiness result, not credentials. `request` records the intended purchase idempotently. `step` performs one bounded lifecycle action and may request provider authorization or execute an already approved purchase; do not run it casually once a real connection is installed. `review` returns the private snapshot and Ability binding digest for human inspection; `approve` grants that reviewed action. Agent projections remain the existing small public surface, not these operator commands.
+
+The local host requires human approval for execution and permits observation-only reconciliation. It reuses the core policy/Ability interfaces, persists minimal audit IDs/phases, and passes no raw API response to audit. The buyer uses the merchant journal only for exact transaction lookup and independently reads Stripe for confirmation. No merchant creation callback is available to this entrypoint.
+
+The expanded launcher test verifies that request/status work with empty enrollment, connection reports `ready:false`, and step refuses before any Link authorization reservation. It checks file-permission and principal-binding rejection. The full lifecycle runner has separate synthetic success/reconciliation coverage. Actual Link enrollment and end-to-end provider-backed purchases have not been tested by these checks, and the runtime header-multiplicity release requirement remains.

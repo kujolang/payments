@@ -95,6 +95,45 @@ with tempfile.TemporaryDirectory(prefix='payments-sandbox-operator-') as directo
     key.unlink(); (root/'saved-key').rename(key)
     # Missing claim rejects recovery before provider access, despite a plausible ID.
     assert run('recover', PAYMENTS_SANDBOX_PAYMENT_INTENT='pi_fixture').returncode != 0
+    # Private buyer can track an intent, but cannot reserve provider issuance
+    # merely because configuration and a Stripe sandbox key exist.
+    buyer_file = root/'buyer.json'
+    buyer_file.write_text((configured/'buyer.json').read_text()); buyer_file.chmod(0o600)
+    principal = intent['principal']
+    parts = ['kujo.payment-principal/v1',principal['type'],principal['id'],principal['tenant_id']]
+    payer_ref = hashlib.sha256(''.join(f'{len(p.encode())}:{p}' for p in parts).encode()).hexdigest()
+    host = {'schema':'kujo.link-sandbox-host/v1',
+            'authority':{'payer':principal,'operator':{'type':'human','id':'operator','tenant_id':principal['tenant_id']},
+                         'issuer_ref':'fixture','ttl_ms':300000},
+            'enrollment_id':'enrollment_fixture',
+            'enrollment':{'credential_id':'credential_fixture','binding':{
+                'tenant_id':principal['tenant_id'],'payer_ref':payer_ref,'account_ref':'account_1',
+                'client_id':'registered_fixture','scope':'offline spend'},
+                'label':'Kujo Payments','origins':['https://app.link.com']},
+            'reconciliation_key':'fixture-reconciliation-key-00000001'}
+    host_file = root/'buyer-host.json'
+    host_file.write_text(encode(host)); host_file.chmod(0o600)
+    def buyer_run(action):
+        result = subprocess.run(['bash','scripts/sandbox-buyer.sh',action],cwd=ROOT,
+                                env=env,capture_output=True,text=True,timeout=15)
+        assert 'SENTINEL' not in result.stdout+result.stderr
+        return result
+    result = buyer_run('connection')
+    assert result.returncode == 0 and json.loads(result.stdout) == {'ok':True,'ready':False}, (result.stdout,result.stderr)
+    assert buyer_run('request').returncode == 0
+    result = buyer_run('status')
+    assert json.loads(result.stdout)['result']['status'] == 'awaiting_authorization'
+    result = buyer_run('step')
+    assert result.returncode != 0 and json.loads(result.stdout)['code'] == 'sandbox_link_connection_unavailable'
+    import sqlite3
+    with sqlite3.connect(root/'link.db') as db:
+        assert db.execute('SELECT count(*) FROM link_authorizations').fetchone()[0] == 0
+    host_file.chmod(0o644)
+    assert buyer_run('request').returncode != 0
+    host_file.chmod(0o600)
+    host['enrollment']['binding']['payer_ref'] = 'other'
+    host_file.write_text(encode(host))
+    assert buyer_run('connection').returncode != 0
     process = subprocess.Popen(['bash','scripts/sandbox-merchant.sh','serve'],cwd=ROOT,env=env,
                                stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     try:
@@ -117,4 +156,4 @@ with tempfile.TemporaryDirectory(prefix='payments-sandbox-operator-') as directo
         process.terminate()
         stdout,stderr=process.communicate(timeout=5)
         assert 'SENTINEL' not in stdout+stderr
-print('Sandbox operator: offline check, private-file/live-key denial, missing-claim recovery and real uncredentialed HTTP startup passed')
+print('Sandbox operators: private setup/permissions, merchant HTTP startup, buyer intake/status and connection-before-issuance denial passed')

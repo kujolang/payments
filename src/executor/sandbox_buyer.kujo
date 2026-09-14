@@ -1,0 +1,71 @@
+// Trusted local entrypoint only. Never expose review/approve or vault files as
+// agent tools. Each invocation performs at most one lifecycle step.
+from src.storage.sqlite import open_store
+from src.storage.port import sqlite_port
+from src.providers.link.credentials import open_link_credentials
+from src.providers.link.enrollment import open_link_enrollment
+from src.providers.link.sandbox_connection import sandbox_link_connection
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant
+from src.providers.link.stripe_sandbox import stripe_sandbox_api, stripe_sandbox_evidence
+from src.providers.link.merchant_http import merchant_http
+from src.executor.sandbox_buyer_runtime import sandbox_buyer_runtime
+from src.executor.approval import operator_authority_matches
+from src.domain.binding import snapshot_digest
+
+func run() {
+    root := env("PAYMENTS_SANDBOX_DIR")
+    buyer := parse_json(read_file(root+"/buyer.json"))
+    seller := parse_json(read_file(root+"/merchant.json"))
+    settings := parse_json(read_file(root+"/buyer-host.json"))
+    assert(type(settings) == "dict" && len(keys(settings)) == 5,"sandbox_host_fields")
+    for key in keys(settings) { assert(contains(["schema","authority","enrollment_id","enrollment","reconciliation_key"],key),"sandbox_host_field") }
+    assert(settings["schema"] == "kujo.link-sandbox-host/v1" && operator_authority_matches(settings["authority"],buyer["intent"]["principal"]),"sandbox_operator_authority")
+    assert(type(settings["reconciliation_key"]) == "string" && regex_match(settings["reconciliation_key"],"^[A-Za-z0-9_.:-]{32,128}$"),"sandbox_reconciliation_identity")
+    assert(snapshot_digest(seller["snapshot"]) == buyer["expected_snapshot_digest"],"sandbox_merchant_snapshot")
+    clock := func() { return current_timestamp() }
+    enrollment := db_connect("sqlite",root+"/enrollment.db");open_link_enrollment(enrollment)
+    vault := db_connect("sqlite",root+"/vault.db");open_link_credentials(vault)
+    connection := sandbox_link_connection(enrollment,vault,settings["enrollment_id"],settings["enrollment"],buyer,clock)
+    action := env("PAYMENTS_SANDBOX_ACTION")
+    if action == "connection" {
+        ready := connection["ready"](clock()+10000)
+        db_close(vault);db_close(enrollment)
+        return {"ok":true,"ready":ready}
+    }
+    db := open_store(root+"/buyer.db")
+    provider_db := db_connect("sqlite",root+"/link.db")
+    merchant_db := db_connect("sqlite",root+"/merchant.db");open_sandbox_merchant(merchant_db)
+    // Buyer has no merchant creation port. Only the merchant HTTP handler can
+    // submit that side; this journal handle supplies an exact lookup for reads.
+    deny := func(body,key,deadline) { return {"ok":false} }
+    merchant_store := sandbox_merchant(merchant_db,seller["account_id"],deny,clock)
+    read := stripe_sandbox_api(trim(read_file(root+"/stripe-test-key")),seller["account_id"],seller["api_version"],clock)
+    evidence := stripe_sandbox_evidence(seller["account_id"],merchant_store["lookup"],read,clock)
+    merchant := merchant_http(buyer["route"],evidence["observe"],clock,buyer["local_fixture"])
+    mut schemas := {};for name in ["intent","snapshot","capabilities","observation"] { schemas[name] = parse_json(read_file("contracts/"+name+".schema.json")) }
+    policy := func(snapshot,invocation) {
+        mut outcome := "approval_required"
+        mut requirements := ["human"]
+        if invocation["ability_id"] == "kujo.payments.execution.reconcile" { outcome = "allow";requirements = [] }
+        return {"schema":"kujo.ability.policy-decision/v1","decision_id":"sandbox-local-operator","outcome":outcome,"reason":"Explicit local operator approval for execution; observation only for reconciliation","requirements":requirements,"policy_id":"sandbox-local-operator","policy_version":"1.0.0"}
+    }
+    audit := func(phase,invocation,payload) {
+        id := invocation["invocation_id"]+":"+phase
+        db_execute(db,"INSERT OR IGNORE INTO audit VALUES(?,NULL,?)",[id,phase])
+        return {"ok":true,"written":true,"phase":phase,"event_id":id}
+    }
+    host := {"clock_ms":clock,"policy":policy,"audit":audit,"authority":settings["authority"],"reconciliation_key":settings["reconciliation_key"]}
+    runner := sandbox_buyer_runtime(buyer,sqlite_port(db),provider_db,connection,merchant,evidence["confirmation"],schemas,host)
+    mut result := {"ok":false,"code":"sandbox_action_invalid"}
+    if action == "request" { result = runner["request"]() }
+    if action == "status" { result = runner["status"]() }
+    if action == "step" { result = runner["step"]() }
+    if action == "review" { result = runner["review"]() }
+    if action == "approve" { result = runner["approve"](env("PAYMENTS_REVIEW_DIGEST")) }
+    db_close(merchant_db);db_close(provider_db);db_close(db);db_close(vault);db_close(enrollment)
+    return result
+}
+mut result := {"ok":false,"code":"sandbox_buyer_failed"}
+try { result = run() } except error { result = {"ok":false,"code":"sandbox_buyer_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }
