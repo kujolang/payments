@@ -1,0 +1,54 @@
+// Private operator process. Start with scripts/sandbox-merchant.sh; no key on argv.
+from src.providers.link.sandbox_create import stripe_sandbox_create
+from src.providers.link.stripe_sandbox import stripe_sandbox_api
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant, recover_sandbox_purchase
+from src.providers.link.sandbox_endpoint import sandbox_purchase_handler
+from src.providers.link.mpp import validate_mpp_challenge
+from src.providers.link.merchant_http import mpp_body_digest
+
+func run() {
+    root := env("PAYMENTS_SANDBOX_DIR")
+    settings := parse_json(read_file(root+"/merchant.json"))
+    assert(type(settings) == "dict" && len(keys(settings)) == 8,"sandbox_config_fields")
+    for key in keys(settings) { assert(contains(["schema","account_id","api_version","port","snapshot","challenge","expected","body"],key),"sandbox_config_field") }
+    assert(settings["schema"] == "kujo.stripe-sandbox-merchant/v1","sandbox_config_version")
+    assert(type(settings["port"]) == "int" && settings["port"] >= 1024 && settings["port"] <= 65535,"sandbox_config_port")
+    assert(type(settings["body"]) == "string" && byte_length(settings["body"]) <= 8192,"sandbox_config_body")
+    snapshot := settings["snapshot"]
+    assert(json_schema_validate(snapshot,parse_json(read_file("contracts/snapshot.schema.json")))["valid"],"sandbox_snapshot_invalid")
+    clock := func() { return current_timestamp() }
+    secret_key := trim(read_file(root+"/stripe-test-key"))
+    create := stripe_sandbox_create(secret_key,settings["account_id"],settings["api_version"],clock)
+    read := stripe_sandbox_api(secret_key,settings["account_id"],settings["api_version"],clock)
+    action := env("PAYMENTS_SANDBOX_ACTION")
+    if action == "recover" {
+        // Existing private directory permissions authenticate the local operator.
+        // No HTTP caller can invoke this branch or supply a replacement snapshot.
+        db := db_connect("sqlite",root+"/merchant.db")
+        open_sandbox_merchant(db)
+        result := recover_sandbox_purchase(db,settings["account_id"],snapshot,env("PAYMENTS_SANDBOX_PAYMENT_INTENT"),read,clock,clock()+5000)
+        db_close(db)
+        return result
+    }
+    assert(action == "check" || action == "serve","sandbox_action")
+    // Validation is offline. Account/API permissions and runtime multiplicity
+    // are not inferred from a successful configuration check.
+    probe := validate_mpp_challenge(settings["challenge"],settings["expected"],clock())
+    assert(probe["ok"] && probe["digest"] == snapshot["request_binding"]["terms_digest"],"sandbox_challenge")
+    assert(settings["expected"]["charge"] == snapshot["charge"] && settings["expected"]["body_digest"] == mpp_body_digest(settings["body"]),"sandbox_purchase_binding")
+    assert(probe["expires_at_ms"] >= snapshot["expires_at_ms"] && snapshot["expires_at_ms"] > clock(),"sandbox_expiry")
+    if action == "check" { return {"ok":true,"code":"sandbox_configuration_valid"} }
+    db := db_connect("sqlite",root+"/merchant.db")
+    open_sandbox_merchant(db)
+    merchant := sandbox_merchant(db,settings["account_id"],create,clock)
+    handler := sandbox_purchase_handler(snapshot,settings["challenge"],settings["expected"],settings["body"],merchant,clock)
+    mut server := http_listen("127.0.0.1",settings["port"])
+    server = server.route("POST","/purchase",handler)
+    server.listen()
+    db_close(db)
+    return {"ok":true,"code":"sandbox_server_stopped"}
+}
+mut result := {"ok":false,"code":"sandbox_operator_failed"}
+try { result = run() } except error { result = {"ok":false,"code":"sandbox_operator_failed"} }
+print(to_json(result))
+if result["ok"] == false { exit(1) }

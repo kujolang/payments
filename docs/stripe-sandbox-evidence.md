@@ -98,3 +98,48 @@ An uncredentialed matching request receives HTTP 402 and the fixed challenge. A 
 The actual HTTP test exposed a runtime boundary gap: Kujo v1.4.0 collapses duplicate same-case request headers in its `headers` dictionary. A source change in `kujolang/kujo` adds lowercase `header_values` arrays in both runtimes without changing the compatibility dictionary. This is unreleased. This new sandbox handler requires that field for credentialed requests and returns HTTP 503 `runtime_header_values_required` on the released binary. Do not advertise this endpoint as installable with v1.4.0 alone. No runtime release or installer update has been performed here.
 
 `tests/network/sandbox_endpoint_test.py` verifies the released-runtime refusal by default. Set `PAYMENTS_HEADER_VALUES_RUNTIME=1` with a built supporting runtime to require the positive HTTP path and duplicate-header rejection. The test uses a synthetic merchant callback and never contacts Stripe. The host still owns bounded ingress, TLS/route deployment, authentication, no-header/body logging and process isolation. There is no implication that all other Kujo HTTP handlers automatically reject duplicates.
+
+## Private merchant launcher
+
+`scripts/sandbox-merchant.sh` now provides `check`, `serve` and `recover` commands. This closes the standalone merchant/operator entrypoint gap; it does not yet provide the buyer's Link login or a complete installed Payments workflow.
+
+Create a directory accessible only to the merchant operator (mode 0700). Put these two regular files inside it, owned by that operator and mode 0600:
+
+- `stripe-test-key`: the merchant sandbox's server-side test key, entered locally. Never paste it into chat or pass it on the command line.
+- `merchant.json`: the reviewed installation object below, including the exact snapshot and challenge from the trusted purchase preparation.
+
+The launcher rejects symlinked directory/files, group/other access, unexpected ownership and oversized files. It uses umask 077 for journal creation and checks existing SQLite sidecars. These checks are not protection from another process running as the same OS user or a privileged administrator. Use a separate principal/container and inaccessible mounts for an untrusted agent. Keep this directory out of the requesting runtime, repository artifacts, backups accessible to agents and telemetry.
+
+The configuration has exactly eight fields:
+
+| Field | Required value |
+| --- | --- |
+| `schema` | `kujo.stripe-sandbox-merchant/v1` |
+| `account_id` | Expected merchant `acct_…` |
+| `api_version` | Explicit Stripe API version selected for the sandbox |
+| `port` | Local listener port, 1024–65535 |
+| `snapshot` | Trusted prepared snapshot conforming to `contracts/snapshot.schema.json` |
+| `challenge` | Matching unexpired MPP challenge string |
+| `expected` | Installed MPP constraints described by `validate_mpp_challenge` |
+| `body` | Exact POST body string, at most 8192 bytes |
+
+The journal is fixed at `merchant.db` inside this directory. Config cannot select another database/key path or bind address. The handler listens only on `127.0.0.1` at `/purchase`. The operator must bind the intended merchant route to this service; deployment routing, TLS and agent/executor network separation remain deployment requirements.
+
+```bash
+export KUJO_BIN=/absolute/path/to/reviewed/kujo
+export PAYMENTS_SANDBOX_DIR=/absolute/path/to/private/merchant
+bash scripts/sandbox-merchant.sh check
+bash scripts/sandbox-merchant.sh serve
+```
+
+`check` validates configuration, test-key shape, exact money/body/challenge binding and expiration offline without creating a journal or contacting Stripe. It does not attest to API permissions, Link connection, account identity, runtime header multiplicity or payment success. `serve` starts the route; the handler still refuses credentialed execution on released Kujo v1.4.0 as documented above. Use a supervising process with bounded lifetime and shutdown appropriate to the installation.
+
+For recovery, an authenticated local operator supplies only a candidate non-secret transaction ID; the snapshot remains in trusted configuration:
+
+```bash
+PAYMENTS_SANDBOX_PAYMENT_INTENT=pi_candidate bash scripts/sandbox-merchant.sh recover
+```
+
+Recovery may read Stripe but cannot create a charge. It requires the matching existing claim and authenticated evidence; a candidate ID alone is insufficient. It can run after snapshot expiration. Local authorization is the private OS environment, not a new remote authentication scheme. Run buyer reconciliation separately after recovery records the ID.
+
+`tests/network/sandbox_operator_test.py` runs the actual launcher using a fake key: offline validation, permission/symlink/live-key refusals, missing-claim recovery and uncredentialed HTTP 402 startup. No credentialed Stripe request is made. The separate source-runtime endpoint test proves credential parsing with a synthetic callback; it does not substitute for real sandbox acceptance.
