@@ -1,0 +1,18 @@
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+db := db_connect("sqlite",env("PAYMENTS_MERCHANT_DB"))
+open_sandbox_merchant(db)
+if env("PAYMENTS_MERCHANT_INIT") != "1" {
+    ledger := db_connect("sqlite",env("PAYMENTS_MERCHANT_LEDGER"))
+    db_query(ledger,"PRAGMA busy_timeout=5000",[])
+    create := func(body,key,deadline) {
+        db_execute(ledger,"INSERT INTO effects VALUES(?)",[key])
+        if env("PAYMENTS_MERCHANT_LOST") == "1" { assert(false,"SENTINEL_LOST_RESPONSE") }
+        return {"ok":true,"native":{"object":"payment_intent","id":"pi_fixture","livemode":false,"amount":5500,"currency":"usd","metadata":body["metadata"]}}
+    }
+    clock := func() { return 1500 }
+    ports := sandbox_merchant(db,"acct_fixture",create,clock)
+    print(to_json(ports["submit"](snapshot,"SENTINEL_SPT",10000)))
+    db_close(ledger)
+}
+db_close(db)

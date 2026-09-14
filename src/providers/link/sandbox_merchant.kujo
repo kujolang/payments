@@ -1,0 +1,58 @@
+// Sandbox merchant-side journal. Separate database from Link wallet secrets and
+// the buyer lifecycle. This is not a generic seller/order-management API.
+from src.providers.link.private_store import open_private_link_store
+from src.domain.binding import snapshot_digest, frame
+
+func reserve_purchase(db,execution_id,digest,account_id,key) {
+    // A caller-owned transaction must fail before any provider call.
+    db_execute(db,"BEGIN IMMEDIATE",[])
+    try {
+        claimed := db_execute(db,"INSERT OR IGNORE INTO sandbox_purchases VALUES(?,?,?,?,NULL)",[execution_id,digest,account_id,key])
+        db_execute(db,"COMMIT",[])
+        return claimed
+    } except error {
+        try { db_execute(db,"ROLLBACK",[]) } except rollback_error { }
+        assert(false,"sandbox_reservation_failed")
+    }
+}
+
+export open_sandbox_merchant := func(db) {
+    open_private_link_store(db,[
+        {"name":"sandbox_purchases","sql":"CREATE TABLE sandbox_purchases(execution_id TEXT PRIMARY KEY,snapshot_digest TEXT NOT NULL UNIQUE,stripe_account_id TEXT NOT NULL,request_key TEXT NOT NULL UNIQUE,payment_intent_id TEXT UNIQUE)"},
+        {"name":"sandbox_purchases_permanent","sql":"CREATE TRIGGER sandbox_purchases_permanent BEFORE DELETE ON sandbox_purchases BEGIN SELECT RAISE(ABORT,'sandbox_purchase_permanent'); END"},
+        {"name":"sandbox_purchases_immutable","sql":"CREATE TRIGGER sandbox_purchases_immutable BEFORE UPDATE ON sandbox_purchases WHEN NEW.execution_id IS NOT OLD.execution_id OR NEW.snapshot_digest IS NOT OLD.snapshot_digest OR NEW.stripe_account_id IS NOT OLD.stripe_account_id OR NEW.request_key IS NOT OLD.request_key OR (OLD.payment_intent_id IS NOT NULL AND NEW.payment_intent_id IS NOT OLD.payment_intent_id) BEGIN SELECT RAISE(ABORT,'sandbox_purchase_immutable'); END"}
+    ],1)
+}
+
+export sandbox_merchant := func(db,account_id,create_payment_intent,clock_ms) {
+    assert(type(account_id) == "string" && regex_match(account_id,"^acct_[A-Za-z0-9]+$") && type(create_payment_intent) == "function" && type(clock_ms) == "function","sandbox_merchant_installation")
+    lookup := func(execution_id,digest) {
+        try {
+            rows := db_query(db,"SELECT * FROM sandbox_purchases WHERE execution_id=? AND snapshot_digest=? AND stripe_account_id=?",[execution_id,digest,account_id])
+            if len(rows) != 1 || rows[0]["payment_intent_id"] == null { return null }
+            return {"snapshot_digest":rows[0]["snapshot_digest"],"stripe_account_id":rows[0]["stripe_account_id"],"payment_intent_id":rows[0]["payment_intent_id"]}
+        } except error { return null }
+    }
+    submit := func(snapshot,spt,deadline_ms) {
+        try {
+            digest := snapshot_digest(snapshot)
+            if type(spt) != "string" || len(spt) < 1 || len(spt) > 8192 || type(deadline_ms) != "int" || clock_ms()+1000 >= deadline_ms || clock_ms() >= snapshot["expires_at_ms"] { return {"ok":false,"code":"sandbox_submission_unknown"} }
+            key := sha256(frame(["kujo.stripe-sandbox-purchase/v1",account_id,snapshot["execution_id"],digest]))
+            // Committed FULL synchronous reservation precedes the only external
+            // write. Never replay, even if the remote idempotency window expires.
+            claimed := reserve_purchase(db,snapshot["execution_id"],digest,account_id,key)
+            if claimed != 1 { return {"ok":false,"code":"sandbox_submission_already_claimed"} }
+            if clock_ms()+1000 >= deadline_ms || clock_ms() >= snapshot["expires_at_ms"] { return {"ok":false,"code":"sandbox_submission_unknown"} }
+            body := {"amount":snapshot["charge"]["minor"],"currency":to_lower(snapshot["charge"]["currency"]),"shared_payment_granted_token":spt,"confirm":true,"metadata":{"kujo_snapshot_digest":digest,"kujo_execution_id":snapshot["execution_id"]}}
+            result := create_payment_intent(body,key,deadline_ms)
+            if result["ok"] != true { return {"ok":false,"code":"sandbox_submission_unknown"} }
+            native := result["native"]
+            if native["object"] != "payment_intent" || type(native["id"]) != "string" || regex_match(native["id"],"^pi_[A-Za-z0-9]+$") == false || type(native["livemode"]) != "bool" || native["livemode"] != false || type(native["amount"]) != "int" || native["amount"] != snapshot["charge"]["minor"] || native["currency"] != to_lower(snapshot["charge"]["currency"]) || native["metadata"]["kujo_snapshot_digest"] != digest || native["metadata"]["kujo_execution_id"] != snapshot["execution_id"] { return {"ok":false,"code":"sandbox_submission_unknown"} }
+            written := db_execute(db,"UPDATE sandbox_purchases SET payment_intent_id=? WHERE execution_id=? AND snapshot_digest=? AND stripe_account_id=? AND payment_intent_id IS NULL",[native["id"],snapshot["execution_id"],digest,account_id])
+            // Recorded is not paid: the independent read-only confirmation port
+            // must retrieve Stripe's authenticated status and exact charge facts.
+            return {"ok":written == 1,"recorded":written == 1}
+        } except error { return {"ok":false,"code":"sandbox_submission_unknown"} }
+    }
+    return {"lookup":lookup,"submit":submit}
+}

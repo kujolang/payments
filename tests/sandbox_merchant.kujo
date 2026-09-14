@@ -1,0 +1,68 @@
+from src.providers.link.sandbox_merchant import open_sandbox_merchant, sandbox_merchant
+from src.domain.binding import snapshot_digest
+snapshot := parse_json(read_file("tests/fixtures/domain.json"))["snapshot"]
+clock := func() { return 1500 }
+for scenario in ["success","lost","malformed","wrong_amount","wrong_digest","live","write_failure"] {
+    path := env("PAYMENTS_TEST_DB")+"-"+scenario
+    db := db_connect("sqlite",path)
+    open_sandbox_merchant(db)
+    ledger := db_connect("sqlite",":memory:")
+    db_execute(ledger,"CREATE TABLE effects(id INTEGER)",[])
+    create := func(body,key,deadline) {
+        db_execute(ledger,"INSERT INTO effects VALUES(1)",[])
+        assert(body["shared_payment_granted_token"] == "SENTINEL_SPT" && body["confirm"] == true,"private_credential")
+        assert(body["metadata"]["kujo_snapshot_digest"] == snapshot_digest(snapshot),"exact_digest")
+        if scenario == "lost" { assert(false,"SENTINEL_PROVIDER_ERROR") }
+        if scenario == "malformed" { return {"ok":true,"native":{"secret":"SENTINEL_SECRET"}} }
+        if scenario == "write_failure" { db_execute(db,"CREATE TRIGGER deny_receipt BEFORE UPDATE ON sandbox_purchases BEGIN SELECT RAISE(ABORT,'fixture_write_failure'); END",[]) }
+        mut native := {"object":"payment_intent","id":"pi_fixture","amount":5500,"currency":"usd","livemode":false,"metadata":body["metadata"],"client_secret":"SENTINEL_CLIENT_SECRET"}
+        if scenario == "wrong_amount" { native["amount"] = 5501 }
+        if scenario == "wrong_digest" { native["metadata"]["kujo_snapshot_digest"] = "other" }
+        if scenario == "live" { native["livemode"] = true }
+        return {"ok":true,"native":native}
+    }
+    ports := sandbox_merchant(db,"acct_fixture",create,clock)
+    first := ports["submit"](snapshot,"SENTINEL_SPT",10000)
+    second := ports["submit"](snapshot,"SENTINEL_SPT",10000)
+    assert(db_query(ledger,"SELECT count(*) AS n FROM effects",[])[0]["n"] == 1,"one_effect")
+    assert(second["code"] == "sandbox_submission_already_claimed","no_retry")
+    assert(contains(to_json(first)+to_json(second)+to_json(db_query(db,"SELECT * FROM sandbox_purchases",[])),"SENTINEL") == 0,"no_secret_output_or_storage")
+    if scenario == "success" {
+        assert(first == {"ok":true,"recorded":true},"stored_not_settled")
+        assert(ports["lookup"](snapshot["execution_id"],snapshot_digest(snapshot))["payment_intent_id"] == "pi_fixture","confirmation_lookup")
+        assert(ports["lookup"](snapshot["execution_id"],"wrong") == null,"lookup_scope")
+        mut replaced := false
+        try { db_execute(db,"UPDATE sandbox_purchases SET payment_intent_id='pi_other'",[]); replaced = true } except error { }
+        assert(replaced == false,"immutable_transaction_id")
+        mut reused := false
+        try { db_execute(db,"INSERT INTO sandbox_purchases VALUES('other','other','acct_fixture','other','pi_fixture')",[]); reused = true } except error { }
+        assert(reused == false,"one_purchase_per_transaction")
+    } else { assert(first["ok"] == false && ports["lookup"](snapshot["execution_id"],snapshot_digest(snapshot)) == null,"unknown_binding") }
+    for sql in ["DELETE FROM sandbox_purchases","UPDATE sandbox_purchases SET snapshot_digest='other'"] {
+        mut rejected := false
+        try { db_execute(db,sql,[]) } except error { rejected = true }
+        assert(rejected,"permanent_binding")
+    }
+    if scenario == "write_failure" { db_execute(db,"DROP TRIGGER deny_receipt",[]) }
+    db_close(db)
+    reopened := db_connect("sqlite",path)
+    open_sandbox_merchant(reopened)
+    again := sandbox_merchant(reopened,"acct_fixture",create,clock)
+    assert(again["submit"](snapshot,"SENTINEL_SPT",10000)["code"] == "sandbox_submission_already_claimed","restart_no_retry")
+    db_close(reopened)
+    db_close(ledger)
+}
+transaction_db := db_connect("sqlite",env("PAYMENTS_TEST_DB")+"-transaction")
+open_sandbox_merchant(transaction_db)
+calls := db_connect("sqlite",":memory:")
+db_execute(calls,"CREATE TABLE calls(id INTEGER)",[])
+never_call := func(body,key,deadline) { db_execute(calls,"INSERT INTO calls VALUES(1)",[]); return {"ok":false} }
+transaction_ports := sandbox_merchant(transaction_db,"acct_fixture",never_call,clock)
+db_execute(transaction_db,"BEGIN IMMEDIATE",[])
+assert(transaction_ports["submit"](snapshot,"SENTINEL_SPT",10000)["ok"] == false,"caller_transaction_refused")
+assert(len(db_query(transaction_db,"SELECT * FROM sandbox_purchases",[])) == 0,"no_uncommitted_claim")
+assert(len(db_query(calls,"SELECT * FROM calls",[])) == 0,"no_provider_call_in_caller_transaction")
+db_execute(transaction_db,"ROLLBACK",[])
+db_close(transaction_db)
+db_close(calls)
+print("Sandbox merchant journal: permanent one-shot reservation, private token, exact binding, lost response and receipt-write failure recovery passed")

@@ -20,7 +20,7 @@ The trusted `lookup(execution_id, snapshot_digest)` must read an immutable merch
 }
 ```
 
-Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. This journal and the merchant's charge creation endpoint are still integration work; this module does not claim they exist.
+Return null when no binding is available. Never populate this lookup from model arguments, a checkout response body, an amount/time search, or an unverified webhook. The merchant must persist the intended binding crash-safely, and create the PaymentIntent with `metadata.kujo_snapshot_digest` and `metadata.kujo_execution_id`. One PaymentIntent must not be assigned to multiple purchases. The private `sandbox_merchant.kujo` component now implements this journal and its lookup. The merchant HTTP endpoint and production Stripe creation transport still need integration; the journal does not claim those exist.
 
 ## Acceptance rule
 
@@ -47,3 +47,15 @@ Official contracts reviewed September 14, 2026:
 - [Shared Payment Tokens](https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens)
 
 Before declaring the Link sandbox example usable, implement the merchant journal and endpoint, wire supported Link authentication, exercise test-only SPT issuance and purchase, then verify recovery against the selected Stripe sandbox. A standard sandbox account alone does not prove access to every preview API. Keep account-specific failures explicit rather than substituting a fixture success.
+
+## Durable sandbox merchant journal
+
+`open_sandbox_merchant(db)` initializes a separate private SQLite database with a strictly checked versioned schema. `sandbox_merchant(db, account_id, create_payment_intent, clock_ms)` provides `submit(snapshot, spt, deadline_ms)` and the exact `lookup` callback above. These are privileged internal methods, not agent tools. Wire `lookup` into `stripe_sandbox_evidence`.
+
+Submission commits a permanent claim before calling the installed Stripe creation port. It supplies exact amount/currency, the SPT, `confirm=true`, and the execution/snapshot metadata. The callback must be an account-bound, test-key-only Stripe transport; the journal is not an authorization boundary and must only receive the already validated, authorized snapshot and credential from the private executor. No raw SPT or provider response is persisted. The optional native idempotency key is stable, but the journal never resends a claimed creation request, regardless of Stripe's retention window.
+
+A validated test PaymentIntent ID can be attached once. It cannot be replaced, removed or reused for another purchase. `recorded=true` only means this identifier was saved; the separate read-only evidence component decides whether payment succeeded. Concurrent callers and process restarts cannot obtain another creation claim. Initialization rejects a missing or modified trigger rather than silently repairing the database.
+
+If the process dies after Stripe accepts creation but before the identifier is durably saved, the claim remains without a lookup result. This remains unresolved and requires an authenticated operator recovery process; never infer failure or automatically create another PaymentIntent. Such recovery and an end-to-end merchant HTTP service remain unfinished. The module also refuses to execute inside a caller-owned transaction so a later rollback cannot erase its reservation after a provider call.
+
+`tests/sandbox_merchant.kujo` covers successful recording, lost/malformed provider responses, binding mismatches, receipt-write failure, immutable identifiers, unique transaction ownership, caller-transaction refusal and restart. `tests/network/sandbox_merchant_test.py` runs four independent Kujo processes against a fake API ledger with no deduplication: both successful and lost-response cases produce one call. These are synthetic process tests, not Stripe account conformance or protection against an operator deleting the database.
