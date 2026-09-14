@@ -57,7 +57,43 @@
         "archive executable equals npm executable and metadata SHA-256"
       ],
       "local_execution_tested": false
+    },
+    {
+      "artifact_id": 10363765425,
+      "target": "darwin-x64",
+      "archive": "kujo-payments-dev-e9e5a67-macos-x64.tar.gz",
+      "archive_sha256": "b25e4235d1f1fa84753b2438fc810b653d06bb295f1f26ff7ddb5aa4cf3447ae",
+      "metadata": {
+        "runtimeVersion": "1.4.0",
+        "gitCommit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+        "target": "darwin-x64",
+        "sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a"
+      },
+      "checks": [
+        "archive checksum matches accompanying SHA-256 file",
+        "npm metadata source commit and target match selected workflow",
+        "archive executable equals npm executable and metadata SHA-256"
+      ],
+      "local_execution_tested": true,
+      "execution_scope": "Intel macOS host, three named synthetic fixtures only",
+      "tests": [
+        {
+          "command": "KUJO_BIN=<verified packaged executable> PAYMENTS_HEADER_VALUES_RUNTIME=1 python3 tests/network/sandbox_endpoint_test.py",
+          "exit_code": 0,
+          "result": "challenge, recording, duplicate Authorization denial and sentinel output suppression"
+        },
+        {
+          "command": "KUJO_BIN=<verified packaged executable> python3 tests/network/sandbox_operator_test.py",
+          "exit_code": 0,
+          "result": "private setup and permissions, merchant HTTP startup, buyer intake/status, missing connection refuses issuance"
+        },
+        {
+          "command": "KUJO_BIN=<verified packaged executable> python3 tests/network/sandbox_recovery_test.py",
+          "exit_code": 0,
+          "result": "process killed after synthetic charge, mismatch denial, expired purchase recovery without duplicate charge"
+        }
+      ]
     }
   ],
-  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Linux and ARM macOS binaries were not executed on this Intel macOS host. Intel macOS/Windows platform jobs and packaged Payments runtime acceptance are pending. No provider API call or money movement."
+  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Only Intel macOS was locally executed, for the three named synthetic fixtures; Linux and ARM macOS execution is not claimed. Windows build and downstream packaging remain pending. Link provisioning, live provider acceptance and deployment isolation are not established. No provider API call or money movement."
 }
