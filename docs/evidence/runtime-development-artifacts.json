@@ -1,0 +1,45 @@
+{
+  "verified_at": "2026-09-14",
+  "workflow_run": "https://github.com/kujolang/kujo/actions/runs/34878190347",
+  "source_commit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+  "development_label": "payments-dev-e9e5a67",
+  "artifacts": [
+    {
+      "artifact_id": 10363090586,
+      "target": "linux-x64",
+      "archive": "kujo-payments-dev-e9e5a67-linux-x64.tar.gz",
+      "archive_sha256": "65b9978f3000945f91fd1f9afd716ea5f29dc03caf46fafec00188997c1cec77",
+      "metadata": {
+        "runtimeVersion": "1.4.0",
+        "gitCommit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+        "target": "linux-x64",
+        "sha256": "862aa3e9b96c4edb0554d31cdeeef283842d7e2b86d5cfbe6d7c30b4403fb931"
+      },
+      "checks": [
+        "archive checksum matches accompanying SHA-256 file",
+        "npm metadata source commit and target match selected workflow",
+        "archive executable equals npm executable and metadata SHA-256"
+      ],
+      "local_execution_tested": false
+    },
+    {
+      "artifact_id": 10362167715,
+      "target": "linux-arm64",
+      "archive": "kujo-payments-dev-e9e5a67-linux-arm64.tar.gz",
+      "archive_sha256": "e5a4ed6ec1f786c9c7a003da857a7189679abc783e0a0af0605d26c938e64823",
+      "metadata": {
+        "runtimeVersion": "1.4.0",
+        "gitCommit": "e9e5a67762ada4e622dff5dcde357eafc1bb8e72",
+        "target": "linux-arm64",
+        "sha256": "5eba79a3ac5c02bf3c52d7e47bd43f8cd6ae545508d9ecd7bbf4bfe0d95a81cf"
+      },
+      "checks": [
+        "archive checksum matches accompanying SHA-256 file",
+        "npm metadata source commit and target match selected workflow",
+        "archive executable equals npm executable and metadata SHA-256"
+      ],
+      "local_execution_tested": false
+    }
+  ],
+  "scope": "Manual branch workflow artifacts; not a tagged release. Checks prove downloaded-content consistency with selected workflow metadata, not independently signed provenance. Linux binaries were not executed on this Intel macOS host. Remaining platform jobs and packaged Payments runtime acceptance are pending. No provider API call or money movement."
+}
