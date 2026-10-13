@@ -31,7 +31,7 @@ def digest_file(path, maximum, deadline):
 
 
 def validate_schema(connection):
-    versions = connection.execute('SELECT version FROM payments_meta').fetchall()
+    versions = connection.execute('SELECT version FROM payments_meta LIMIT 2').fetchall()
     if len(versions) != 1 or type(versions[0][0]) is not int or versions[0][0] not in (1, 2):
         raise ValueError('unsupported schema')
     version = versions[0][0]
@@ -43,7 +43,7 @@ def validate_schema(connection):
 
 
 def snapshot(source, destination, timeout=30, max_bytes=256*1024*1024):
-    if not 0 < timeout <= 300 or not 4096 <= max_bytes <= 16*1024**3:
+    if type(timeout) is not int or not 0 < timeout <= 300 or type(max_bytes) is not int or not 4096 <= max_bytes <= 16*1024**3:
         raise ValueError('invalid maintenance bounds')
     source = Path(source)
     destination = Path(destination)
@@ -61,7 +61,9 @@ def snapshot(source, destination, timeout=30, max_bytes=256*1024*1024):
             if time.monotonic() > deadline or total * page_size > max_bytes:
                 raise TimeoutError('snapshot deadline')
         uri = source.resolve().as_uri() + '?mode=ro'
-        with closing(sqlite3.connect(uri, uri=True, timeout=5)) as original:
+        with closing(sqlite3.connect(uri, uri=True, timeout=min(5, timeout))) as original:
+            # Bound validation before trusting the source schema, not only the copy.
+            original.set_progress_handler(lambda: int(time.monotonic() > deadline), 1000)
             validate_schema(original)
             page_size = original.execute('PRAGMA page_size').fetchone()[0]
             if original.execute('PRAGMA page_count').fetchone()[0] * page_size > max_bytes:

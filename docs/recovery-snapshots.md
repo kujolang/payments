@@ -8,7 +8,7 @@ python3 scripts/maintenance/recovery_snapshot.py \
   --output-dir /private/recovery/incident-001
 ```
 
-The destination must not exist. Defaults are 256 MiB and a 30-second work deadline; explicit bounds are available through `--max-bytes` and `--timeout-seconds` (maximum 16 GiB and 300 seconds). Backup progress, SQL integrity checks and streaming hashes enforce these work limits; a blocked OS filesystem operation is not a guaranteed hard real-time cancellation point. Run under the trusted database administrator identity.
+The destination must not exist. Defaults are 256 MiB and a 30-second work deadline; explicit integer bounds are available through `--max-bytes` and `--timeout-seconds` (maximum 16 GiB and 300 seconds). Initial source-schema validation, backup progress, SQL integrity checks and streaming hashes enforce these work limits. The initial SQLite lock wait is capped at the smaller of five seconds and the requested deadline. A blocked OS filesystem operation is not a guaranteed hard real-time cancellation point. Run under the trusted database administrator identity.
 
 A successful result produces `payments.db` and `manifest.json`, both mode 0600 in a mode 0700 directory. The database is published without overwriting any existing file only after quarantine and its control event commit. The manifest records the snapshot hash before quarantine and the database hash at publication. These are integrity/provenance references, not signatures or proof that the source contained all real financial effects. Later reconciliation writes change the database hash. Interrupted publication may leave a quarantined database without a complete manifest; inspect it privately and use another new destination for a retry.
 
@@ -27,6 +27,8 @@ Re-enabling operations after loss of the authoritative journal requires separate
 ## Tested scope
 
 `tests/network/recovery_test.py` verifies committed WAL inclusion, a source claim committed after a pre-claim snapshot, denied claims/resume/SQL bypasses from that stale copy, post-claim observation recovery, repeated quarantine, private permissions, publication hash, no overwrite, size refusal and future-schema refusal without source changes. The tests use temporary synthetic journals. They do not establish power-loss durability on every filesystem, live provider reconciliation or protection against a database/host administrator deliberately removing guards.
+
+`tests/recovery_bounds_test.py` checks a costly malformed source-schema query and an exclusive source lock against a one-second work limit, with a three-second outer process bound. It also verifies early rejection of excess metadata rows and invalid Python API bounds before an output directory is created. These checks run offline in normal CI.
 
 
 ## Verify a published snapshot before use

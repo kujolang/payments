@@ -4,6 +4,7 @@ cd "$(dirname "$0")/.."
 : "${KUJO_BIN:?Set KUJO_BIN to an absolute Kujo executable}"
 python3 -c 'import sys; sys.exit("Run verification without PYTHONOPTIMIZE; assertions are required") if sys.flags.optimize else None'
 python3 tests/deployment_integrity_test.py
+python3 tests/recovery_bounds_test.py
 "$KUJO_BIN" run tests/domain.kujo
 python3 scripts/binding_vectors.py --check
 "$KUJO_BIN" run tests/bindings.kujo
