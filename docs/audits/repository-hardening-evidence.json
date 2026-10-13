@@ -1,0 +1,442 @@
+{
+  "schema": "kujo.payments.repository-hardening-evidence/v1",
+  "date": "2026-10-13",
+  "starting_sha": "ea2f2242489ecd77c7a040a1cb67f49b5383763e",
+  "ending_implementation_sha": "6bc4526670d74a954d8346da362a7876e0713d5b",
+  "local_runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+  "ci_run": 38346668948,
+  "commands": [
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" PAYMENTS_HEADER_VALUES_RUNTIME=1 /usr/bin/time -p bash scripts/test.sh",
+      "phase": "before",
+      "exit": 1,
+      "result": "package_install_test.py native builder exceeded unchanged 180-second deadline",
+      "elapsed_seconds": 990.9
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" PAYMENTS_HEADER_VALUES_RUNTIME=1 /usr/bin/time -p bash .local/audit-20261013/baseline-remainder.sh",
+      "phase": "before remainder",
+      "result": "All original commands after package test passed; original payment source unchanged",
+      "exit": 0,
+      "elapsed_seconds": 946.41
+    },
+    {
+      "command": "PAYMENTS_AUDIT_ROOT=\"$PWD\" python3 /tmp/payments_deployment_integrity_test.py",
+      "phase": "before regression reproduction",
+      "exit": 1,
+      "result": "7 tests, 13 failing subcases; wrong hashes installed under -O"
+    },
+    {
+      "command": "python3 tests/deployment_integrity_test.py",
+      "phase": "after",
+      "exit": 0,
+      "result": "11 tests passed; optimized subprocess and fault cases included"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" /usr/bin/time -p python3 tests/network/package_install_test.py",
+      "phase": "after local package",
+      "exit": 1,
+      "result": "same 180-second native builder timeout",
+      "elapsed_seconds": 217.31
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" PAYMENTS_HEADER_VALUES_RUNTIME=1 /usr/bin/time -p bash scripts/test.sh",
+      "phase": "after local suite",
+      "exit": 1,
+      "result": "flat_identity_scope.kujo VM exceeded unchanged 90-second deadline; source unchanged from baseline pass; Linux full suite passed",
+      "elapsed_seconds": 262.89
+    },
+    {
+      "command": "npm ci --ignore-scripts --no-audit --no-fund",
+      "cwd": "examples/mcp",
+      "phase": "after",
+      "exit": 0
+    },
+    {
+      "command": "npm audit --omit=dev --json",
+      "cwd": "examples/mcp",
+      "phase": "before / after",
+      "exit_before": 1,
+      "exit_after": 0,
+      "advisory_package_count_before": 4,
+      "advisory_package_count_after": 0
+    },
+    {
+      "command": "python3 docs/audits/runtime-cache-measure.py scripts/deployment/fetch_runtime.py",
+      "phase": "after cache",
+      "exit": 0
+    },
+    {
+      "command": "KUJO_BIN=<pinned Linux runtime> bash scripts/test.sh",
+      "phase": "CI after",
+      "exit": 0,
+      "job": 115129585532
+    },
+    {
+      "command": "python3 scripts/deployment/setup_workcell.py; bash scripts/deployment/test_oci.sh",
+      "phase": "CI after",
+      "exit": 0,
+      "job": 115129585321
+    },
+    {
+      "command": "PAYMENTS_DEMO_DIR=<fresh temporary directory> <verified local runtime> run examples/local-fixture/main.kujo --interpreter",
+      "phase": "after",
+      "exit": 0
+    },
+    {
+      "command": "git diff --check; Python ast.parse of tracked .py; json.loads of tracked .json; bash -n of tracked .sh",
+      "phase": "after",
+      "exit": 0
+    },
+    {
+      "command": "docker info --format {{json .ServerVersion}}",
+      "phase": "local availability",
+      "result": "no response within 8-second subprocess bound; local OCI not run"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" /usr/bin/time -p python3 tests/network/identity_profile_test.py",
+      "phase": "isolated after baseline workload finished",
+      "exit": 0,
+      "elapsed_seconds": 53.06,
+      "result": "all VM/interpreter identity and admission checks passed at unchanged deadlines"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" /usr/bin/time -p python3 tests/network/package_install_test.py",
+      "phase": "isolated after baseline workload finished",
+      "exit": 0,
+      "elapsed_seconds": 83.27,
+      "result": "102 files, 150497 archive bytes; deterministic build, real install, VM/interpreter imports and media/payload guards passed at unchanged deadlines"
+    }
+  ],
+  "measurements": {
+    "cache_before": {
+      "cache_bytes": 8388608,
+      "peak_python_bytes": 8703996,
+      "elapsed_ms": 317.0519730192609
+    },
+    "cache_after": {
+      "cache_bytes": 8388608,
+      "peak_python_bytes": 2417831,
+      "elapsed_ms": 692.7030590013601
+    },
+    "mcp_local_before": {
+      "first_request_ms": 764,
+      "idle_observation_ms": 250,
+      "measurement_version": 1,
+      "native_process_counts": {
+        "inspect": 9,
+        "project": 1,
+        "request": 13
+      },
+      "node_version": "v26.7.0",
+      "replay_ms": 640,
+      "response_envelope_utf8_bytes": 438,
+      "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+      "startup_and_discovery_ms": 2039,
+      "status_ms": 697,
+      "summary_utf8_bytes": 182,
+      "tool_schema_utf8_bytes": 3065,
+      "warm_replay": {
+        "max_ms": 843.5916870000001,
+        "median_ms": 624.965827,
+        "min_ms": 586.280323,
+        "p95_ms": 843.5916870000001,
+        "samples": 8
+      },
+      "warm_status": {
+        "max_ms": 862.1201039999996,
+        "median_ms": 703.1818954999999,
+        "min_ms": 660.2628809999997,
+        "p95_ms": 862.1201039999996,
+        "samples": 8
+      }
+    },
+    "ci_after": {
+      "mcp": {
+        "first_request_ms": 81,
+        "idle_observation_ms": 250,
+        "measurement_version": 1,
+        "native_process_counts": {
+          "inspect": 9,
+          "project": 1,
+          "request": 13
+        },
+        "node_version": "v24.20.0",
+        "replay_ms": 67,
+        "response_envelope_utf8_bytes": 438,
+        "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+        "startup_and_discovery_ms": 302,
+        "status_ms": 72,
+        "summary_utf8_bytes": 182,
+        "tool_schema_utf8_bytes": 3065,
+        "warm_replay": {
+          "max_ms": 69.389318,
+          "median_ms": 66.79332199999999,
+          "min_ms": 65.80049300000007,
+          "p95_ms": 69.389318,
+          "samples": 8
+        },
+        "warm_status": {
+          "max_ms": 72.43269699999996,
+          "median_ms": 69.75004450000006,
+          "min_ms": 68.90867300000014,
+          "p95_ms": 72.43269699999996,
+          "samples": 8
+        }
+      },
+      "Architecture": "46 files; Fence passed; 14 forbidden edges and 5 export/coverage/external mutations rejected",
+      "Package installation": "deterministic native archive, private-path exclusion, real Kennel install/validate and two client imports in VM/interpreter passed; 102 files, 150497 archive bytes",
+      "link": {
+        "flows_per_process": 4,
+        "native_process_count": 8,
+        "process_ms": {
+          "max_ms": 1070.361528999996,
+          "median_ms": 1045.1078474999917,
+          "min_ms": 1038.1345649999787,
+          "p95_ms": 1070.361528999996,
+          "samples": 8
+        },
+        "scenarios": {
+          "changed_challenge": {
+            "calls_per_flow": {
+              "GET": 2,
+              "POST": 1,
+              "credential": 0,
+              "pay": 0,
+              "probe": 2
+            },
+            "phase_ms": {
+              "authorization_poll": {
+                "max_ms": 15.86732500000005,
+                "median_ms": 15.146081500000008,
+                "min_ms": 14.933464999999956,
+                "p95_ms": 15.86732500000005,
+                "samples": 8
+              },
+              "followup": {
+                "max_ms": 58.00528100000008,
+                "median_ms": 54.98725999999999,
+                "min_ms": 54.64183600000001,
+                "p95_ms": 58.00528100000008,
+                "samples": 8
+              },
+              "operator_review_and_grant": {
+                "max_ms": 50.28868900000009,
+                "median_ms": 48.65689500000005,
+                "min_ms": 47.78787999999997,
+                "p95_ms": 50.28868900000009,
+                "samples": 8
+              },
+              "prepare_and_authorize": {
+                "max_ms": 33.43307400000003,
+                "median_ms": 32.624578000000014,
+                "min_ms": 32.20491500000003,
+                "p95_ms": 33.43307400000003,
+                "samples": 8
+              },
+              "submit": {
+                "max_ms": 78.31112399999995,
+                "median_ms": 75.44469450000008,
+                "min_ms": 74.31715399999985,
+                "p95_ms": 78.31112399999995,
+                "samples": 8
+              }
+            },
+            "summary_bytes": {
+              "first": 111,
+              "followup": 111,
+              "pending": 114
+            }
+          },
+          "lost_charge": {
+            "calls_per_flow": {
+              "GET": 3,
+              "POST": 1,
+              "credential": 1,
+              "pay": 1,
+              "probe": 2
+            },
+            "phase_ms": {
+              "authorization_poll": {
+                "max_ms": 16.075072000000034,
+                "median_ms": 15.221255999999983,
+                "min_ms": 14.709126999999995,
+                "p95_ms": 16.075072000000034,
+                "samples": 8
+              },
+              "followup": {
+                "max_ms": 54.68409500000001,
+                "median_ms": 53.733845,
+                "min_ms": 53.43780400000003,
+                "p95_ms": 54.68409500000001,
+                "samples": 8
+              },
+              "operator_review_and_grant": {
+                "max_ms": 49.22377499999999,
+                "median_ms": 48.069841,
+                "min_ms": 47.33084000000002,
+                "p95_ms": 49.22377499999999,
+                "samples": 8
+              },
+              "prepare_and_authorize": {
+                "max_ms": 35.53888499999999,
+                "median_ms": 33.45990549999998,
+                "min_ms": 31.646316000000013,
+                "p95_ms": 35.53888499999999,
+                "samples": 8
+              },
+              "submit": {
+                "max_ms": 82.00784899999996,
+                "median_ms": 79.18111149999999,
+                "min_ms": 78.15071599999999,
+                "p95_ms": 82.00784899999996,
+                "samples": 8
+              }
+            },
+            "summary_bytes": {
+              "first": 111,
+              "followup": 109,
+              "pending": 114
+            }
+          },
+          "success": {
+            "calls_per_flow": {
+              "GET": 3,
+              "POST": 1,
+              "credential": 1,
+              "pay": 1,
+              "probe": 2
+            },
+            "phase_ms": {
+              "authorization_poll": {
+                "max_ms": 16.165019,
+                "median_ms": 14.703191499999999,
+                "min_ms": 14.151239000000004,
+                "p95_ms": 16.165019,
+                "samples": 8
+              },
+              "followup": {
+                "max_ms": 4.237072000000012,
+                "median_ms": 3.5043229999999994,
+                "min_ms": 3.440459000000004,
+                "p95_ms": 4.237072000000012,
+                "samples": 8
+              },
+              "operator_review_and_grant": {
+                "max_ms": 48.169361,
+                "median_ms": 46.904836,
+                "min_ms": 46.505522,
+                "p95_ms": 48.169361,
+                "samples": 8
+              },
+              "prepare_and_authorize": {
+                "max_ms": 34.263109,
+                "median_ms": 32.835950999999994,
+                "min_ms": 32.216087,
+                "p95_ms": 34.263109,
+                "samples": 8
+              },
+              "submit": {
+                "max_ms": 82.841322,
+                "median_ms": 80.6448485,
+                "min_ms": 78.908928,
+                "p95_ms": 82.841322,
+                "samples": 8
+              }
+            },
+            "summary_bytes": {
+              "first": 109,
+              "followup": 109,
+              "pending": 114
+            }
+          },
+          "unverified_2xx": {
+            "calls_per_flow": {
+              "GET": 3,
+              "POST": 1,
+              "credential": 1,
+              "pay": 1,
+              "probe": 2
+            },
+            "phase_ms": {
+              "authorization_poll": {
+                "max_ms": 16.590121000000067,
+                "median_ms": 15.616532500000005,
+                "min_ms": 15.121895999999992,
+                "p95_ms": 16.590121000000067,
+                "samples": 8
+              },
+              "followup": {
+                "max_ms": 57.10440300000016,
+                "median_ms": 55.850216000000046,
+                "min_ms": 54.587236000000075,
+                "p95_ms": 57.10440300000016,
+                "samples": 8
+              },
+              "operator_review_and_grant": {
+                "max_ms": 50.273741000000086,
+                "median_ms": 49.35610099999991,
+                "min_ms": 48.48833499999989,
+                "p95_ms": 50.273741000000086,
+                "samples": 8
+              },
+              "prepare_and_authorize": {
+                "max_ms": 40.24790900000005,
+                "median_ms": 34.192957999999976,
+                "min_ms": 32.888238,
+                "p95_ms": 40.24790900000005,
+                "samples": 8
+              },
+              "submit": {
+                "max_ms": 86.23939199999995,
+                "median_ms": 84.26093199999997,
+                "min_ms": 81.68731200000002,
+                "p95_ms": 86.23939199999995,
+                "samples": 8
+              }
+            },
+            "summary_bytes": {
+              "first": 111,
+              "followup": 111,
+              "pending": 114
+            }
+          }
+        },
+        "schema": "kujo.payment-fixture-performance/v1",
+        "scope": "synthetic_in_process_provider_callbacks"
+      }
+    },
+    "npm_locked_packages_before": 94,
+    "npm_locked_packages_after": 94,
+    "promotional_files_excluded": 45,
+    "promotional_source_bytes_excluded": 5285320
+  },
+  "limitations": [
+    "Local and Linux timing samples are not comparable performance evidence.",
+    "Tracemalloc measures Python allocations, not process RSS.",
+    "No provider-backed payment or deployment certification.",
+    "Report-only follow-up changes documentation; package bytes above identify the implementation SHA."
+  ],
+  "local_log_sha256": {
+    "baseline.log": "5a5cee5d79aa30265f51c2f87df79947b0692ef45eb7244d96e92efa2c2d3f25",
+    "baseline-remainder.log": "a07dfb7ccda778e07eecc216189539e9ff5cbcafba83ad8c374af8dfad72a027",
+    "after.log": "2558a39e57e196fc5d1ea4201e2afd70503a20b7a7adc51ede8f4b70dc478f1d",
+    "integrity-before.log": "6889c463625348e9b0aefde6f604f55b21c80f3734eb7dada90bd2b688d1731a",
+    "integrity-after.log": "e193e9c36676ed031192ba3ecc37ee8ab88c0a23e84159556ae95a864e24677d",
+    "package-after.log": "ba9d3a65b1872df03b896c2c2806f31b7ffd369a0045e3ad3e982e64cb65a350",
+    "npm-audit.json": "94461b8ecd3c4f0bc58d07ab8f718472b80860b95dfcb2db7bf0af0e158a1783",
+    "npm-audit-after.json": "9a2280dab8af3ebca0f39c8370efeb13848dc18f514043f6df42ad14d6c3f402",
+    "ci-host.log": "56c99295da616dccc4a34d684d79fbf54aa64af7fda1ab0eb495d1a07f611edb",
+    "ci-containment.log": "d0411ba740250eaaad81a801e02cbfd0092333001eda917d64a50383523ec494",
+    "demo-after.log": "05aa3bd72a8077ad0092dc85ce0c37d6001e1873dc0cd41091bce9cfaa068173",
+    "identity-isolated-after.log": "eea9933d541dad4b9c7c77521587578ac6035bc2f8857ea538ff468fcd1d394f",
+    "package-isolated-after.log": "97fd41748dabb405cb8601931c24977581d6195fbd411aedb833c91f2080847b"
+  },
+  "ci_status": "completed",
+  "ci_conclusion": "success",
+  "ci_containment_markers": [
+    "Pinned Workcell source and host Kujo runtime built and verified",
+    "Workcell composition passed: isolated hostile probes, verified intent artifact, separate trusted intake and zero credential evidence leakage",
+    "OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works"
+  ]
+}
