@@ -11,7 +11,7 @@ source = "github:kujolang/ability"
 
 [kujo]
 entry = "payments.kujo"
-excludes = [".git", ".local", ".kennel_tmp", "kennel_packages", "dist", "build", "node_modules", "docs/evidence"]
+excludes = [".git", ".local", ".kennel_tmp", "kennel_packages", "dist", "build", "node_modules", "docs/evidence", "docs/videos"]
 includes = ["README.md", "kennel.lock", "docs"]
 minimum_version = "1.4.0"
 sources = ["payments.kujo", "payments_http.kujo", "src", "contracts", "scripts/maintenance"]

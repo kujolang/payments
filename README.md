@@ -12,7 +12,7 @@ We're building Payments here, in this repository, with code, tests, and document
 
 The local purchase flow works with simulated payments. A Stripe Link adapter is implemented and tested with synthetic provider responses; real Link sandbox validation and deployment acceptance are still ahead. No live provider is enabled by default.
 
-[Watch the narrated demo](docs/videos/payments-alpha-demo/kujo-payments-alpha-narrated.mp4) or read its [transcript](docs/videos/payments-alpha-demo/narration/TRANSCRIPT.md). The demo is simulated and moves no money.
+[Watch the narrated demo](https://github.com/kujolang/payments/blob/main/docs/videos/payments-alpha-demo/kujo-payments-alpha-narrated.mp4) or read its [transcript](https://github.com/kujolang/payments/blob/main/docs/videos/payments-alpha-demo/narration/TRANSCRIPT.md). The demo is simulated and moves no money.
 
 ## What it does
 

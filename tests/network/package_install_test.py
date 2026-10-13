@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory(prefix='payments-package-') as temporary:
         target=repo/name;target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(source,target)
     # Deliberately tracked sentinels: the positive allowlist must exclude them,
     # including paths not covered by the publisher's own generic denylist.
-    sentinels=['.local/backup.json','tests/package-canary.txt','docs/evidence/package-canary.txt','unrelated.txt','src/.env','src/credential.key']
+    sentinels=['.local/backup.json','tests/package-canary.txt','docs/evidence/package-canary.txt','docs/videos/package-canary.txt','unrelated.txt','src/.env','src/credential.key']
     for name in sentinels:
         path=repo/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text('PACKAGE_PRIVATE_SENTINEL')
     run(['git','init','-q'],cwd=repo);run(['git','add','-f','.'],cwd=repo)
@@ -48,6 +48,8 @@ print("native package and extraction passed")
     with tarfile.open(archive) as tar:
         names=tar.getnames()
         assert len(names)==metadata['file_count'] and not any(n in names for n in sentinels)
+        assert not any(n.startswith('docs/videos/') for n in names), 'Promotional media is not a runtime dependency'
+        assert sum(m.size for m in tar.getmembers()) <= 1024*1024, 'Review package growth before increasing the 1 MiB payload budget'
         for member in tar:
             assert member.isfile() and 'PACKAGE_PRIVATE_SENTINEL' not in tar.extractfile(member).read().decode(errors='ignore')
         for required in ['kennel.toml','kennel.lock','LICENSE','payments.kujo','payments_http.kujo','src/client/client.kujo','src/client/http.kujo','contracts/abilities/inspect.json']:

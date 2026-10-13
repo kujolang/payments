@@ -46,7 +46,7 @@ Official contracts reviewed September 14, 2026:
 - [PaymentIntent fields](https://docs.stripe.com/api/payment_intents/object)
 - [Shared Payment Tokens](https://docs.stripe.com/agentic-commerce/concepts/shared-payment-tokens)
 
-Before declaring the Link sandbox example usable, implement the merchant journal and endpoint, wire supported Link authentication, exercise test-only SPT issuance and purchase, then verify recovery against the selected Stripe sandbox. A standard sandbox account alone does not prove access to every preview API. Keep account-specific failures explicit rather than substituting a fixture success.
+The merchant journal, HTTP endpoint and private launchers are implemented and covered by synthetic tests below. Before declaring the Link sandbox example usable, wire supported Link authentication, exercise test-only SPT issuance and purchase, then verify recovery against the selected Stripe sandbox. A standard sandbox account alone does not prove access to every preview API. Keep account-specific failures explicit rather than substituting a fixture success.
 
 ## Durable sandbox merchant journal
 
@@ -56,7 +56,7 @@ Submission commits a permanent claim before calling the installed Stripe creatio
 
 A validated test PaymentIntent ID can be attached once. It cannot be replaced, removed or reused for another purchase. `recorded=true` only means this identifier was saved; the separate read-only evidence component decides whether payment succeeded. Concurrent callers and process restarts cannot obtain another creation claim. Initialization rejects a missing or modified trigger rather than silently repairing the database.
 
-If the process dies after Stripe accepts creation but before the identifier is durably saved, the claim remains without a lookup result. The private recovery function below can verify an operator-supplied candidate ID and attach it to the existing claim. Until that verification succeeds, the purchase remains unresolved; never infer failure or automatically create another PaymentIntent. An authenticated operator command and end-to-end merchant HTTP service remain unfinished. The module also refuses to execute inside a caller-owned transaction so a later rollback cannot erase its reservation after a provider call.
+If the process dies after Stripe accepts creation but before the identifier is durably saved, the claim remains without a lookup result. The private recovery function below can verify an operator-supplied candidate ID and attach it to the existing claim. Until that verification succeeds, the purchase remains unresolved; never infer failure or automatically create another PaymentIntent. The private `sandbox-merchant.sh recover` command and merchant HTTP service are implemented below; actual operator deployment and provider-backed acceptance remain unverified. The module also refuses to execute inside a caller-owned transaction so a later rollback cannot erase its reservation after a provider call.
 
 `tests/sandbox_merchant.kujo` covers successful recording, lost/malformed provider responses, binding mismatches, receipt-write failure, immutable identifiers, unique transaction ownership, caller-transaction refusal and restart. `tests/network/sandbox_merchant_test.py` runs four independent Kujo processes against a fake API ledger with no deduplication: both successful and lost-response cases produce one call. These are synthetic process tests, not Stripe account conformance or protection against an operator deleting the database.
 
