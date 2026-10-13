@@ -1,0 +1,144 @@
+{
+  "schema": "kujo.payments.manual-audit-evidence/v1",
+  "audit_date": "2026-10-13",
+  "scope": "second manual repository sweep; offline recovery bounds fix",
+  "baseline_revision": "666a27cea83bd135cd8ac196632bc4134587734f",
+  "implementation_revision": "7766181d0732104c9d979de9467e821762f711d9",
+  "baseline": {
+    "command": "KUJO_BIN=<verified-runtime> PAYMENTS_HEADER_VALUES_RUNTIME=1 bash scripts/test.sh",
+    "result": "passed",
+    "elapsed_seconds": 585.85,
+    "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+    "mcp_schema_utf8_bytes": 3065,
+    "mcp_summary_utf8_bytes": 182,
+    "mcp_envelope_utf8_bytes": 438,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    }
+  },
+  "before": {
+    "query": {
+      "timed_out": true,
+      "elapsed_seconds": 3.0235737659968436,
+      "declared_timeout_seconds": 1,
+      "outer_timeout_seconds": 3
+    },
+    "lock": {
+      "timed_out": true,
+      "elapsed_seconds": 3.160157767997589,
+      "declared_timeout_seconds": 1,
+      "outer_timeout_seconds": 3
+    },
+    "metadata_cardinality": "5000 malformed rows exceeded a 1000-instruction SQLite progress budget"
+  },
+  "after": {
+    "query": {
+      "elapsed_seconds": 1.080049660988152,
+      "returncode": 1,
+      "output": {
+        "ok": false,
+        "code": "recovery_snapshot_failed"
+      },
+      "database_published": false
+    },
+    "lock": {
+      "elapsed_seconds": 1.1160722919739783,
+      "returncode": 1,
+      "output": {
+        "ok": false,
+        "code": "recovery_snapshot_failed"
+      },
+      "database_published": false
+    }
+  },
+  "regressions": {
+    "test_methods": 4,
+    "modes": [
+      "normal",
+      "-O",
+      "-OO"
+    ],
+    "result": "passed",
+    "focused_recovery_elapsed_seconds": 11.631,
+    "suites": [
+      "recovery_bounds_test.py",
+      "network/recovery_test.py",
+      "network/recovery_verification_test.py",
+      "network/recovery_set_test.py"
+    ]
+  },
+  "npm_audit": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 95,
+      "dev": 0,
+      "optional": 0,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 94
+    }
+  },
+  "logs": {
+    "baseline.log": {
+      "path": ".local/audit-20261013-second/baseline.log",
+      "sha256": "7e6d447fd5c65ae2c669fac592b7c3dd441c6dd6baaf7e4e32f536945cfdc8b6"
+    },
+    "regressions-before.log": {
+      "path": ".local/audit-20261013-second/regressions-before.log",
+      "sha256": "4b1bb3d7934ea5ed3df0e4106c5540ee7615857530534a160acc130bae7b206a"
+    },
+    "cardinality-before.log": {
+      "path": ".local/audit-20261013-second/cardinality-before.log",
+      "sha256": "6555a35746afb540857708cb1d4c480c43d4cf0a2b19ac1e2ba232a2045e3854"
+    },
+    "focused-after.log": {
+      "path": ".local/audit-20261013-second/focused-after.log",
+      "sha256": "fb3f44162b40c22d3cbe1277ff05784c893f8277903711f2b0c0b5aadc491c92"
+    },
+    "ci-host.log": {
+      "path": ".local/audit-20261013-second/ci-host.log",
+      "sha256": "962e14ca7747018e58001f5f100f9431146736c553dcd16ad97da8a08cbd0550"
+    },
+    "ci-containment.log": {
+      "path": ".local/audit-20261013-second/ci-containment.log",
+      "sha256": "09cd2e07739c80692fe8d3867476ca78d3d063a95c62f55a9e09ad67656510a2"
+    }
+  },
+  "ci": {
+    "run_id": 38349145665,
+    "url": "https://github.com/kujolang/payments/actions/runs/38349145665",
+    "result": "passed",
+    "host": "passed",
+    "host_job_id": 115137320533,
+    "model_surface": {
+      "tool_schema_utf8_bytes": 3065,
+      "summary_utf8_bytes": 182,
+      "response_envelope_utf8_bytes": 438,
+      "native_process_counts": {
+        "inspect": 9,
+        "project": 1,
+        "request": 13
+      }
+    },
+    "containment": "passed",
+    "containment_job_id": 115137320293,
+    "containment_proof": [
+      "Workcell composition passed: isolated hostile probes, verified intent artifact, separate trusted intake and zero credential evidence leakage",
+      "OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works"
+    ]
+  },
+  "limitations": [
+    "Synthetic fixtures; no real credentials or money used.",
+    "Recovery deadlines remain cooperative; blocked OS filesystem calls are not hard cancellation points.",
+    "Native Link provisioning, verified funding authority and provider-backed sandbox acceptance remain unverified."
+  ]
+}
