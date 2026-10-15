@@ -1,0 +1,260 @@
+{
+  "schema": "kujo.payments.manual-audit-evidence/v1",
+  "audit_date": "2026-10-15",
+  "repository": "kujolang/payments",
+  "branch": "main",
+  "original_baseline_sha": "ea2f2242489ecd77c7a040a1cb67f49b5383763e",
+  "closure_start_sha": "a41d67286525c904af671b84bf573c0d5ddb522a",
+  "ending_tested_sha": "7659aa310c03b86c692126d5a436a1118f580975",
+  "commands": [
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" PAYMENTS_HEADER_VALUES_RUNTIME=1 /usr/bin/time -p bash scripts/test.sh",
+      "result": "failed before source edits",
+      "log": ".local/audit-20261015/verification.log",
+      "exit": 1,
+      "elapsed_seconds": 606.66,
+      "failure": "tests/network/reconciliation_test.py seed failed unknown_after_charge; no actual result/state retained by original fixture"
+    },
+    {
+      "command": "npm audit --omit=dev --json",
+      "cwd": "examples/mcp",
+      "result": "passed",
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 95,
+          "dev": 0,
+          "optional": 0,
+          "peer": 0,
+          "peerOptional": 0,
+          "total": 94
+        }
+      }
+    },
+    {
+      "command": "npm ls --depth=0 --prefix examples/mcp",
+      "result": "passed; @modelcontextprotocol/sdk@1.32.1"
+    },
+    {
+      "command": "git show ea2f224:scripts/deployment/fetch_runtime.py > .local/audit-20261015/cache-before.py",
+      "result": "passed"
+    },
+    {
+      "command": "python3 docs/audits/runtime-cache-measure.py .local/audit-20261015/cache-before.py",
+      "result": "passed",
+      "measurement": {
+        "cache_bytes": 8388608,
+        "peak_python_bytes": 8703996,
+        "elapsed_ms": 128.40187000256265
+      }
+    },
+    {
+      "command": "python3 docs/audits/runtime-cache-measure.py scripts/deployment/fetch_runtime.py",
+      "result": "passed",
+      "measurement": {
+        "cache_bytes": 8388608,
+        "peak_python_bytes": 2417831,
+        "elapsed_ms": 109.88342400378315
+      }
+    },
+    {
+      "command": "python3 - <<'PY'\nimport ast,json,subprocess\nfrom pathlib import Path\npaths=subprocess.check_output(['git','ls-files'],text=True).splitlines();counts={'python':0,'json':0,'shell':0}\nfor name in paths:\n if name.startswith('docs/videos/'):continue\n p=Path(name)\n if p.suffix=='.py':ast.parse(p.read_text(),filename=name);counts['python']+=1\n elif p.suffix=='.json':json.loads(p.read_text());counts['json']+=1\n elif p.suffix=='.sh':subprocess.run(['bash','-n',name],check=True);counts['shell']+=1\nprint(json.dumps(counts));Path('.local/audit-20261015/static-checks.json').write_text(json.dumps(counts)+'\\n')\nfor name in ['cache-before.json','cache-after.json']:print(name,Path('.local/audit-20261015',name).read_text().strip())\nPY",
+      "result": "passed",
+      "counts": {
+        "python": 56,
+        "json": 79,
+        "shell": 10
+      }
+    },
+    {
+      "command": "gh api repos/kujolang/payments/actions/runs/38349145665 --jq '{id,head_sha,status,conclusion,html_url}'",
+      "result": "completed/success",
+      "source": "7766181d0732104c9d979de9467e821762f711d9",
+      "note": "Revalidated completed job; not a newly launched CI run. Host and containment logs retained from the second sweep."
+    },
+    {
+      "command": "git diff ea2f224..HEAD -- src contracts payments.kujo payments_http.kujo kennel.lock",
+      "result": "passed; empty diff"
+    },
+    {
+      "command": "git diff 7766181..HEAD --stat",
+      "result": "only two second-pass report files at inspected a41d672"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" python3 tests/network/reconciliation_test.py",
+      "phase": "unchanged isolated rerun",
+      "result": "passed",
+      "log": ".local/audit-20261015/reconciliation-rerun.log"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" python3 tests/network/reconciliation_test.py",
+      "phase": "after failure diagnostics",
+      "result": "passed",
+      "log": ".local/audit-20261015/reconciliation-after.log"
+    },
+    {
+      "command": "KUJO_BIN=\"$PWD/.local/runtime-artifacts/34878190347/macos-x64/verified-bin/kujo\" PAYMENTS_HEADER_VALUES_RUNTIME=1 /usr/bin/time -p bash scripts/test.sh",
+      "phase": "after failure diagnostics",
+      "result": "passed",
+      "log": ".local/audit-20261015/verification-after.log",
+      "exit": 0,
+      "elapsed_seconds": 1219.46
+    }
+  ],
+  "current_ci": {
+    "run_id": 38687600913,
+    "source_sha": "7659aa310c03b86c692126d5a436a1118f580975",
+    "status": "completed",
+    "conclusion": "success",
+    "url": "https://github.com/kujolang/payments/actions/runs/38687600913",
+    "host_job_id": 116265921340,
+    "containment_job_id": 116265921656,
+    "containment_markers": [
+      "Workcell composition passed: isolated hostile probes, verified intent artifact, separate trusted intake and zero credential evidence leakage",
+      "OCI containment passed: credential files/env/processes, sockets, command access, symlinks and network denied; trusted intake works"
+    ]
+  },
+  "prior_evidence_integrity": {
+    "first_sweep_log_count": 13,
+    "second_sweep_log_count": 6,
+    "all_recorded_hashes_match": true
+  },
+  "seed_reproduction_attempts": {
+    "attempts": 30,
+    "failures": [],
+    "elapsed_seconds": 41.993547929996566
+  },
+  "forced_failure_diagnostics": {
+    "forced_failure_retained": true,
+    "evidence": {
+      "charges": 1,
+      "claimed": 1,
+      "code": "",
+      "status": "fixture_unexpected"
+    },
+    "secret_sentinel_absent": true
+  },
+  "model_surface": {
+    "tool_schema_utf8_bytes": 3065,
+    "summary_utf8_bytes": 182,
+    "response_envelope_utf8_bytes": 438,
+    "native_process_counts": {
+      "inspect": 9,
+      "project": 1,
+      "request": 13
+    }
+  },
+  "link_fixture": {
+    "scope": "synthetic_in_process_provider_callbacks",
+    "native_process_count": 8,
+    "flows_per_process": 4,
+    "scenarios": {
+      "changed_challenge": {
+        "calls_per_flow": {
+          "GET": 2,
+          "POST": 1,
+          "credential": 0,
+          "pay": 0,
+          "probe": 2
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 111,
+          "pending": 114
+        }
+      },
+      "lost_charge": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 109,
+          "pending": 114
+        }
+      },
+      "success": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "summary_bytes": {
+          "first": 109,
+          "followup": 109,
+          "pending": 114
+        }
+      },
+      "unverified_2xx": {
+        "calls_per_flow": {
+          "GET": 3,
+          "POST": 1,
+          "credential": 1,
+          "pay": 1,
+          "probe": 2
+        },
+        "summary_bytes": {
+          "first": 111,
+          "followup": 111,
+          "pending": 114
+        }
+      }
+    }
+  },
+  "logs": {
+    "verification.log": {
+      "path": ".local/audit-20261015/verification.log",
+      "sha256": "56d2d065a0b4c3d9c5758e2e602b736d3a01b12a16c37f4f00282372221d7ffe"
+    },
+    "verification-after.log": {
+      "path": ".local/audit-20261015/verification-after.log",
+      "sha256": "04fc5ea8c132d20623ba8f96d98b6b9a2b0a8cae889e118e8a0c8f56d7437db8"
+    },
+    "reconciliation-rerun.log": {
+      "path": ".local/audit-20261015/reconciliation-rerun.log",
+      "sha256": "b66019defa4355f89739a5e9a8c8b0804939390a5001682df6a5d6d92447b261"
+    },
+    "reconciliation-after.log": {
+      "path": ".local/audit-20261015/reconciliation-after.log",
+      "sha256": "b66019defa4355f89739a5e9a8c8b0804939390a5001682df6a5d6d92447b261"
+    },
+    "ci-host.log": {
+      "path": ".local/audit-20261015/ci-host.log",
+      "sha256": "2bc024eed0bdb15c4681e8acf5671f5b414555b0b3cad666d3d1fe20742e1d29"
+    },
+    "ci-containment.log": {
+      "path": ".local/audit-20261015/ci-containment.log",
+      "sha256": "5cd298c329e14be099788266d12248516ad2d1ffed7b347eabe0e8c3824ffbd1"
+    }
+  },
+  "remaining_finding": {
+    "id": "KPH-008",
+    "status": "needs_more_evidence",
+    "observation": "One original reconciliation seed failed before source edits; exact result/state not retained. Subsequent checks passed. Cause not established.",
+    "implemented_response": "Failure-only scalar diagnostics; no changed assertion condition or timeout.",
+    "not_claimed": [
+      "A financial-domain vulnerability",
+      "A harmless host-load failure",
+      "Root-cause remediation"
+    ]
+  },
+  "limits": [
+    "Synthetic data only; no real credentials or financial calls.",
+    "Full local rerun and current Linux host/containment passed; first baseline failure remains recorded.",
+    "Historical and current latency samples are not controlled comparative speed measurements.",
+    "Live Link acceptance and selected-deployment certification remain outside this hardening audit."
+  ]
+}
