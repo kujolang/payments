@@ -43,7 +43,15 @@ if mode == "seed" {
     approval := {"schema":"kujo.ability.approval/v1","approval_id":"approval:"+execution_id,"binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"fixture:"+execution_id,"evidence":{}}
     assert(authorize_execution(store,principal,execution_id,approval,definition,"fixture",func(issuer,value,inv) { return true },1500)["ok"],"grant")
     result := execute_payment(store,principal,execution_id,approval,definition,provider,schemas,{"version":"fixture-v1","exponents":{"USD":2}},"US",host,confirmation)
-    assert(result["result"]["status"] == "reconciliation_required","unknown_after_charge")
+    if result["result"]["status"] != "reconciliation_required" {
+        // Keep scalar synthetic evidence before the Python harness removes its
+        // temporary journals. Never include raw provider errors or receipt payloads.
+        mut seed_code := ""
+        if has_key(result,"code") { seed_code = result["code"] }
+        if has_key(result,"ability_result") { seed_code = result["ability_result"]["code"] }
+        seed_evidence := {"status":result["result"]["status"],"code":seed_code,"claimed":inspect(db,scope,execution_id)["claimed"],"charges":len(db_query(processor,"SELECT ref FROM fixture_charges WHERE ref=?",[execution_id]))}
+        assert(false,"unknown_after_charge:"+to_json(seed_evidence))
+    }
     print(to_json({"ok":true}));db_close(processor);db_close(db)
 } else {
     native_observe := provider["observe"]
