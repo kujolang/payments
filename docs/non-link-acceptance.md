@@ -146,3 +146,31 @@ records the local checks and [CI run 39153564005](https://github.com/kujolang/pa
 at `41d19bfb1e367c959fb5f20b59446fdb2799f381`: full Linux host suite, 40 fresh
 stress samples and actual OCI/Workcell containment all passed. The original
 KPH-008 release concern remains open.
+
+## Admin and installation acceptance — October 18, 2026
+
+The operator and control shell launchers now reject unsafe configuration, journal
+and SQLite sidecar paths before entering Kujo. Tests cover 38 refusals and actual
+bound review, approval and pause with no financial claim. This enforces POSIX
+ownership and mode prerequisites; it does not establish host authentication,
+ACL isolation or protection against a hostile process with the same user ID.
+Embedded callers must enforce equivalent prerequisites.
+
+The installed client now exercises authenticated request, replay, status and
+authentication rejection against the gateway in both VM and interpreter modes.
+A separate fresh consumer installed the exact source commit from GitHub through
+pinned Kennel, validated its lock, matched installed source bytes, and imported
+without custom module paths. No registry release or provider purchase was made.
+
+[CI run 39155351846](https://github.com/kujolang/payments/actions/runs/39155351846)
+passed the Linux host suite and actual OCI/Workcell containment at
+`c7ff956d8d291bcd1c9c0fb595cd16f42c5cdc72`.
+The first run exposed a recovery fixture that could leave SQLite sidecars with
+public mode bits. The fixture now creates journals under a private umask and
+closes read connections explicitly. This is not a diagnosis of KPH-008.
+
+The [acceptance evidence](evidence/admin-install-acceptance-20261018.json)
+preserves the initial failure, corrected run, source pins and local log hashes.
+Actual deployment acceptance, authoritative financial-history recovery, release
+artifact acceptance, KPH-008 and provider acceptance remain open; see the
+[remaining release inputs](release-checklist.md#remaining-non-provider-acceptance-inputs).

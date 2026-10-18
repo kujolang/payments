@@ -1,0 +1,91 @@
+{
+  "schema": "kujo.payments.admin-install-acceptance/v1",
+  "date": "2026-10-18",
+  "repository": "kujolang/payments",
+  "tested_commit": "c7ff956d8d291bcd1c9c0fb595cd16f42c5cdc72",
+  "changes": {
+    "50c758c": "Private operator/control launcher preflight, actual launcher conformance",
+    "3208b2b": "Installed authenticated client traffic through source gateway, VM and interpreter",
+    "c7ff956": "Recovery fixture private process umask and explicit reader close; service umask and ACL scope documentation"
+  },
+  "before": {
+    "exit": 0,
+    "review_accepted": true,
+    "config_mode": "0666",
+    "journal_mode": "0644"
+  },
+  "local_admin": {
+    "unsafe_config_refusals": 38,
+    "real_review_approval_pause": "passed",
+    "financial_claims": 0
+  },
+  "local_recovery": "passed before and after fixture correction",
+  "initial_ci": {
+    "run_id": 39155087681,
+    "host_result": "failure at recovery fixture private-file preflight after admin/package checks passed",
+    "overall": "cancelled by superseding source run"
+  },
+  "sidecar_reproduction": {
+    "database_mode": "0600",
+    "wal_mode": "0644",
+    "shm_mode": "0644",
+    "preflight_exit": 1,
+    "method": "actual SQLite WAL connection under umask022, chmod main database only; observed refusal",
+    "historical_KPH008_cause_established": false
+  },
+  "limits": [
+    "Preflight checks POSIX ownership/modes, not ACLs, host authentication or hostile same-UID path races",
+    "Direct Kujo operator/control invocation bypasses shell preflight; embedded host must enforce equivalent controls",
+    "Installed client test uses synthetic native package and source gateway, no published registry release",
+    "Actual deployment, complete financial-history recovery and release/provider acceptance remain open",
+    "KPH-008 remains unresolved"
+  ],
+  "real_money_moved": false,
+  "production_approved": false,
+  "logs": {
+    "before.json": "85aded485a26b5b651f366d8a4ff7bec113971c407569623475522e58ba09c35",
+    "admin.log": "ee6b3e79b72dedf12ebe934a7f8bb6a89f12a4b0f90e310823d6dcb95bbe72a2",
+    "recovery.log": "8e37c341d524d6ee31af8791bb38a43577e8d918cb3144e9f8a0daacdd011b36",
+    "recovery-after.log": "8e37c341d524d6ee31af8791bb38a43577e8d918cb3144e9f8a0daacdd011b36",
+    "package.log": "5a59ef9baacbe8de0ab72f8725e152f76a2f108cda95a9efda9436cbd461baac",
+    "ci-host-first.log": "deb23cf8b3ef83d12360c1d0edd6aef32c4c474bbf71ac0d6c526af5cfd0d305",
+    "ci-host-final.log": "99639113982ae8cc7d8cfc89fc03c832b24257e213ee07f28adac546793ebf47",
+    "ci-containment-final.log": "c81c1f4f604977e4b7312ace40ec562bc07b84e9498e4782d2c03d3cab2e8259",
+    "github-install.log": "c8986f41acbb69aa8516cfd62a2fbe5eefd62fea37c342e6507a271ede4eb3b9"
+  },
+  "log_directory": ".local/admin-acceptance-20261018",
+  "ci": {
+    "run_id": 39155351846,
+    "url": "https://github.com/kujolang/payments/actions/runs/39155351846",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 117757386767,
+        "name": "host / pinned Linux runtime",
+        "conclusion": "success"
+      },
+      {
+        "id": 117757386917,
+        "name": "containment / pinned Linux runtime",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "github_install": {
+    "source_commit": "c7ff956d8d291bcd1c9c0fb595cd16f42c5cdc72",
+    "kennel_commit": "546dd4205b90825f3e326336941c3068b1add0f0",
+    "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+    "lock_sha256": "5295c3479cacfb89ae4ebfe1b4d449cb38b55b80d1ce679704bfc99345c08173",
+    "installed_client_sha256": "71bea791939c6fa5f6e078140a3723cf74e8042a89da6dc2b9ae7ff283541174",
+    "git_source_install": "passed",
+    "validate": "passed",
+    "vm_import_without_custom_module_path": "passed",
+    "interpreter_import_without_custom_module_path": "passed",
+    "registry_release_published": false
+  },
+  "ci_package": {
+    "files": 110,
+    "archive_bytes": 176020,
+    "installed_authenticated_client_vm_and_interpreter": "passed"
+  }
+}

@@ -64,3 +64,16 @@ Status: implementation in progress; not approved for real-money release. A check
 - [ ] Obtain separate authorization for any live financial acceptance test, then record its exact scope and outcome. A generic build instruction is not authorization to move funds.
 
 No release date or completion percentage is asserted while these gates remain unresolved. Raw-card/browser credential injection, recurring payments, transfers and general financial management remain outside V1.
+
+## Remaining non-provider acceptance inputs
+
+Repository tests are evidence for their named profiles, not a replacement for an installation record.
+
+| Remaining item | Required input or evidence |
+| --- | --- |
+| Actual deployment acceptance | Named host/image, service and operator OS identities, TLS edge, request/rate limits, egress and log destinations; run the boundary/leak checks there. Local launcher preflight checks POSIX file prerequisites only. |
+| Operational recovery acceptance | Actual journal inventory, backup custody/retention, recovery objectives and authoritative history source. Quarantined observation-only rehearsal passes; spending from restored copies remains unsupported. |
+| Release artifact acceptance | Selected immutable release artifact and its real provenance/install/upgrade evidence. Commit-pinned GitHub installation and synthetic native package installation are tested; no registry release has been published. |
+| KPH-008 | Evidence identifying the historical intermittent seed failure. Passing stress and improved diagnostics do not close it. |
+
+These items remain separate from supported Link provisioning and provider-backed sandbox acceptance. No production host was selected or changed during the October 18 repository acceptance work.

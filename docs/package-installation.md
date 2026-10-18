@@ -20,3 +20,22 @@ GitHub/file installation and registry archive installation are distinct Kennel p
 `tests/network/package_install_test.py` checks the actual pinned Kennel builder and installer, not a replacement archive generator. It creates a disposable Git fixture and synthetic release metadata, builds twice to verify deterministic output, inspects and extracts the native archive, checks deliberately tracked forbidden-path sentinels, runs real Kennel add/install validation into a fresh consumer, then imports both client modules in VM and interpreter modes with custom module paths removed. Callback envelopes and HTTP factory construction are exercised. The installed client also makes authenticated request, exact replay and status calls to the real loopback Kujo gateway in VM and interpreter modes, and rejects an invalid token. The gateway runs separately from the source checkout; the consumer imports only its installed package. No provider is installed and no money moves. No tag, registry artifact or release is created in the Payments repository or published externally. The test fetches the pinned public Kennel and Ability sources; it is synthetic, not fully offline.
 
 Promotional video projects in `docs/videos` are retained in GitHub but excluded from installable packages. The package conformance test rejects that directory and caps the uncompressed payload at 1 MiB. To increase this budget intentionally, review the added package contents and update the explicit assertion in `tests/network/package_install_test.py`; do not remove the exclusion or private-file checks.
+
+## Verified commit-pinned GitHub installation
+
+A fresh consumer was installed and validated with pinned Kennel
+`546dd4205b90825f3e326336941c3068b1add0f0` on October 18, 2026 using:
+
+```toml
+[dependencies.payments]
+source = "github:kujolang/payments"
+commit = "c7ff956d8d291bcd1c9c0fb595cd16f42c5cdc72"
+```
+
+The generated lockfile resolved that exact commit and Ability's declared pin.
+The installed public client matched the Git source bytes; VM and interpreter
+imports passed with custom module paths removed. This verifies the existing
+GitHub source installation path, not a signed registry release or production
+payment acceptance. Retain the lockfile and choose a reviewed commit when
+upgrading. Runtime identity and checks are recorded in the
+[admin/install acceptance evidence](evidence/admin-install-acceptance-20261018.json).
