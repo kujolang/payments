@@ -48,6 +48,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Operator recovery rehearsal composes pause, coordinated capture, immutable verification, separate-copy reconciliation against independent synthetic processor evidence, one-charge preservation and denied resume. See [non-Link acceptance](non-link-acceptance.md). This does not enable financial-history restore or certify a selected installation.
 
+- [x] Local operator/control launchers enforce private configuration, journal and sidecar prerequisites before Kujo entry; bound review/approval and pause are exercised through the actual launchers. This does not certify a host or replace authenticated operator isolation.
+
 ## Required before real-money release
 
 - [x] Resolve compatibility for the frozen Payments profile: complete v2 definition admission, flat approval binding and independent domain replay checks. General Ability v1 nested serialization remains unresolved upstream and is excluded from this scoped decision; see [identity compatibility](identity-compatibility.md).

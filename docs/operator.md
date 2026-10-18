@@ -21,6 +21,10 @@ Create a private configuration matching `contracts/operator.schema.json`:
 
 Use the actual provisioned payer identity and payment database. Keep the file private, for example mode `0600` beneath a directory with mode `0700`. The configuration contains no payment credential. Grant lifetime is capped at five minutes and at the prepared snapshot expiration.
 
+The supported `scripts/operator.sh` and `scripts/control.sh` launchers now run a Python 3 preflight before Kujo. Both require an absolute executable `KUJO_BIN`, an absolute configuration path, and an existing absolute journal path. Configurations and journals must be current-user-owned regular files with no group/other permissions or hard links, beneath current-user-owned private immediate directories. Existing SQLite sidecars must meet the same file requirements. Symlinks, duplicate configuration keys and configurations over 64 KiB fail closed with `private_admin_config_required`. Successful checks produce no extra output. The launchers do not silently change ownership or permissions or create missing journals.
+
+This enforces local file prerequisites, not operator authentication. Keep all path ancestors and the executable under trusted administrator custody. The same OS principal and host administrator remain trusted, and a separate Kujo invocation reopens the checked paths; these checks do not promise race resistance against those actors. Direct invocation of the Kujo modules bypasses this launcher preflight and remains an embedded host integration requiring equivalent controls. Python 3 is now required for these two shell entrypoints. Existing shared/group-readable installations must be reviewed and made private before using them.
+
 After the trusted worker prepares a purchase, review it in the operator environment:
 
 ```bash

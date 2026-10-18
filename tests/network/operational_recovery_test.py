@@ -45,6 +45,7 @@ with tempfile.TemporaryDirectory(prefix='payments-operator-recovery-') as tempor
     assert run(fixture, env)['ok']
     assert query(processor, 'SELECT count(*) FROM fixture_charges') == [(1,)]
     assert query(core, 'SELECT state,claimed FROM executions') == [('reconciliation_required', 1)]
+    core.chmod(0o600)
     control = root / 'control.json'
     control.write_text(json.dumps({'schema': 'kujo.payment-control/v1',
                                   'database': str(core), 'actor_ref': 'drill-operator'}))

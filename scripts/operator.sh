@@ -6,4 +6,5 @@ cd "$(dirname "$0")/.."
 : "${PAYMENTS_OPERATOR_CONFIG:?Set the trusted operator configuration path}"
 : "${PAYMENTS_EXECUTION_ID:?Set the payment execution identifier}"
 : "${PAYMENTS_OPERATOR_ACTION:?Set review or approve}"
+python3 scripts/maintenance/admin_preflight.py operator
 "$KUJO_BIN" run src/executor/operator.kujo --interpreter

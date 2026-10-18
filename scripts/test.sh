@@ -36,6 +36,7 @@ python3 tests/network/provision_test.py
 python3 scripts/architecture_test.py
 python3 tests/network/package_install_test.py
 python3 tests/network/operator_test.py
+python3 tests/network/admin_launch_test.py
 python3 tests/network/operator_delivery_test.py
 python3 tests/network/control_test.py
 python3 tests/network/recovery_test.py
