@@ -36,6 +36,17 @@ jobs:
       - name: Synthetic host suite
         if: matrix.suite == 'host'
         run: bash scripts/test.sh
+      - name: Fresh-process reconciliation acceptance stress
+        if: matrix.suite == 'host'
+        run: python3 scripts/acceptance/reconciliation_stress.py > "$RUNNER_TEMP/payments-reconciliation-stress.json"
+      - name: Retain reconciliation acceptance evidence
+        if: matrix.suite == 'host' && always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: payments-reconciliation-stress
+          path: ${{ runner.temp }}/payments-reconciliation-stress.json
+          if-no-files-found: ignore
+          retention-days: 14
       - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8
         if: matrix.suite == 'containment'
       - name: Build pinned Workcell host runtime

@@ -46,6 +46,8 @@ Status: implementation in progress; not approved for real-money release. A check
 
 - [x] Safe abandonment of interrupted unclaimed execution through existing conditional cancellation: five real process checkpoints with killed/live originals, preserved reservations and post-claim observation-only behavior. [Procedure and scope](interrupted-execution.md); [verified Linux/containment evidence](evidence/interrupted-execution-ci.json). Financial re-entry is unsupported.
 
+- [x] Operator recovery rehearsal composes pause, coordinated capture, immutable verification, separate-copy reconciliation against independent synthetic processor evidence, one-charge preservation and denied resume. See [non-Link acceptance](non-link-acceptance.md). This does not enable financial-history restore or certify a selected installation.
+
 ## Required before real-money release
 
 - [x] Resolve compatibility for the frozen Payments profile: complete v2 definition admission, flat approval binding and independent domain replay checks. General Ability v1 nested serialization remains unresolved upstream and is excluded from this scoped decision; see [identity compatibility](identity-compatibility.md).
