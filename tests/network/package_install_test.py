@@ -79,7 +79,12 @@ assert(type(transport)=="function","installed_http_factory")
 print("installed HTTP transport factory passed; no network call")
 ''')
     for suffix in [[],['--interpreter']]:run([KUJO,'run',str(sample),*suffix],cwd=consumer,env=clean_env,timeout=30)
-    # Exercise the installed HTTP client against the real source gateway, not
+    # Executor startup treats the installed package as its own project. Resolve
+    # its locked dependencies there; consumer-level client imports alone do not
+    # populate the executor project's dependency root.
+    run([KUJO,'run',str(kennel/'kennel.kujo'),'--interpreter','--','install','--project-dir',str(installed)])
+    run([KUJO,'run',str(kennel/'kennel.kujo'),'--interpreter','--','validate','--project-dir',str(installed)])
+    # Exercise the installed HTTP client against the real installed gateway, not
     # just a factory or a replacement transport. No provider is installed.
     with socket.socket() as sock:
         sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
@@ -92,12 +97,15 @@ print("installed HTTP transport factory passed; no network call")
             'principal':{'type':'user','id':'fixture','tenant_id':'package'},'operations':['request','inspect'],
             'disabled':False,'expires_at_ms':4102444800000}]}));config.chmod(0o600)
     gateway_env={**clean_env,'PAYMENTS_SERVICE_CONFIG':str(config),'KUJO_HTTP_SERVER_READ_TIMEOUT_MS':'500'}
-    gateway=subprocess.Popen([KUJO,'run','src/executor/gateway.kujo','--interpreter'],cwd=ROOT,
-        env=gateway_env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    gateway=subprocess.Popen([KUJO,'run','src/executor/gateway.kujo','--interpreter'],cwd=installed,
+        env=gateway_env,umask=0o077,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     try:
         deadline=time.monotonic()+15
         while True:
-            assert gateway.poll() is None,'package gateway exited'
+            if gateway.poll() is not None:
+                startup_out,startup_err=gateway.communicate(timeout=5)
+                assert token not in startup_out+startup_err,'gateway token leakage'
+                raise AssertionError('package gateway exited: '+(startup_out+startup_err)[-1500:])
             try:
                 with socket.create_connection(('127.0.0.1',port),timeout=.1):break
             except OSError:

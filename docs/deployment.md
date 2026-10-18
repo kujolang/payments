@@ -1,5 +1,9 @@
 # Request service and tested credential boundary
 
+For host selection and installation-specific evidence, use the
+[deployment acceptance worksheet](deployment-acceptance.md). Start with synthetic
+staging; production recovery and provider acceptance remain separate gates.
+
 ## Local service
 
 Install the pinned Ability dependency. Provision a **new** private directory:
