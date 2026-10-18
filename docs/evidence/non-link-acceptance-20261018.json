@@ -1,0 +1,88 @@
+{
+  "schema": "kujo.payments.non-link-acceptance-evidence/v1",
+  "date": "2026-10-18",
+  "repository": "kujolang/payments",
+  "tested_ci_commit": "5b91f7ca30a77a68504a74344f6202356d3ac46b",
+  "implementation_commits": [
+    "81560d2",
+    "5b91f7c"
+  ],
+  "ci_url": "https://github.com/kujolang/payments/actions/runs/39151801328",
+  "local_host": {
+    "command": "KUJO_BIN=<verified macOS runtime> PAYMENTS_HEADER_VALUES_RUNTIME=1 bash scripts/test.sh",
+    "exit_code": 0,
+    "scope": "Started at 0425497; test-only additions made during run. Exact-source full suite independently verified by Linux CI at tested_ci_commit."
+  },
+  "stress_local": {
+    "elapsed_seconds": 53.074,
+    "failures": [],
+    "passed": 100,
+    "root_cause_resolved": false,
+    "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+    "samples": 100,
+    "schema": "kujo.payments.synthetic-seed-stress/v1",
+    "scope": "synthetic_fresh_processes_not_provider_acceptance",
+    "workers": 2
+  },
+  "stress_linux": {
+    "elapsed_seconds": 2.626,
+    "failures": [],
+    "passed": 40,
+    "root_cause_resolved": false,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "samples": 40,
+    "schema": "kujo.payments.synthetic-seed-stress/v1",
+    "scope": "synthetic_fresh_processes_not_provider_acceptance",
+    "workers": 2
+  },
+  "stress_negative_checks": [
+    "failed child produces failed sample and nonzero exit without sentinel leakage",
+    "zero samples rejected",
+    "optimized Python rejected"
+  ],
+  "local_docker": "unavailable: engine socket absent; CI supplies Linux reference containment",
+  "package_install": {
+    "files": 109,
+    "archive_bytes": 173305,
+    "scope": "synthetic native Kennel archive and fresh consumer; no registry publication"
+  },
+  "unresolved": [
+    "KPH-008 historical intermittent seed failure not reproduced; root cause unproven",
+    "No named production host accepted; actual TLS edge, operator identity, egress, logs, backup custody and recovery objectives require installation evidence",
+    "Financial-history restoration and spending from recovered copies unsupported",
+    "Published release artifact and its installation/provenance not yet accepted",
+    "Supported Link provisioning, authority, lifecycle and provider sandbox acceptance remain open"
+  ],
+  "real_money_moved": false,
+  "production_approved": false,
+  "log_hashes": {
+    "baseline.log": "3e3d56abc433a084d19308da6cd9c8ad1007491f9d477daff82693597b4eb2ce",
+    "ci-host.log": "cd869d999249db97e404af7c9c5ad36c1ad34359930ade69c024e2a27c774568",
+    "stress.json": "083f0a42704879c5d33f2262dccc924616ab1f11d98d83a456107e7053161b2f",
+    "ci-stress.json": "8b172d8c53a25a6c6e8be17e4bc76f28799a4c60c467e5f62ff857406456c5da",
+    "ci-containment.log": "45245442d2a5d87c18b237e863b53525e101368f40beb45c1d408c615b44774c",
+    "ci-run.json": "aa60e6e8090b1cc8369944436135c1a150ef157568d98231cb99a09f90619c66",
+    "ci-jobs.json": "7e079e2a0cdfc99b28c6b11d0bc7d29623103dea169a4381c0b78bf8623b48e8"
+  },
+  "ci": {
+    "run_id": 39151801328,
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 117746796556,
+        "name": "containment / pinned Linux runtime",
+        "conclusion": "success",
+        "started_at": "2026-10-18T17:55:39Z",
+        "completed_at": "2026-10-18T18:04:46Z"
+      },
+      {
+        "id": 117746796794,
+        "name": "host / pinned Linux runtime",
+        "conclusion": "success",
+        "started_at": "2026-10-18T17:55:39Z",
+        "completed_at": "2026-10-18T17:57:45Z"
+      }
+    ]
+  },
+  "log_directory": ".local/acceptance-20261018 (ignored local evidence; CI URL above)"
+}

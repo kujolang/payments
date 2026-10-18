@@ -84,3 +84,21 @@ rollback; do not restore stale spending state to roll back code.
 Keep the [release checklist](release-checklist.md) open until the selected
 deployment and provider acceptance records exist. No real-money or PCI readiness
 claim follows from these synthetic checks.
+
+## Recorded acceptance — October 18, 2026
+
+[CI run 39151801328](https://github.com/kujolang/payments/actions/runs/39151801328)
+passed the full host suite and actual OCI/Workcell containment at
+`5b91f7ca30a77a68504a74344f6202356d3ac46b`. The full local host suite also passed.
+The new operator recovery rehearsal passed locally and in Linux CI. Native
+packaging installed a 109-file, 173,305-byte archive into a fresh consumer.
+
+Fresh-process stress passed 100 local samples and 40 Linux samples, with no
+failed samples retried. Forced child failure produced a nonzero result without
+leaking a sentinel; invalid bounds and optimized Python were rejected. KPH-008
+remains unexplained, not fixed. Source/runtime scope, result counts and retained
+log hashes are in the [acceptance evidence](evidence/non-link-acceptance-20261018.json).
+
+These results accept the named synthetic reference checks, not all production
+release gates. No production host was selected or changed, no published package
+was released, and no real provider enrollment or purchase was performed.
