@@ -41,6 +41,7 @@ python3 tests/network/control_test.py
 python3 tests/network/recovery_test.py
 python3 tests/network/recovery_verification_test.py
 python3 tests/network/recovery_set_test.py
+python3 tests/network/operational_recovery_test.py
 python3 tests/network/worker_test.py
 python3 tests/network/interrupted_execution_test.py
 python3 tests/network/reconciliation_test.py

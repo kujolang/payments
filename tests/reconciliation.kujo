@@ -10,7 +10,11 @@ func checkpoint(name) {
 }
 v := parse_json(read_file("tests/fixtures/domain.json"))
 db := open_store(env("PAYMENTS_TEST_DB"));store := sqlite_port(db)
-processor := db_connect("sqlite",env("PAYMENTS_TEST_DB")+".processor")
+// Recovery drills keep the authoritative synthetic processor separate from
+// the quarantined core copy. This override exists only in the test fixture.
+mut processor_path := env("PAYMENTS_TEST_PROCESSOR_DB")
+if processor_path == "" { processor_path = env("PAYMENTS_TEST_DB")+".processor" }
+processor := db_connect("sqlite",processor_path)
 db_execute(processor,"CREATE TABLE IF NOT EXISTS observations(id TEXT)",[])
 principal := v["intent"]["principal"];scope := principal_digest(principal)
 provider := fixture_provider(processor,v["snapshot"],v["capabilities"],"throw_after")
