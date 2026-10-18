@@ -1,10 +1,11 @@
 """Pinned native Kennel packaging and real installation; synthetic release only."""
-import hashlib,json,os,shutil,subprocess,tarfile,tempfile
+import hashlib,hmac,json,os,shutil,socket,subprocess,tarfile,tempfile,time
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 KUJO=os.environ['KUJO_BIN'];PIN='546dd4205b90825f3e326336941c3068b1add0f0'
-def run(args,cwd=ROOT,env=None,timeout=180):
+def run(args,cwd=ROOT,env=None,timeout=180,secrets=()):
     p=subprocess.run(args,cwd=cwd,env=env,capture_output=True,text=True,timeout=timeout)
+    assert not any(secret in p.stdout+p.stderr for secret in secrets), 'package fixture private output'
     if p.returncode:raise AssertionError('package fixture command failed: '+p.stdout[-1500:]+p.stderr[-1500:])
     return p.stdout
 with tempfile.TemporaryDirectory(prefix='payments-package-') as temporary:
@@ -78,4 +79,58 @@ assert(type(transport)=="function","installed_http_factory")
 print("installed HTTP transport factory passed; no network call")
 ''')
     for suffix in [[],['--interpreter']]:run([KUJO,'run',str(sample),*suffix],cwd=consumer,env=clean_env,timeout=30)
-    print('Package installation: deterministic native archive, private-path exclusion, real Kennel install/validate and two client imports in VM/interpreter passed; '+str(len(names))+' files, '+str(archive.stat().st_size)+' archive bytes')
+    # Exercise the installed HTTP client against the real source gateway, not
+    # just a factory or a replacement transport. No provider is installed.
+    with socket.socket() as sock:
+        sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+    token='package-fixture-'+('a'*64)
+    config=root/'gateway.json'
+    config.write_text(json.dumps({'schema':'kujo.payment-service/v1','bind':'127.0.0.1','port':port,
+        'database':str(root/'gateway.db'),'namespace':'package-acceptance',
+        'currency_table':{'version':'fixture-v1','exponents':{'USD':2}},
+        'credentials':[{'verifier':hmac.new(token.encode(),b'kujo.payments.transport/v1',hashlib.sha256).hexdigest(),
+            'principal':{'type':'user','id':'fixture','tenant_id':'package'},'operations':['request','inspect'],
+            'disabled':False,'expires_at_ms':4102444800000}]}));config.chmod(0o600)
+    gateway_env={**clean_env,'PAYMENTS_SERVICE_CONFIG':str(config),'KUJO_HTTP_SERVER_READ_TIMEOUT_MS':'500'}
+    gateway=subprocess.Popen([KUJO,'run','src/executor/gateway.kujo','--interpreter'],cwd=ROOT,
+        env=gateway_env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    try:
+        deadline=time.monotonic()+15
+        while True:
+            assert gateway.poll() is None,'package gateway exited'
+            try:
+                with socket.create_connection(('127.0.0.1',port),timeout=.1):break
+            except OSError:
+                assert time.monotonic()<deadline,'package gateway startup timeout'
+                time.sleep(.05)
+        sample.write_text('''from payments import purchase_request, purchase_status
+from payments_http import http_transport
+schema := parse_json(read_file("kennel_packages/payments/contracts/abilities/inspect.json"))["output_schema"]
+endpoint := env("PACKAGE_ENDPOINT")
+transport := http_transport(endpoint,env("PACKAGE_TOKEN"),schema,true)
+intent := {"purchase_ref":env("PACKAGE_PURCHASE"),"payee_ref":"merchant","amount":{"mode":"maximum","minor":5500,"currency":"USD"},"purpose":"Package acceptance","payment_profile":"default","expires_in_ms":60000}
+requested := purchase_request(transport,intent,env("PACKAGE_KEY"))
+assert(requested["ok"],"installed_request")
+id := requested["result"]["execution_id"]
+replayed := purchase_request(transport,intent,env("PACKAGE_KEY"))
+assert(replayed["ok"] && replayed["result"]["execution_id"]==id,"installed_replay")
+status := purchase_status(transport,id)
+assert(status["ok"] && status["result"]["status"]=="awaiting_authorization","installed_status")
+denied := purchase_status(http_transport(endpoint,repeat("z",64),schema,true),id)
+assert(denied["ok"]==false && denied["code"]=="gateway_rejected","installed_auth_denial")
+print("installed authenticated request/replay/status and denial passed")
+''')
+        for index,suffix in enumerate([[],['--interpreter']]):
+            client_env={**clean_env,'PACKAGE_ENDPOINT':f'http://127.0.0.1:{port}/v1/payments',
+                'PACKAGE_TOKEN':token,'PACKAGE_PURCHASE':'installed-'+str(index),'PACKAGE_KEY':'installed-key-'+str(index),
+                'KUJO_ALLOW_PRIVATE_NETWORK_DESTINATIONS':'true'}
+            # Each clean consumer uses a distinct gateway key as well as reference.
+            result=run([KUJO,'run',str(sample),*suffix],cwd=consumer,env=client_env,timeout=30,secrets=(token,))
+            assert token not in result
+    finally:
+        gateway.terminate()
+        try:out,err=gateway.communicate(timeout=5)
+        except subprocess.TimeoutExpired:
+            gateway.kill();out,err=gateway.communicate(timeout=5)
+        assert token not in out+err,'gateway token leakage'
+    print('Package installation: deterministic native archive, private-path exclusion, real Kennel install/validate and installed authenticated HTTP request/replay/status/denial in VM/interpreter passed; '+str(len(names))+' files, '+str(archive.stat().st_size)+' archive bytes')
