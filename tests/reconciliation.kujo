@@ -23,6 +23,7 @@ for name in ["intent","snapshot","capabilities","observation"] { schemas[name] :
 definition := parse_json(read_file("contracts/abilities/execute.json"))
 clock := func() { return 1500 }
 mode := env("PAYMENTS_TEST_MODE")
+seed_fault := env("PAYMENTS_TEST_SEED_FAULT")
 mut execution_id := env("PAYMENTS_TEST_EXECUTION");if execution_id == "" { execution_id = "exec_1" }
 policy := func(snapshot,invocation) {
     mut outcome := "allow"
@@ -32,7 +33,7 @@ policy := func(snapshot,invocation) {
 }
 audit := func(phase,invocation,payload) {
     db_execute(db,"INSERT INTO audit VALUES(?,NULL,?)",[uuid_v4(),to_json({"phase":phase,"invocation":invocation,"payload":payload})])
-    accepted := mode != "preflight_fail" && (mode != "completed_fail" || phase != "completed")
+    accepted := mode != "preflight_fail" && (mode != "completed_fail" || phase != "completed") && (seed_fault != "preflight" || phase != "preflight")
     return {"ok":accepted,"written":accepted,"phase":phase,"event_id":"fixture:"+phase}
 }
 verify := func(snapshot,observation) { return len(db_query(processor,"SELECT ref FROM fixture_charges WHERE ref=?",[snapshot["execution_id"]])) == 1 }
@@ -46,6 +47,9 @@ if mode == "seed" {
     invocation := execution_invocation(inspect(db,scope,execution_id),principal,definition)
     approval := {"schema":"kujo.ability.approval/v1","approval_id":"approval:"+execution_id,"binding_digest":approval_binding_digest(invocation),"approved_by":principal,"issued_at_ms":1000,"expires_at_ms":2000,"nonce":"fixture:"+execution_id,"evidence":{}}
     assert(authorize_execution(store,principal,execution_id,approval,definition,"fixture",func(issuer,value,inv) { return true },1500)["ok"],"grant")
+    if seed_fault == "observation" {
+        store["record_observation"] = func(s,id,r,e,d,o,event,receipt) { return {"ok":false,"code":"storage_failure"} }
+    }
     result := execute_payment(store,principal,execution_id,approval,definition,provider,schemas,{"version":"fixture-v1","exponents":{"USD":2}},"US",host,confirmation)
     if result["result"]["status"] != "reconciliation_required" {
         // Keep scalar synthetic evidence before the Python harness removes its
@@ -53,7 +57,8 @@ if mode == "seed" {
         mut seed_code := ""
         if has_key(result,"code") { seed_code = result["code"] }
         if has_key(result,"ability_result") { seed_code = result["ability_result"]["code"] }
-        seed_evidence := {"status":result["result"]["status"],"code":seed_code,"claimed":inspect(db,scope,execution_id)["claimed"],"charges":len(db_query(processor,"SELECT ref FROM fixture_charges WHERE ref=?",[execution_id]))}
+        seed_evidence := {"schema":"kujo.payments.seed-failure/v1","status":result["result"]["status"],"code":seed_code,"claimed":inspect(db,scope,execution_id)["claimed"],"charges":len(db_query(processor,"SELECT ref FROM fixture_charges WHERE ref=?",[execution_id]))}
+        print(to_json(seed_evidence))
         assert(false,"unknown_after_charge:"+to_json(seed_evidence))
     }
     print(to_json({"ok":true}));db_close(processor);db_close(db)

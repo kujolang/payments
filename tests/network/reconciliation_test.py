@@ -33,7 +33,8 @@ def invariants(path):
 
 def fixture(root):
     path = root/'payments.db'
-    env = {**os.environ, 'PAYMENTS_TEST_DB': str(path), 'PAYMENTS_TEST_STOP': ''}
+    env = {**os.environ, 'PAYMENTS_TEST_DB': str(path), 'PAYMENTS_TEST_STOP': '',
+           'PAYMENTS_TEST_SEED_FAULT': '', 'PAYMENTS_TEST_PROCESSOR_DB': '', 'PAYMENTS_TEST_EXECUTION': ''}
     assert call(env, 'seed')['ok']
     return path, env
 

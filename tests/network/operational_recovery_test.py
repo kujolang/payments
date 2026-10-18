@@ -40,7 +40,7 @@ with tempfile.TemporaryDirectory(prefix='payments-operator-recovery-') as tempor
     processor = root / 'processor.db'
     env = {**os.environ, 'PAYMENTS_TEST_DB': str(core),
            'PAYMENTS_TEST_PROCESSOR_DB': str(processor), 'PAYMENTS_TEST_EXECUTION': '',
-           'PAYMENTS_TEST_STOP': '', 'PAYMENTS_TEST_MODE': 'seed'}
+           'PAYMENTS_TEST_STOP': '', 'PAYMENTS_TEST_MODE': 'seed', 'PAYMENTS_TEST_SEED_FAULT': ''}
     fixture = [KUJO, 'run', 'tests/reconciliation.kujo', '--interpreter']
     assert run(fixture, env)['ok']
     assert query(processor, 'SELECT count(*) FROM fixture_charges') == [(1,)]

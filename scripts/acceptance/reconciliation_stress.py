@@ -14,19 +14,53 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def seed_diagnostic(output):
+    """Accept only the fixture's bounded scalar vocabulary, never raw errors."""
+    if len(output) > 4096:
+        return None
+    try:
+        value = json.loads(output)
+    except ValueError:
+        return None
+    if type(value) is not dict or set(value) != {'schema', 'status', 'code', 'claimed', 'charges'}:
+        return None
+    if value['schema'] != 'kujo.payments.seed-failure/v1':
+        return None
+    if value['status'] not in ('awaiting_authorization', 'ready', 'executing',
+                               'reconciliation_required', 'succeeded', 'closed'):
+        return None
+    if type(value['claimed']) is not int or value['claimed'] not in (0, 1):
+        return None
+    if type(value['charges']) is not int or not 0 <= value['charges'] <= 1000000:
+        return None
+    # A new internal code needs review before entering public CI artifacts.
+    codes = ('ability_audit_failed', 'ability_approval_store_failed',
+             'ability_approval_replayed', 'ability_handler_failed',
+             'ability_idempotency_store_failed', 'ability_invocation_in_progress',
+             'storage_failure', 'revision_conflict', 'invalid_execution', '')
+    value['code'] = value['code'] if value['code'] in codes else 'unrecognized'
+    return value
+
+
 def sample(index):
     with tempfile.TemporaryDirectory(prefix='payments-seed-stress-') as temporary:
         db = Path(temporary) / 'core.db'
         env = {**os.environ, 'PAYMENTS_TEST_DB': str(db), 'PAYMENTS_TEST_MODE': 'seed',
                'PAYMENTS_TEST_EXECUTION': '', 'PAYMENTS_TEST_PROCESSOR_DB': '',
-               'PAYMENTS_TEST_STOP': ''}
+               'PAYMENTS_TEST_STOP': '', 'PAYMENTS_TEST_SEED_FAULT': ''}
         reason = 'unexpected_result'
+        diagnostic = None
+        process_exit = None
         try:
             p = subprocess.run([os.environ['KUJO_BIN'], 'run', 'tests/reconciliation.kujo',
                                 '--interpreter'], cwd=ROOT, env=env, capture_output=True,
                                text=True, timeout=30)
             reason = 'process_failed' if p.returncode else 'unexpected_result'
-            if p.returncode == 0 and json.loads(p.stdout) == {'ok': True}:
+            process_exit = p.returncode
+            diagnostic = seed_diagnostic(p.stdout)
+            if 'SENTINEL' in p.stdout + p.stderr:
+                reason = 'sentinel_output'
+            elif p.returncode == 0 and json.loads(p.stdout) == {'ok': True}:
                 with sqlite3.connect(db) as core, sqlite3.connect(str(db)+'.processor') as processor:
                     assert core.execute('SELECT state,claimed FROM executions').fetchall() == [('reconciliation_required', 1)]
                     assert core.execute('SELECT consumed FROM approvals').fetchall() == [(1,)]
@@ -38,7 +72,8 @@ def sample(index):
             reason = 'invariant_failed'
         # Never copy arbitrary process errors, journals or provider values into
         # acceptance artifacts. Preserve only the independently queried counts.
-        evidence = {'sample': index, 'ok': False, 'code': reason}
+        evidence = {'sample': index, 'ok': False, 'code': reason,
+                    'process_exit': process_exit, 'seed_diagnostic': diagnostic}
         for name, path, sql in (
             ('claimed', db, 'SELECT sum(claimed) FROM executions'),
             ('consumed', db, 'SELECT sum(consumed) FROM approvals'),
