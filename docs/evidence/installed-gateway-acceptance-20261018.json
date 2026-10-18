@@ -1,0 +1,33 @@
+{
+  "schema": "kujo.payments.installed-gateway-acceptance/v1",
+  "date": "2026-10-18",
+  "tested_commit": "82c952cadde6d466c80cb374de79a9c8af57d649",
+  "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+  "kennel_commit": "546dd4205b90825f3e326336941c3068b1add0f0",
+  "result": "passed locally",
+  "package_files": 111,
+  "archive_bytes": 179454,
+  "checks": [
+    "deterministic native package and forbidden-path exclusion",
+    "real Kennel installation and validation",
+    "executor project locked dependency installation and validation",
+    "installed gateway with private process umask and no custom module paths",
+    "installed clients authenticated request/replay/status/denial in VM and interpreter",
+    "quarantined observation-only operational recovery rehearsal"
+  ],
+  "initial_failure": "Installed gateway could not resolve Ability until its own project dependencies were installed. Consumer-level client imports do not establish executor dependency readiness.",
+  "log_directory": ".local/staging-acceptance-20261018",
+  "log_sha256": {
+    "package.log": "3e5ac68a1e8f635f0641b9c72e2b29cdf35c7197eb588050643d77aafaf621af",
+    "recovery.log": "8e37c341d524d6ee31af8791bb38a43577e8d918cb3144e9f8a0daacdd011b36"
+  },
+  "limits": [
+    "Synthetic release metadata, no published registry artifact",
+    "No actual host selected or provisioned",
+    "No TLS edge, external log sinks or production backup custody verified",
+    "Financial-history restore and KPH-008 remain open",
+    "Hosted CI is separate evidence; this record reports local results only"
+  ],
+  "real_money_moved": false,
+  "production_approved": false
+}

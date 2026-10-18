@@ -174,3 +174,19 @@ preserves the initial failure, corrected run, source pins and local log hashes.
 Actual deployment acceptance, authoritative financial-history recovery, release
 artifact acceptance, KPH-008 and provider acceptance remain open; see the
 [remaining release inputs](release-checklist.md#remaining-non-provider-acceptance-inputs).
+
+## Installed gateway acceptance — October 18, 2026
+
+At `82c952cadde6d466c80cb374de79a9c8af57d649`, the native package fixture
+runs both client and gateway from installed files. The executor project's own
+locked dependencies must be installed and validated; consumer imports alone did
+not make Ability resolvable when starting the gateway from its package directory.
+The corrected fixture passes authenticated request/replay/status/denial in VM and
+interpreter modes without custom module paths. The existing observation-only
+recovery rehearsal also passes locally. [Recorded local evidence](evidence/installed-gateway-acceptance-20261018.json)
+includes runtime identity, package size and log hashes. These checks do not
+publish a registry release or accept a production installation.
+
+Use the [deployment acceptance worksheet](deployment-acceptance.md) to select
+staging and record installation-specific evidence. The deployment owner has not
+yet selected a host or recovery targets; these remain explicit inputs.
