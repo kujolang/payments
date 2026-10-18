@@ -4,6 +4,7 @@ No provider API or credentials. A verified publication remains immutable; only
 its separate working copy receives observation writes. Never resume spending.
 """
 import hashlib
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -18,14 +19,14 @@ KUJO = os.environ['KUJO_BIN']
 
 
 def run(args, env=None, ok=True):
-    p = subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True, timeout=45)
+    p = subprocess.run(args, cwd=ROOT, env=env, capture_output=True, text=True, timeout=45, umask=0o077)
     assert 'SENTINEL' not in p.stdout + p.stderr, 'secret in drill output'
     assert (p.returncode == 0) == ok, (p.stdout, p.stderr)
     return json.loads(p.stdout)
 
 
 def query(path, sql):
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         return db.execute(sql).fetchall()
 
 
@@ -43,6 +44,7 @@ with tempfile.TemporaryDirectory(prefix='payments-operator-recovery-') as tempor
            'PAYMENTS_TEST_STOP': '', 'PAYMENTS_TEST_MODE': 'seed', 'PAYMENTS_TEST_SEED_FAULT': ''}
     fixture = [KUJO, 'run', 'tests/reconciliation.kujo', '--interpreter']
     assert run(fixture, env)['ok']
+    assert all(path.stat().st_mode & 0o077 == 0 for path in root.glob('*.db*')), 'private fixture journals and sidecars required'
     assert query(processor, 'SELECT count(*) FROM fixture_charges') == [(1,)]
     assert query(core, 'SELECT state,claimed FROM executions') == [('reconciliation_required', 1)]
     core.chmod(0o600)
