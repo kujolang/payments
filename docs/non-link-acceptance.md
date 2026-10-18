@@ -102,3 +102,47 @@ log hashes are in the [acceptance evidence](evidence/non-link-acceptance-2026101
 These results accept the named synthetic reference checks, not all production
 release gates. No production host was selected or changed, no published package
 was released, and no real provider enrollment or purchase was performed.
+
+## Intermittent seed investigation — October 18, 2026
+
+KPH-008 remains open. An additional 200 fresh processes before the diagnostic
+change and 200 afterward passed with four workers. The historical log contains
+only `unknown_after_charge`; the original result and journals were removed.
+Passing repetitions cannot recover that missing evidence or establish a cause.
+
+Two deterministic fault injections reproduce the same assertion with materially
+different financial states:
+
+| Injected fault | State | Claim / charge count | Normalized error |
+| --- | --- | --- | --- |
+| Preflight audit rejection | `ready` | 0 / 0 | `ability_audit_failed` |
+| Observation persistence failure after submission | `executing` | 1 / 1 | `storage_failure` |
+
+These are controlled examples, not diagnoses of the historical incident. The
+second retains its financial claim; it must be observed, never resubmitted.
+
+A verified diagnostic defect was fixed: the stress collector discarded the
+fixture's status and error code before deleting its temporary journals. The
+fixture now emits a bounded machine-readable failure object; the collector
+retains only allowed scalar fields and the process exit, alongside independently
+queried claim/approval/charge counts. Unrecognized codes become `unrecognized`;
+raw errors and journals are not exported. Sentinel output makes even a zero-exit
+child fail. Regular fixtures clear test-only fault controls.
+
+`tests/network/seed_diagnostics_test.py` runs both actual injected failures,
+checks the independent journals, verifies exactly one child invocation, and
+checks malformed/oversized/private diagnostics and timeout handling. The old
+collector from `f090c48` was run against the same fault-enabled fixture and lost
+both status/error pairs. No payment execution, retry, approval or persistence
+behavior was changed to make the original assertion pass.
+
+On recurrence, retain the CI stress artifact and source/runtime identity. Use
+`seed_diagnostic`, `process_exit` and the independent counts to locate the failing
+phase before changing production behavior. Do not infer zero charges from a
+missing/unreadable processor journal or close KPH-008 from another green run.
+
+The [investigation evidence](evidence/reconciliation-investigation-20261018.json)
+records the local checks and [CI run 39153564005](https://github.com/kujolang/payments/actions/runs/39153564005)
+at `41d19bfb1e367c959fb5f20b59446fdb2799f381`: full Linux host suite, 40 fresh
+stress samples and actual OCI/Workcell containment all passed. The original
+KPH-008 release concern remains open.

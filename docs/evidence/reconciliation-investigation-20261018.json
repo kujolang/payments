@@ -1,0 +1,100 @@
+{
+  "schema": "kujo.payments.reconciliation-investigation/v1",
+  "date": "2026-10-18",
+  "repository": "kujolang/payments",
+  "tested_commit": "41d19bfb1e367c959fb5f20b59446fdb2799f381",
+  "historical_finding": "KPH-008",
+  "historical_root_cause": "unproven; original seed result and journals unavailable",
+  "production_behavior_changed": false,
+  "verified_fix": "Stress collector discarded seed status/error; now retains bounded scalar diagnostic and process exit, rejects sentinel output, clears test-only fault controls in ordinary fixtures.",
+  "reproduction_control": "Previous collector from f090c48 run against the same fault-enabled fixture loses status/error for both faults; new regression verifies retained fields and independent processor/core counts.",
+  "faults": [
+    {
+      "injected": "preflight audit rejection",
+      "status": "ready",
+      "code": "ability_audit_failed",
+      "claimed": 0,
+      "charges": 0
+    },
+    {
+      "injected": "observation persistence failure",
+      "status": "executing",
+      "code": "storage_failure",
+      "claimed": 1,
+      "charges": 1
+    }
+  ],
+  "faults_explain_historical_failure": false,
+  "local_stress_before": {
+    "elapsed_seconds": 31.23,
+    "failures": [],
+    "passed": 200,
+    "root_cause_resolved": false,
+    "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+    "samples": 200,
+    "schema": "kujo.payments.synthetic-seed-stress/v1",
+    "scope": "synthetic_fresh_processes_not_provider_acceptance",
+    "workers": 4
+  },
+  "local_stress_after": {
+    "elapsed_seconds": 49.115,
+    "failures": [],
+    "passed": 200,
+    "root_cause_resolved": false,
+    "runtime_sha256": "84ef9eb2313de963690f25a31f56083b61013ccdf6a34bad47d630d69f88694a",
+    "samples": 200,
+    "schema": "kujo.payments.synthetic-seed-stress/v1",
+    "scope": "synthetic_fresh_processes_not_provider_acceptance",
+    "workers": 4
+  },
+  "local_tests": {
+    "reconciliation": "passed",
+    "operational_recovery": "passed",
+    "seed_diagnostics": "passed; no retries, malformed/unrecognized/oversized private fields, sentinel output and timeout handling"
+  },
+  "logs": {
+    "stress.json": "c9322edfd5e927e065bab6a93d5d6e4b25ca54d46b68395b77cfc373e0602fd1",
+    "stress-after.json": "3ea7169cbdb6d2eefbd89282eb57eedfa8f6112b7e9c673501812c41cb184b25",
+    "diagnostic-before.json": "143a8e10922d65f4a72d6c37adede1635f22891d8cbdc3d17b31bdfc86c684e1",
+    "diagnostics.log": "9c02350e05a3e60acdeead2a4125d0ce45cd515d5b27b63cd4dc2d8d7dcd0c94",
+    "reconciliation.log": "b66019defa4355f89739a5e9a8c8b0804939390a5001682df6a5d6d92447b261",
+    "recovery.log": "8e37c341d524d6ee31af8791bb38a43577e8d918cb3144e9f8a0daacdd011b36",
+    "reconciliation-after.log": "b66019defa4355f89739a5e9a8c8b0804939390a5001682df6a5d6d92447b261",
+    "ci-host.log": "fbcef9dfebd05849d15fd3381c3953e52f6f90eba9fa13534029a312179471cc",
+    "ci-containment.log": "70f066be15574ea07fb2e93dcbeda7689f4b56cfc7074071de68db866284ac94",
+    "ci-run.json": "ef27edd301ffda4ae90aa82239ad93cdaa9a60e94ea1abb9dadc3e9c33fcd3e2",
+    "ci-jobs.json": "a8dc73e42fbeed252222cba189daf0cf3c23fab85959481b07f97c0778150cb0",
+    "ci-stress.json": "dfbf275e182be6f043e9cfd8101acf90bec2283c9a4b1eb134607b514ae43ace"
+  },
+  "log_directory": ".local/intermittent-20261018",
+  "real_money_moved": false,
+  "release_gate_closed": false,
+  "ci": {
+    "run_id": 39153564005,
+    "url": "https://github.com/kujolang/payments/actions/runs/39153564005",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 117751999620,
+        "name": "containment / pinned Linux runtime",
+        "conclusion": "success"
+      },
+      {
+        "id": 117751999759,
+        "name": "host / pinned Linux runtime",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "linux_stress": {
+    "elapsed_seconds": 2.939,
+    "failures": [],
+    "passed": 40,
+    "root_cause_resolved": false,
+    "runtime_sha256": "1c7f960df366f213146577fefa0c5e8ec3a1581dab822356c4e3ca295334c26c",
+    "samples": 40,
+    "schema": "kujo.payments.synthetic-seed-stress/v1",
+    "scope": "synthetic_fresh_processes_not_provider_acceptance",
+    "workers": 2
+  }
+}
