@@ -74,7 +74,7 @@ The example simulates both approval and payment confirmation in one trusted proc
 
 ## Develop and integrate
 
-After the setup above, install the MCP example's Node dependencies and run the host test suite. You'll also need Node.js and npm; CI uses Node 24.20.0.
+After the setup above, install the MCP example's Node dependencies and run the host test suite. You'll also need Node.js and npm; CI and `.nvmrc` use Node 26.12.1; supported patched alternatives are declared in the example package’s `engines` field.
 
 ```sh
 npm ci --prefix examples/mcp --ignore-scripts --no-audit --no-fund

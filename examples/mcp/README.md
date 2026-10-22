@@ -6,7 +6,7 @@ The existing Kujo Ability packaged bridge has a different gateway route contract
 
 ## Install and run
 
-From Payments root, install the committed example Kennel lock and run `npm ci --prefix examples/mcp --ignore-scripts --no-audit --no-fund`. `scripts/ci/bootstrap.py` installs/verifies the Kujo development dependencies. Node 24.20.0 is the tested runtime; the example requires Node 22 or newer.
+From Payments root, install the committed example Kennel lock and run `npm ci --prefix examples/mcp --ignore-scripts --no-audit --no-fund`. `scripts/ci/bootstrap.py` installs/verifies the Kujo development dependencies. Node 26.12.1 is the repository and CI default; supported patched alternatives are declared in `package.json` engines.
 
 Configure the trusted host with absolute `KUJO_BIN`, `PAYMENTS_CLIENT_ENDPOINT` and request/status-only `PAYMENTS_CLIENT_TOKEN`. Launch `python3 examples/mcp/run.py` as an MCP STDIO server from the Payments root. No endpoint/token appears in tool arguments. A host configuration can use `command: python3`, an absolute path to `examples/mcp/run.py` in `args`, and those trusted environment entries. Keep credentials out of committed host configuration. HTTPS is required except the explicitly enabled loopback fixture profile (`PAYMENTS_LOCAL_FIXTURE=true`).
 
