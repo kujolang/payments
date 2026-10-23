@@ -1,5 +1,9 @@
 # Kujo Payments
 
+[![Version](https://img.shields.io/badge/version-0.1.0-black)](https://github.com/kujolang/payments)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![built with Kujo](https://img.shields.io/badge/built%20with-Kujo-white.svg)](https://github.com/kujolang/kujo)
+
 Kujo Payments lets an agent request a purchase, wait for approval, and check what happened. Payment credentials belong in a separate, trusted executor—not in the agent's context.
 
 For example: **“Pay this merchant up to $55 USD for this purchase.”** The agent works with that request and its status. The executor handles the provider connection and records the outcome.
