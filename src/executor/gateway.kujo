@@ -8,7 +8,9 @@ config_path := env("PAYMENTS_SERVICE_CONFIG")
 assert(config_path != "","PAYMENTS_SERVICE_CONFIG is required")
 settings := parse_json(read_file(config_path))
 assert(json_schema_validate(settings,parse_json(read_file("contracts/service.schema.json")))["valid"],"service_config_invalid")
-assert(type(settings["port"]) == "int" && settings["port"] >= 1024 && settings["port"] <= 65535,"service_port")
+mut port := 8795
+if has_key(settings,"port") { port = settings["port"] }
+assert(type(port) == "int" && port >= 1024 && port <= 65535,"service_port")
 assert(settings["bind"] == "127.0.0.1" || settings["bind"] == "0.0.0.0","service_bind")
 assert(len(settings["credentials"]) > 0 && len(settings["credentials"]) <= 128,"service_credentials")
 assert(len(keys(settings["currency_table"]["exponents"])) > 0,"currency_table_empty")
@@ -33,6 +35,6 @@ audit := func(phase,invocation,payload) {
 }
 config := {"clock_ms":clock,"policy":policy,"audit":audit,"namespace":settings["namespace"],"currency_table":settings["currency_table"],"intent_schema":parse_json(read_file("contracts/intent.schema.json")),"definitions":{"request":parse_json(read_file("contracts/abilities/request.json")),"inspect":parse_json(read_file("contracts/abilities/inspect.json")),"inspect_revision":parse_json(read_file("contracts/abilities/inspect_revision.json")),"cancel":parse_json(read_file("contracts/abilities/cancel.json"))}}
 handler := request_handler(sqlite_port(db),config,settings["credentials"])
-mut server := http_listen(settings["bind"],settings["port"])
+mut server := http_listen(settings["bind"],port)
 server = server.route("POST","/v1/payments",handler)
 server.listen()

@@ -15,6 +15,7 @@ export sandbox_configuration := func(plan,schemas,now_ms) {
         for key in keys(installed) { assert(contains(["snapshot","capabilities","expected","payment_method","test_mode"],key),"sandbox_installation_field") }
         assert(type(installed["payment_method"]) == "string" && regex_match(installed["payment_method"],"^[A-Za-z0-9_]{1,128}$"),"sandbox_payment_profile")
         seller := plan["merchant"]
+        if type(seller) == "dict" && has_key(seller,"port") == 0 { seller["port"] = 8796 }
         assert(type(seller) == "dict" && len(keys(seller)) == 3 && type(seller["account_id"]) == "string" && regex_match(seller["account_id"],"^acct_[A-Za-z0-9]+$") && type(seller["api_version"]) == "string" && regex_match(seller["api_version"],"^[0-9]{4}-[0-9]{2}-[0-9]{2}(\\.[a-z]+)?$") && type(seller["port"]) == "int" && seller["port"] >= 1024 && seller["port"] <= 65535,"sandbox_merchant_config")
         assert(type(installed["test_mode"]) == "bool" && installed["test_mode"] == true,"sandbox_test_mode")
         assert(installed["snapshot"]["provider"]["id"] == "link" && installed["snapshot"]["provider"]["adapter_version"] == "0.1.0" && installed["capabilities"]["provider_id"] == "link" && installed["capabilities"]["adapter_version"] == "0.1.0","sandbox_provider")
@@ -31,7 +32,7 @@ export sandbox_configuration := func(plan,schemas,now_ms) {
         assert(plan["route"]["method"] == "POST" && type(plan["route"]["body"]) == "string","sandbox_post_route")
         assert(route["origin"] == snapshot["payee"]["origin"] && route["body_digest"] == installed["expected"]["body_digest"],"sandbox_route_destination")
         for key in ["route_id","route_version","resource_ref"] { assert(route[key] == snapshot["request_binding"][key],"sandbox_route_identity") }
-        merchant := {"schema":"kujo.stripe-sandbox-merchant/v1","account_id":plan["merchant"]["account_id"],"api_version":plan["merchant"]["api_version"],"port":plan["merchant"]["port"],"snapshot":snapshot,"challenge":plan["challenge"],"expected":installed["expected"],"body":plan["route"]["body"]}
+        merchant := {"schema":"kujo.stripe-sandbox-merchant/v1","account_id":plan["merchant"]["account_id"],"api_version":plan["merchant"]["api_version"],"port":seller["port"],"snapshot":snapshot,"challenge":plan["challenge"],"expected":installed["expected"],"body":plan["route"]["body"]}
         // Existing provider factory receives its original template; it derives
         // the same digest after independently probing the real merchant route.
         buyer := {"schema":"kujo.link-sandbox-installation/v1","intent":plan["intent"],"execution_id":plan["execution_id"],"installed":installed,"route":plan["route"],"local_fixture":plan["local_fixture"],"currency_table":plan["currency_table"],"region":plan["region"],"expected_snapshot_digest":snapshot_digest(snapshot)}

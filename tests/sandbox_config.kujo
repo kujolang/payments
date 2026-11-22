@@ -18,6 +18,12 @@ installed := {"snapshot":template,"capabilities":caps,"expected":expected,"payme
 plan := {"installed":installed,"intent":v["intent"],"execution_id":"exec_actual","currency_table":{"version":"fixture-v1","exponents":{"USD":2}},"region":"US","challenge":challenge,"route":{"url":"https://example.com/purchase","method":"POST","body":"{}","route_id":"mpp_1","route_version":"v1","resource_ref":"order_1"},"local_fixture":false,"merchant":{"account_id":"acct_fixture","api_version":"2026-08-27.dahlia","port":8080}}
 output := sandbox_configuration(plan,schemas,1500)
 assert(output["ok"],"coordinated_config")
+assert(output["merchant"]["port"] == 8080,"explicit_port_preserved")
+default_plan := parse_json(to_json(plan))
+default_plan["merchant"] = {"account_id":"acct_fixture","api_version":"2026-08-27.dahlia"}
+default_output := sandbox_configuration(default_plan,schemas,1500)
+assert(default_output["ok"] && default_output["merchant"]["port"] == 8796,"default_merchant_port")
+assert(default_output["buyer"]["expected_snapshot_digest"] == output["buyer"]["expected_snapshot_digest"],"port_preserves_payment_terms")
 clock := func() { return 1500 }
 never := func(a,b,c,d) { assert(false,"must_not_call_provider"); return null }
 observe := func(a,b,c) { assert(false,"must_not_observe"); return null }

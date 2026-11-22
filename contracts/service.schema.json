@@ -13,7 +13,8 @@
     "port": {
       "type": "integer",
       "minimum": 1024,
-      "maximum": 65535
+      "maximum": 65535,
+      "default": 8795
     },
     "database": {
       "type": "string",
@@ -124,7 +125,6 @@
   "required": [
     "schema",
     "bind",
-    "port",
     "database",
     "namespace",
     "currency_table",

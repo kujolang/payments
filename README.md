@@ -102,3 +102,7 @@ Useful places to go deeper:
 - [Cancellation](docs/cancellation.md): programmatic controls and their limits.
 
 Want to help? [Open an issue](https://github.com/kujolang/payments/issues) with a confusing setup step, a reproducible failure, or a concrete provider use case. Developer feedback and sandbox integration work are useful right now.
+
+## Local service ports
+
+The authenticated intent gateway uses TCP port `8795` when its service config omits `port`. The sandbox merchant configuration generator uses `8796` when the merchant plan omits `port`. Explicit port settings take precedence. Existing bind and authorization settings still apply.
