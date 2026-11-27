@@ -8,7 +8,7 @@ python3 tests/recovery_bounds_test.py
 "$KUJO_BIN" run tests/domain.kujo
 python3 scripts/binding_vectors.py --check
 "$KUJO_BIN" run tests/bindings.kujo
-store_dir=$(mktemp -d)
+store_dir=$(mktemp -d "${TMPDIR:-/tmp}/kujo-payments-XXXXXX")
 trap 'rm -rf "$store_dir"' EXIT
 PAYMENTS_TEST_DB="$store_dir/state.db" "$KUJO_BIN" run tests/storage.kujo
 python3 scripts/concurrency_test.py
