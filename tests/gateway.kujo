@@ -41,6 +41,9 @@ assert(gateway_call(sqlite_port(db),{"operation":"execute","input":{}},"authenti
 assert(gateway_call(sqlite_port(db),{"operation":"inspect","input":{"execution_id":id},"principal":principal},"authenticated-test-channel",config)["ok"] == false,"caller_principal_denied")
 assert(purchase_status(transport,"other")["ok"] == false,"unknown_id")
 assert(decode_gateway_request("{not json")["ok"] == false,"invalid_json")
+assert(decode_gateway_request("{\"operation\":\"inspect\",\"operation\":\"request\"}")["ok"] == false,"duplicate_operation")
+assert(decode_gateway_request("{\"amount\":{\"minor\":100,\"m\\u0069nor\":200}}")["ok"] == false,"duplicate_escaped_member")
+assert(decode_gateway_request("{\"a\":{\"key\":\"literal } and \\\"quoted\\\"\"},\"b\":[{\"key\":1},{\"key\":2}]}")["ok"],"members_scoped_to_each_object")
 for minor in [5500.0,5500.1,true,0,-1,9007199254740992] {
     mut bad := parse_json(to_json(input))
     bad["amount"] = {"mode":"maximum","minor":minor,"currency":"USD"}

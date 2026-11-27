@@ -27,6 +27,8 @@ Set the service process umask to `077` before it creates the journal or SQLite s
 
 The service defaults to loopback. Do not expose its plain HTTP listener on a public network. Remote deployments need an authenticated TLS edge, request/header limits, rate limits and protected internal routing. Set an 8 KiB body limit at that edge; Kujo's native reader imposes an 8 MiB hard ceiling before the application's stricter 8 KiB JSON check. The native server is a bounded synchronous service, not a high-volume edge proxy. `--interpreter` is required for this HTTP route callback in the tested runtime. API tokens, headers and raw request bodies must not enter edge/application logs.
 
+Reject repeated `Authorization` and `Content-Type` headers at the edge before forwarding. The pinned Kujo v1.4.0 HTTP listener collapses repeated header lines before the intent gateway can inspect them. Assign each bearer verifier to a single credential entry.
+
 ## OCI reference profile
 
 `deployment/Dockerfile` pins the amd64 Ubuntu manifest and verifies the official Kujo 1.4.0 executable. `deployment/runtime.lock.json` pins archive and executable SHA-256 values. Downloads happen at image build time, never during a payment. Build and run the probe:

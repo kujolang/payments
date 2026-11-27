@@ -14,11 +14,14 @@ assert(type(port) == "int" && port >= 1024 && port <= 65535,"service_port")
 assert(settings["bind"] == "127.0.0.1" || settings["bind"] == "0.0.0.0","service_bind")
 assert(len(settings["credentials"]) > 0 && len(settings["credentials"]) <= 128,"service_credentials")
 assert(len(keys(settings["currency_table"]["exponents"])) > 0,"currency_table_empty")
+verifiers := {}
 for credential in settings["credentials"] {
     assert(ability_principal_compatible(credential["principal"]),"credential_ability_identity")
     mut seen := []
     for op in credential["operations"] { assert(contains(seen,op) == false,"duplicate_operation");seen = push(seen,op) }
     assert(type(credential["verifier"]) == "string" && len(credential["verifier"]) == 64,"credential_verifier")
+    assert(has_key(verifiers,credential["verifier"]) == 0,"duplicate_credential_verifier")
+    verifiers[credential["verifier"]] := true
     assert(type(credential["expires_at_ms"]) == "int","credential_expiry")
     for op in credential["operations"] { assert(contains(["request","inspect","inspect_revision","cancel"],op),"credential_operation") }
 }

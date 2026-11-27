@@ -13,9 +13,36 @@ func request_digest(input) {
     }
     return sha256(frame(parts))
 }
+func unique_json_members(body) {
+    // Scan complete strings so punctuation inside a value cannot change nesting.
+    // The full JSON parser still validates the document's grammar.
+    tokens := regex_find_all(body, "\"([^\"\\\\]|\\\\.)*\"[ \\t\\r\\n]*:|\"([^\"\\\\]|\\\\.)*\"|[{}\\[\\]]")
+    mut depth := 0
+    seen := {}
+    for token in tokens {
+        if token == "{" || token == "[" {
+            depth = depth + 1
+            if depth > 32 { return false }
+            seen[to_string(depth)] := {}
+        } else if token == "}" || token == "]" {
+            depth = depth - 1
+            if depth < 0 { return false }
+        } else if ends_with(token, ":") {
+            slot := to_string(depth)
+            if has_key(seen,slot) == 0 { return false }
+            members := seen[slot]
+            key := parse_json(trim(substring(token,0,len(token)-1)))
+            if has_key(members,key) { return false }
+            members[key] := true
+            seen[slot] := members
+        }
+    }
+    return depth == 0
+}
 export decode_gateway_request := func(body) {
     if type(body) != "string" || byte_length(body) > 8192 { return {"ok":false,"code":"invalid_request"} }
     try {
+        if unique_json_members(body) == false { return {"ok":false,"code":"invalid_request"} }
         value := parse_json(body)
         if type(value) != "dict" { return {"ok":false,"code":"invalid_request"} }
         return {"ok":true,"value":value}

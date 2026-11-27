@@ -4,9 +4,9 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 def digest(token):
     return hmac.new(token.encode(),b'kujo.payments.transport/v1',hashlib.sha256).hexdigest()
-def exchange(port,token,value,content_type='application/json',path='/v1/payments'):
+def exchange(port,token,value,content_type='application/json',path='/v1/payments',scheme='Bearer'):
     body=value if isinstance(value,bytes) else json.dumps(value).encode()
-    request=urllib.request.Request(f'http://127.0.0.1:{port}{path}',body,headers={'Authorization':'Bearer '+token,'Content-Type':content_type})
+    request=urllib.request.Request(f'http://127.0.0.1:{port}{path}',body,headers={'Authorization':scheme+' '+token,'Content-Type':content_type})
     try:
         with urllib.request.urlopen(request,timeout=4) as response: return response.status,response.read(),dict(response.headers)
     except urllib.error.HTTPError as e: return e.code,e.read(),dict(e.headers)
@@ -19,9 +19,15 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
     for secret,tenant,expiry in [(token,'one',4102444800000),(other,'two',4102444800000),(expired,'one',1)]:
         credentials.append({'verifier':digest(secret),'principal':{'type':'user','id':'user','tenant_id':tenant},'operations':['request','inspect'],'disabled':False,'expires_at_ms':expiry})
     settings={'schema':'kujo.payment-service/v1','bind':'127.0.0.1','port':port,'database':str(root/'payments.db'),'namespace':'test-installation','currency_table':{'version':'test-v1','exponents':{'USD':2}},'credentials':credentials}
-    (root/'config.json').write_text(json.dumps(settings))
     env={**os.environ,'PAYMENTS_SERVICE_CONFIG':str(root/'config.json'),'KUJO_HTTP_SERVER_READ_TIMEOUT_MS':'500'}
-    process=subprocess.Popen([os.environ['KUJO_BIN'],'run','src/executor/gateway.kujo','--interpreter'],cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    command=[os.environ['KUJO_BIN'],'run','src/executor/gateway.kujo','--interpreter']
+    ambiguous={**credentials[0], 'principal':credentials[1]['principal']}
+    (root/'config.json').write_text(json.dumps({**settings,'credentials':[credentials[0],ambiguous]}))
+    rejection=subprocess.run(command,cwd=ROOT,env=env,capture_output=True,text=True,timeout=15)
+    assert rejection.returncode!=0 and 'duplicate_credential_verifier' in rejection.stderr,rejection.stderr
+    assert not (root/'payments.db').exists()
+    (root/'config.json').write_text(json.dumps(settings))
+    process=subprocess.Popen(command,cwd=ROOT,env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     try:
         deadline=time.monotonic()+15
         while True:
@@ -37,12 +43,15 @@ with tempfile.TemporaryDirectory(prefix='payments-http-') as tmp:
         assert headers['Cache-Control']=='no-store'
         lookup={'operation':'inspect','input':{'execution_id':eid}}
         assert exchange(port,token,lookup)[0]==200
+        assert exchange(port,token,lookup,scheme='bEaReR')[0]==200
         assert exchange(port,other,lookup)[0]==409
         assert exchange(port,expired,lookup)[0]==401
-        assert exchange(port,'d'*64,lookup)[0]==401
+        status,_,headers=exchange(port,'d'*64,lookup)
+        assert status==401 and headers['WWW-Authenticate']=='Bearer'
         assert exchange(port,token,{'operation':'execute','input':{}})[0]==403
         assert exchange(port,token,{**lookup,'principal':credentials[0]['principal']})[0]==409
         assert exchange(port,token,b'{'*9000)[0]==400
+        assert exchange(port,token,b'{"operation":"inspect","operation":"inspect","input":{}}')[0]==400
         assert exchange(port,token,lookup,'text/plain')[0]==415
         assert exchange(port,token,lookup,path='/execute')[0]==404
         exponent=json.dumps(purchase).replace('5500','5500e0').replace('"key"','"exponent"').encode()
